@@ -10,11 +10,13 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '../src/store/useAppStore';
 import { getFamilyStatus } from '../src/api/family';
 import { MemberRow } from '../src/components/MemberRow';
 import { PressableScale } from '../src/components/PressableScale';
+import { FloatingStars } from '../src/components/FloatingStars';
 
 interface FamilyMember {
   id: string;
@@ -54,6 +56,7 @@ export default function FamilyScreen() {
   };
 
   const handleShare = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await Share.share({
         message: `Dołącz do mojej rodziny w Cmok! ✦ Kod: ${code}`,
@@ -87,11 +90,13 @@ export default function FamilyScreen() {
 
   return (
     <View style={styles.container}>
+      <FloatingStars />
+
       <View style={styles.header}>
         <PressableScale onPress={() => router.back()}>
           <Text style={styles.backButton}>← Wstecz</Text>
         </PressableScale>
-        <Text style={styles.title}>✦ Rodzina</Text>
+        <Text style={styles.title}>Rodzina ✦</Text>
         <View style={{ width: 70 }} />
       </View>
 
@@ -130,20 +135,23 @@ export default function FamilyScreen() {
               </View>
             )}
 
-            <Text style={styles.codeLabel}>✦ Kod rodziny</Text>
-            <View style={styles.codeBox}>
-              <Text style={styles.codeText}>{code}</Text>
-            </View>
+            {/* Code section — glassmorphism */}
+            <View style={styles.codeCard}>
+              <Text style={styles.codeLabel}>✦ Kod rodziny</Text>
+              <View style={styles.codeBox}>
+                <Text style={styles.codeText}>{code}</Text>
+              </View>
 
-            <PressableScale onPress={handleShare} style={styles.shareButton}>
-              <Text style={styles.shareButtonText}>
-                Udostępnij kod ✦
+              <PressableScale onPress={handleShare} style={styles.shareButton}>
+                <Text style={styles.shareButtonText}>
+                  Udostępnij kod ✦
+                </Text>
+              </PressableScale>
+
+              <Text style={styles.codeHint}>
+                Wyślij ten kod bliskim, żeby dołączyli do Twojej rodziny
               </Text>
-            </PressableScale>
-
-            <Text style={styles.codeHint}>
-              Wyślij ten kod bliskim, żeby dołączyli do Twojej rodziny ✦
-            </Text>
+            </View>
 
             <PressableScale onPress={handleReset} style={styles.resetButton}>
               <Text style={styles.resetButtonText}>Resetuj apkę</Text>
@@ -167,6 +175,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 12,
+    zIndex: 10,
   },
   backButton: {
     fontSize: 16,
@@ -176,7 +185,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#D4A574',
+    color: '#F0E6D3',
     letterSpacing: 1,
   },
   list: {
@@ -198,21 +207,21 @@ const styles = StyleSheet.create({
   // Solo easter egg
   soloCard: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 24,
     paddingHorizontal: 24,
-    backgroundColor: 'rgba(212,165,116,0.08)',
-    borderRadius: 16,
-    borderWidth: 1,
+    backgroundColor: 'rgba(212,165,116,0.06)',
+    borderRadius: 20,
+    borderWidth: 1.5,
     borderColor: 'rgba(212,165,116,0.2)',
     marginBottom: 28,
     borderStyle: 'dashed',
   },
   soloEmoji: {
-    fontSize: 32,
-    marginBottom: 8,
+    fontSize: 36,
+    marginBottom: 10,
   },
   soloText: {
-    fontSize: 16,
+    fontSize: 17,
     color: 'rgba(212,165,116,0.7)',
     fontWeight: '600',
     textAlign: 'center',
@@ -220,77 +229,81 @@ const styles = StyleSheet.create({
   // Code section
   codeSection: {
     alignItems: 'center',
-    marginTop: 32,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(212,165,116,0.15)',
+    marginTop: 24,
+  },
+  codeCard: {
+    width: '100%',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(212,165,116,0.15)',
   },
   codeLabel: {
     fontSize: 16,
     color: '#D4A574',
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 16,
     letterSpacing: 0.5,
   },
   codeBox: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(26,26,46,0.6)',
     paddingHorizontal: 32,
     paddingVertical: 18,
     borderRadius: 16,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: '#D4A574',
+    borderColor: 'rgba(212,165,116,0.4)',
     shadowColor: '#D4A574',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
-    shadowRadius: 10,
+    shadowRadius: 12,
     elevation: 4,
   },
   codeText: {
-    fontSize: 34,
+    fontSize: 36,
     fontWeight: '800',
     color: '#D4A574',
-    letterSpacing: 6,
+    letterSpacing: 8,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   shareButton: {
-    backgroundColor: 'rgba(200,90,90,0.8)',
-    paddingHorizontal: 28,
+    backgroundColor: '#E07A5F',
+    paddingHorizontal: 32,
     paddingVertical: 14,
-    borderRadius: 16,
+    borderRadius: 25,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(212,165,116,0.3)',
-    shadowColor: '#C85A5A',
-    shadowOffset: { width: 0, height: 3 },
+    shadowColor: '#E07A5F',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   shareButtonText: {
     color: '#F0E6D3',
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.5,
   },
   codeHint: {
     fontSize: 14,
-    color: 'rgba(212,165,116,0.45)',
+    color: 'rgba(240,230,211,0.35)',
     textAlign: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 16,
     lineHeight: 22,
   },
   resetButton: {
-    marginTop: 48,
+    marginTop: 40,
     marginBottom: 32,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(200,90,90,0.3)',
+    borderColor: 'rgba(224,122,95,0.25)',
   },
   resetButtonText: {
-    color: 'rgba(200,90,90,0.6)',
+    color: 'rgba(224,122,95,0.5)',
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',

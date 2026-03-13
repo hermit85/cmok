@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet, Animated, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { GeometricHeart } from './GeometricHeart';
 
-const PARTICLE_COUNT = 10;
-const FOLK_SHAPES = ['✦', '✧', '❋', '✿', '✻', '❊', '✾', '✽', '❁', '✺'];
+const HEART_EMOJIS = ['💕', '❤️', '💜', '💗', '💖', '🩷', '💘', '💝', '💓', '❤️‍🔥', '💕', '💗', '💜', '💖', '💗'];
+const PARTICLE_COUNT = 15;
 
 interface HeartButtonProps {
   onPress: () => void;
@@ -13,8 +14,11 @@ interface HeartButtonProps {
 
 export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
-  const glowOpacity = useRef(new Animated.Value(0.3)).current;
+  const idleScale = useRef(new Animated.Value(1)).current;
+  const glowOpacity = useRef(new Animated.Value(0.2)).current;
   const innerGlow = useRef(new Animated.Value(0)).current;
+  const labelOpacity = useRef(new Animated.Value(1)).current;
+  const sentLabelOpacity = useRef(new Animated.Value(0)).current;
   const tapCount = useRef(0);
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -29,25 +33,68 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
   ).current;
 
   const [showParticles, setShowParticles] = useState(false);
+  const [showSentLabel, setShowSentLabel] = useState(false);
 
-  const explodeParticles = () => {
+  // Idle breathing animation
+  useEffect(() => {
+    if (!disabled) {
+      const breathe = () => {
+        Animated.sequence([
+          Animated.timing(idleScale, { toValue: 1.03, duration: 2000, useNativeDriver: true }),
+          Animated.timing(idleScale, { toValue: 1.0, duration: 2000, useNativeDriver: true }),
+        ]).start(() => breathe());
+      };
+      breathe();
+
+      // Glow ring gentle pulse
+      const glowPulse = () => {
+        Animated.sequence([
+          Animated.timing(glowOpacity, { toValue: 0.35, duration: 2500, useNativeDriver: true }),
+          Animated.timing(glowOpacity, { toValue: 0.15, duration: 2500, useNativeDriver: true }),
+        ]).start(() => glowPulse());
+      };
+      glowPulse();
+    }
+  }, [disabled, idleScale, glowOpacity]);
+
+  // Sent label animation
+  useEffect(() => {
+    if (sent) {
+      setShowSentLabel(true);
+      Animated.parallel([
+        Animated.timing(labelOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.timing(sentLabelOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(sentLabelOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.timing(labelOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        ]).start(() => setShowSentLabel(false));
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [sent, labelOpacity, sentLabelOpacity]);
+
+  const explodeHearts = () => {
     setShowParticles(true);
     const animations = particles.map((p, i) => {
-      const angle = (i / PARTICLE_COUNT) * Math.PI * 2;
-      const distance = 90 + Math.random() * 50;
+      const angle = (i / PARTICLE_COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      const distance = 100 + Math.random() * 150;
 
       p.x.setValue(0);
       p.y.setValue(0);
       p.opacity.setValue(1);
-      p.scale.setValue(0.2);
+      p.scale.setValue(0.3);
       p.rotate.setValue(0);
 
       return Animated.parallel([
         Animated.timing(p.x, { toValue: Math.cos(angle) * distance, duration: 800, useNativeDriver: true }),
-        Animated.timing(p.y, { toValue: Math.sin(angle) * distance, duration: 800, useNativeDriver: true }),
-        Animated.timing(p.rotate, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(p.y, { toValue: Math.sin(angle) * distance - 30, duration: 800, useNativeDriver: true }),
+        Animated.timing(p.rotate, { toValue: Math.random() * 2 - 1, duration: 800, useNativeDriver: true }),
         Animated.sequence([
-          Animated.timing(p.scale, { toValue: 1, duration: 250, useNativeDriver: true }),
+          Animated.timing(p.scale, { toValue: 0.8 + Math.random() * 0.4, duration: 250, useNativeDriver: true }),
           Animated.timing(p.scale, { toValue: 0, duration: 550, useNativeDriver: true }),
         ]),
         Animated.sequence([
@@ -61,14 +108,11 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
   };
 
   const handlePress = () => {
-    if (disabled && !sent) {
-      // Still count taps for easter egg even when disabled
-    }
-
     tapCount.current += 1;
     if (tapTimer.current) clearTimeout(tapTimer.current);
     tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
 
+    // Easter egg: 5 rapid taps
     if (tapCount.current >= 5) {
       tapCount.current = 0;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -78,46 +122,43 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
 
     if (disabled) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // 1. Haptic: Heavy
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // Heart spring animation
+    // 2. BIG spring bounce: 1.0 → 1.4 → 0.9 → 1.05 → 1.0
     scale.stopAnimation();
     scale.setValue(1);
     Animated.sequence([
-      Animated.spring(scale, { toValue: 1.2, useNativeDriver: true, speed: 40, bounciness: 12 }),
-      Animated.spring(scale, { toValue: 0.9, useNativeDriver: true, speed: 40, bounciness: 10 }),
+      Animated.spring(scale, { toValue: 1.4, useNativeDriver: true, speed: 50, bounciness: 0 }),
+      Animated.spring(scale, { toValue: 0.9, useNativeDriver: true, speed: 40, bounciness: 0 }),
+      Animated.spring(scale, { toValue: 1.05, useNativeDriver: true, speed: 30, bounciness: 0 }),
       Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 8 }),
     ]).start();
 
-    // Gold glow flash
+    // 3. Gold flash effect
     Animated.sequence([
-      Animated.timing(innerGlow, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.timing(innerGlow, { toValue: 0, duration: 600, useNativeDriver: true }),
+      Animated.timing(innerGlow, { toValue: 1, duration: 150, useNativeDriver: true }),
+      Animated.timing(innerGlow, { toValue: 0, duration: 500, useNativeDriver: true }),
     ]).start();
 
-    // Glow ring pulse
-    Animated.sequence([
-      Animated.timing(glowOpacity, { toValue: 0.8, duration: 150, useNativeDriver: true }),
-      Animated.timing(glowOpacity, { toValue: 0.3, duration: 500, useNativeDriver: true }),
-    ]).start();
+    // 4. Heart emoji explosion
+    explodeHearts();
 
-    explodeParticles();
-
-    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 100);
-    setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 400);
+    // 5. Additional haptic feedback
+    setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 300);
 
     onPress();
   };
 
   return (
     <View style={styles.wrapper}>
-      {/* Folk particles */}
+      {/* Flying heart emoji particles */}
       {showParticles && (
         <View style={styles.particlesContainer}>
           {particles.map((p, i) => {
             const rotation = p.rotate.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['0deg', '180deg'],
+              inputRange: [-1, 0, 1],
+              outputRange: ['-45deg', '0deg', '45deg'],
             });
             return (
               <Animated.Text
@@ -135,7 +176,7 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
                   },
                 ]}
               >
-                {FOLK_SHAPES[i % FOLK_SHAPES.length]}
+                {HEART_EMOJIS[i % HEART_EMOJIS.length]}
               </Animated.Text>
             );
           })}
@@ -143,38 +184,39 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
       )}
 
       {/* Outer glow ring */}
-      <Animated.View style={[styles.glowRing, { opacity: glowOpacity }]} />
+      <Animated.View style={[styles.outerRing, { opacity: glowOpacity }]} />
 
-      {/* Main button */}
-      <Animated.View style={[styles.button, disabled && !sent && styles.disabled, { transform: [{ scale }] }]}>
-        <Pressable onPress={handlePress} style={styles.inner}>
-          {/* Gold glow overlay */}
-          <Animated.View style={[styles.goldGlow, { opacity: innerGlow }]} />
+      {/* Inner ring */}
+      <View style={styles.innerRing} />
 
-          {/* Geometric folk heart */}
-          <View style={styles.heartOuter}>
-            {/* Main heart lobes */}
-            <View style={styles.heartShape}>
-              <View style={[styles.heartLobe, styles.heartLeft]} />
-              <View style={[styles.heartLobe, styles.heartRight]} />
-            </View>
-            {/* Inner diamond decoration (folk style) */}
-            <View style={styles.innerDiamond} />
-            {/* Center dot */}
-            <View style={styles.centerDot} />
-          </View>
+      {/* Main heart button */}
+      <Animated.View
+        style={[
+          styles.button,
+          disabled && !sent && styles.disabled,
+          { transform: [{ scale: Animated.multiply(scale, idleScale) }] },
+        ]}
+      >
+        <Pressable onPress={handlePress} style={styles.pressable}>
+          {/* Gold glow overlay (flash) */}
+          <Animated.View style={[styles.goldFlash, { opacity: innerGlow }]} />
 
-          {sent && (
-            <View style={styles.sentBadge}>
-              <Text style={styles.sentText}>✓</Text>
-            </View>
-          )}
+          {/* SVG Heart */}
+          <GeometricHeart size={120} />
         </Pressable>
       </Animated.View>
 
-      <Text style={styles.label}>
-        {sent ? 'Cmok wysłany! ✦' : disabled ? 'Za chwilę...' : 'Wyślij cmoka'}
-      </Text>
+      {/* Label */}
+      <View style={styles.labelContainer}>
+        <Animated.Text style={[styles.label, { opacity: labelOpacity }]}>
+          {disabled && !sent ? '' : 'Wyślij cmoka ✦'}
+        </Animated.Text>
+        {showSentLabel && (
+          <Animated.Text style={[styles.sentLabel, { opacity: sentLabelOpacity }]}>
+            Cmok wysłany! 😘
+          </Animated.Text>
+        )}
+      </View>
     </View>
   );
 }
@@ -183,124 +225,87 @@ const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 280,
+    height: 300,
   },
   particlesContainer: {
     position: 'absolute',
-    width: 220,
-    height: 220,
+    width: 300,
+    height: 300,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
   },
   particle: {
     position: 'absolute',
-    fontSize: 20,
-    color: '#D4A574',
+    fontSize: 24,
   },
-  glowRing: {
+  outerRing: {
     position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
     backgroundColor: 'transparent',
     borderWidth: 1.5,
     borderColor: '#D4A574',
   },
+  innerRing: {
+    position: 'absolute',
+    width: 210,
+    height: 210,
+    borderRadius: 105,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: 'rgba(212,165,116,0.15)',
+  },
   button: {
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: '#1E2A4A',
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: 'rgba(30,42,74,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#D4A574',
+    borderColor: 'rgba(212,165,116,0.4)',
     shadowColor: '#D4A574',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
+    shadowOpacity: 0.3,
+    shadowRadius: 25,
     elevation: 10,
   },
   disabled: {
     opacity: 0.5,
   },
-  inner: {
+  pressable: {
     width: '100%',
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 95,
+    overflow: 'hidden',
   },
-  goldGlow: {
+  goldFlash: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 85,
-    backgroundColor: 'rgba(212,165,116,0.15)',
+    borderRadius: 95,
+    backgroundColor: 'rgba(212,165,116,0.25)',
   },
-  heartOuter: {
-    width: 80,
-    height: 75,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heartShape: {
-    width: 80,
-    height: 70,
-    position: 'relative',
-  },
-  heartLobe: {
-    position: 'absolute',
-    top: 0,
-    width: 46,
-    height: 70,
-    borderRadius: 46,
-    backgroundColor: '#C85A5A',
-  },
-  heartLeft: {
-    left: 3,
-    transform: [{ rotate: '-45deg' }],
-  },
-  heartRight: {
-    right: 3,
-    transform: [{ rotate: '45deg' }],
-  },
-  innerDiamond: {
-    position: 'absolute',
-    width: 16,
-    height: 16,
-    backgroundColor: '#D4A574',
-    transform: [{ rotate: '45deg' }],
-    top: 22,
-  },
-  centerDot: {
-    position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#F0E6D3',
-    top: 27,
-  },
-  sentBadge: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#D4A574',
+  labelContainer: {
+    height: 30,
+    marginTop: 16,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  sentText: {
-    color: '#1A1A2E',
-    fontSize: 18,
-    fontWeight: '800',
   },
   label: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#D4A574',
-    marginTop: 16,
     textAlign: 'center',
     fontWeight: '600',
     letterSpacing: 1,
+  },
+  sentLabel: {
+    position: 'absolute',
+    fontSize: 20,
+    color: '#F0E6D3',
+    textAlign: 'center',
+    fontWeight: '700',
   },
 });

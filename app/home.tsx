@@ -1,12 +1,15 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   RefreshControl,
+  Animated,
+  Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../src/store/useAppStore';
 import { sendCmok, getRecentCmoks, RecentCmok } from '../src/api/cmok';
 import { getFamilyStatus } from '../src/api/family';
@@ -14,6 +17,7 @@ import { HeartButton } from '../src/components/HeartButton';
 import { StreakBadge } from '../src/components/StreakBadge';
 import { CmokRow } from '../src/components/CmokRow';
 import { PressableScale } from '../src/components/PressableScale';
+import { FloatingStars } from '../src/components/FloatingStars';
 import { timeAgo } from '../src/utils/time';
 
 interface FamilyMember {
@@ -37,10 +41,34 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Check if cooldown is active (1 hour)
-  const isCooldown = lastCmokAt
-    ? Date.now() - new Date(lastCmokAt).getTime() < 3600000
-    : false;
+  // Logo easter egg: rotate 360 on tap
+  const logoRotation = useRef(new Animated.Value(0)).current;
+  const [logoTapCount, setLogoTapCount] = useState(0);
+
+  // Cooldown: 1 hour
+  const getCooldownRemaining = useCallback(() => {
+    if (!lastCmokAt) return 0;
+    const elapsed = Date.now() - new Date(lastCmokAt).getTime();
+    return Math.max(0, 3600000 - elapsed);
+  }, [lastCmokAt]);
+
+  const [cooldownMs, setCooldownMs] = useState(getCooldownRemaining());
+  const isCooldown = cooldownMs > 0;
+
+  // Update cooldown timer every second
+  useEffect(() => {
+    if (!lastCmokAt) return;
+    const interval = setInterval(() => {
+      const remaining = getCooldownRemaining();
+      setCooldownMs(remaining);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lastCmokAt, getCooldownRemaining]);
+
+  const formatCooldown = (ms: number) => {
+    const mins = Math.ceil(ms / 60000);
+    return `${mins} min`;
+  };
 
   const fetchStatus = useCallback(async () => {
     if (!memberId) return;
@@ -88,6 +116,22 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
+  const handleLogoTap = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLogoTapCount(prev => prev + 1);
+    // Easter egg: logo tap → heart spins 360
+    Animated.timing(logoRotation, {
+      toValue: logoTapCount + 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const logoSpin = logoRotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   const otherMembers = members.filter((m) => m.id !== memberId);
 
   const getStatusEmoji = (status: string) => {
@@ -98,11 +142,14 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <FloatingStars />
+
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>Cmok ✦</Text>
-          <Text style={styles.subtitle}>Wyślij buziaczka bliskim</Text>
-        </View>
+        <Pressable onPress={handleLogoTap}>
+          <Animated.Text style={[styles.title, { transform: [{ rotate: logoSpin }] }]}>
+            Cmok ✦
+          </Animated.Text>
+        </Pressable>
         <PressableScale onPress={() => router.push('/family')} style={styles.familyButton}>
           <Text style={styles.familyLink}>✦ Rodzina</Text>
         </PressableScale>
@@ -119,9 +166,11 @@ export default function HomeScreen() {
                 sent={sent}
               />
               {isCooldown && !sent && (
-                <Text style={styles.cooldownText}>
-                  Możesz wysłać kolejnego cmoka za chwilę ⏳
-                </Text>
+                <View style={styles.cooldownContainer}>
+                  <Text style={styles.cooldownText}>
+                    Kolejny cmok za {formatCooldown(cooldownMs)} ⏳
+                  </Text>
+                </View>
               )}
             </View>
 
@@ -148,7 +197,7 @@ export default function HomeScreen() {
 
             {recentCmoks.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>✧ Ostatnie cmoki</Text>
+                <Text style={styles.sectionTitle}>💌 Ostatnie cmoki</Text>
                 {recentCmoks.map((cmok, index) => (
                   <CmokRow
                     key={cmok.id}
@@ -187,23 +236,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 8,
+    zIndex: 10,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: '#F0E6D3',
     letterSpacing: 1,
   },
-  subtitle: {
-    fontSize: 14,
-    color: 'rgba(212,165,116,0.6)',
-    marginTop: 2,
-  },
   familyButton: {
-    backgroundColor: 'rgba(212,165,116,0.1)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(212,165,116,0.3)',
   },
@@ -215,16 +260,22 @@ const styles = StyleSheet.create({
   content: {
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingTop: 10,
   },
   heartContainer: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 0,
+  },
+  cooldownContainer: {
+    marginTop: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
   },
   cooldownText: {
     fontSize: 14,
     color: 'rgba(212,165,116,0.5)',
-    marginTop: 8,
     textAlign: 'center',
   },
   section: {
@@ -232,10 +283,10 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#D4A574',
-    marginBottom: 12,
+    color: '#F0E6D3',
+    marginBottom: 14,
     letterSpacing: 0.5,
   },
   memberCard: {
@@ -243,17 +294,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 20,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(212,165,116,0.15)',
   },
   memberDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(212,165,116,0.1)',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(212,165,116,0.08)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -261,7 +310,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212,165,116,0.2)',
   },
   memberDotText: {
-    fontSize: 14,
+    fontSize: 15,
   },
   memberInfo: {
     flex: 1,

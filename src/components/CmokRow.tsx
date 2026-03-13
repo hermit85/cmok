@@ -10,7 +10,7 @@ interface CmokRowProps {
 
 export function CmokRow({ senderName, createdAt, index }: CmokRowProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
+  const slideAnim = useRef(new Animated.Value(40)).current; // slide from right
 
   useEffect(() => {
     Animated.parallel([
@@ -30,19 +30,26 @@ export function CmokRow({ senderName, createdAt, index }: CmokRowProps) {
     ]).start();
   }, [fadeAnim, slideAnim, index]);
 
+  const initial = senderName.charAt(0).toUpperCase();
+
   return (
     <Animated.View
       style={[
         styles.row,
         {
           opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
+          transform: [{ translateX: slideAnim }],
         },
       ]}
     >
-      <View style={styles.iconContainer}>
-        <Text style={styles.icon}>✦</Text>
+      {/* Gold left border accent */}
+      <View style={styles.leftBorder} />
+
+      {/* Avatar circle */}
+      <View style={styles.avatarCircle}>
+        <Text style={styles.avatarLetter}>{initial}</Text>
       </View>
+
       <View style={styles.content}>
         <Text style={styles.text}>
           <Text style={styles.name}>{senderName}</Text>
@@ -60,24 +67,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16,
+    paddingLeft: 18,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 20,
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(212,165,116,0.2)',
+    overflow: 'hidden',
   },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(200,90,90,0.15)',
+  leftBorder: {
+    position: 'absolute',
+    left: 0,
+    top: 8,
+    bottom: 8,
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: '#D4A574',
+  },
+  avatarCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(26,26,46,0.8)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
+    borderWidth: 1.5,
+    borderColor: '#D4A574',
   },
-  icon: {
+  avatarLetter: {
     fontSize: 16,
-    color: '#C85A5A',
+    fontWeight: '700',
+    color: '#F0E6D3',
   },
   content: {
     flex: 1,
@@ -92,7 +111,7 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 12,
-    color: 'rgba(240,230,211,0.4)',
+    color: 'rgba(240,230,211,0.35)',
     marginTop: 3,
   },
 });

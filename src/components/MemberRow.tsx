@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { timeAgo } from '../utils/time';
 
-const AVATAR_COLORS = ['#C85A5A', '#D4A574', '#7B8EC8', '#8B6FAE', '#5A9E8F', '#C87A5A', '#6B8BBD', '#9E7BA5'];
+const AVATAR_COLORS = ['#E07A5F', '#D4A574', '#7B8EC8', '#8B6FAE', '#5A9E8F', '#C87A5A', '#6B8BBD', '#9E7BA5'];
 
 interface MemberRowProps {
   name: string;
@@ -14,7 +14,7 @@ interface MemberRowProps {
 function getStatusInfo(status: string): { emoji: string; label: string; color: string } {
   if (status === '🟢') return { emoji: '✨', label: 'Aktywny/a dziś', color: '#D4A574' };
   if (status === '🟡') return { emoji: '✦', label: 'Był(a) wczoraj', color: 'rgba(212,165,116,0.6)' };
-  return { emoji: '💛', label: 'Dawno nie było cmoka...', color: 'rgba(200,90,90,0.7)' };
+  return { emoji: '💛', label: 'Dawno nie było cmoka...', color: 'rgba(224,122,95,0.7)' };
 }
 
 function getAvatarColor(name: string): string {
@@ -28,8 +28,10 @@ function getAvatarColor(name: string): string {
 export function MemberRow({ name, lastCmokAt, status, index = 0 }: MemberRowProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+  const breathe = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    // Entry animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -45,7 +47,17 @@ export function MemberRow({ name, lastCmokAt, status, index = 0 }: MemberRowProp
         bounciness: 6,
       }),
     ]).start();
-  }, [fadeAnim, slideAnim, index]);
+
+    // Avatar breathing — each with different timing
+    const duration = 2500 + index * 400;
+    const breatheLoop = () => {
+      Animated.sequence([
+        Animated.timing(breathe, { toValue: 1.06, duration, useNativeDriver: true }),
+        Animated.timing(breathe, { toValue: 1, duration, useNativeDriver: true }),
+      ]).start(() => breatheLoop());
+    };
+    breatheLoop();
+  }, [fadeAnim, slideAnim, breathe, index]);
 
   const statusInfo = getStatusInfo(status);
   const avatarColor = getAvatarColor(name);
@@ -61,11 +73,14 @@ export function MemberRow({ name, lastCmokAt, status, index = 0 }: MemberRowProp
         },
       ]}
     >
-      <View style={[styles.avatar, { backgroundColor: avatarColor + '25' }]}>
-        <View style={[styles.avatarBorder, { borderColor: avatarColor }]}>
-          <Text style={[styles.avatarText, { color: avatarColor }]}>{initial}</Text>
-        </View>
-      </View>
+      <Animated.View
+        style={[
+          styles.avatar,
+          { borderColor: avatarColor, transform: [{ scale: breathe }] },
+        ]}
+      >
+        <Text style={[styles.avatarText, { color: avatarColor }]}>{initial}</Text>
+      </Animated.View>
       <View style={styles.info}>
         <Text style={styles.name}>{name}</Text>
         <View style={styles.statusRow}>
@@ -86,31 +101,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 20,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(212,165,116,0.15)',
   },
   avatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  avatarBorder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
     borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    marginRight: 14,
+    backgroundColor: 'rgba(26,26,46,0.8)',
   },
   avatarText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
   },
   info: {
