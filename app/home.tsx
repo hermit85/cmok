@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Pressable,
   FlatList,
   RefreshControl,
 } from 'react-native';
@@ -13,6 +12,8 @@ import { sendCmok, getRecentCmoks, RecentCmok } from '../src/api/cmok';
 import { getFamilyStatus } from '../src/api/family';
 import { HeartButton } from '../src/components/HeartButton';
 import { StreakBadge } from '../src/components/StreakBadge';
+import { CmokRow } from '../src/components/CmokRow';
+import { PressableScale } from '../src/components/PressableScale';
 import { timeAgo } from '../src/utils/time';
 
 interface FamilyMember {
@@ -48,7 +49,6 @@ export default function HomeScreen() {
       setMembers(data.members);
       setStreak(data.streak);
 
-      // Fetch recent cmoks
       const familyId = useAppStore.getState().familyId;
       if (familyId) {
         const cmoks = await getRecentCmoks(familyId);
@@ -92,11 +92,18 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Gradient-like background layers */}
+      <View style={styles.bgTop} />
+      <View style={styles.bgBottom} />
+
       <View style={styles.header}>
-        <Text style={styles.title}>Cmok</Text>
-        <Pressable onPress={() => router.push('/family')}>
-          <Text style={styles.familyLink}>Rodzina</Text>
-        </Pressable>
+        <View>
+          <Text style={styles.title}>Cmok 💜</Text>
+          <Text style={styles.subtitle}>Wyślij buziaczka bliskim</Text>
+        </View>
+        <PressableScale onPress={() => router.push('/family')} style={styles.familyButton}>
+          <Text style={styles.familyLink}>👨‍👩‍👧‍👦 Rodzina</Text>
+        </PressableScale>
       </View>
 
       <FlatList
@@ -111,7 +118,7 @@ export default function HomeScreen() {
               />
               {isCooldown && !sent && (
                 <Text style={styles.cooldownText}>
-                  Możesz wysłać kolejnego cmoka za chwilę
+                  Możesz wysłać kolejnego cmoka za chwilę ⏳
                 </Text>
               )}
             </View>
@@ -119,40 +126,47 @@ export default function HomeScreen() {
             <StreakBadge streak={streak} />
 
             {otherMembers.length > 0 && (
-              <View style={styles.recentSection}>
-                <Text style={styles.sectionTitle}>Ostatnio:</Text>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>👨‍👩‍👧 Bliscy</Text>
                 {otherMembers.map((member) => (
-                  <View key={member.id} style={styles.recentRow}>
-                    <Text style={styles.recentEmoji}>
-                      {member.status === '🟢' ? '💜' : '🤍'}
+                  <View key={member.id} style={styles.memberCard}>
+                    <Text style={styles.memberEmoji}>
+                      {member.status === '🟢' ? '💚' : member.status === '🟡' ? '💛' : '❤️\u200D🩹'}
                     </Text>
-                    <Text style={styles.recentName}>{member.name}</Text>
-                    <Text style={styles.recentTime}>
-                      {timeAgo(member.last_cmok_at)}
-                    </Text>
+                    <View style={styles.memberInfo}>
+                      <Text style={styles.memberName}>{member.name}</Text>
+                      <Text style={styles.memberTime}>
+                        {timeAgo(member.last_cmok_at)}
+                      </Text>
+                    </View>
                   </View>
                 ))}
               </View>
             )}
 
             {recentCmoks.length > 0 && (
-              <View style={styles.recentSection}>
-                <Text style={styles.sectionTitle}>Ostatnie cmoki:</Text>
-                {recentCmoks.map((cmok) => (
-                  <View key={cmok.id} style={styles.recentRow}>
-                    <Text style={styles.recentEmoji}>💜</Text>
-                    <Text style={styles.recentName}>{cmok.sender_name}</Text>
-                    <Text style={styles.recentTime}>
-                      {timeAgo(cmok.created_at)}
-                    </Text>
-                  </View>
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>💌 Ostatnie cmoki</Text>
+                {recentCmoks.map((cmok, index) => (
+                  <CmokRow
+                    key={cmok.id}
+                    senderName={cmok.sender_name}
+                    createdAt={cmok.created_at}
+                    index={index}
+                  />
                 ))}
               </View>
             )}
+
+            <View style={styles.bottomPadding} />
           </View>
         )}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#E8578B"
+          />
         }
       />
     </View>
@@ -164,70 +178,113 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFF5F7',
   },
+  bgTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 300,
+    backgroundColor: '#FFFBFC',
+  },
+  bgBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    backgroundColor: '#FFF0F3',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingTop: 60,
-    paddingBottom: 12,
+    paddingBottom: 8,
   },
   title: {
     fontSize: 32,
     fontWeight: '800',
     color: '#E8578B',
   },
+  subtitle: {
+    fontSize: 14,
+    color: '#C48FA3',
+    marginTop: 2,
+  },
+  familyButton: {
+    backgroundColor: '#FFF0F3',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: '#E8578B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
+  },
   familyLink: {
-    fontSize: 18,
+    fontSize: 15,
     color: '#7F5BA6',
     fontWeight: '600',
   },
   content: {
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: 40,
+    paddingTop: 20,
   },
   heartContainer: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 8,
   },
   cooldownText: {
     fontSize: 14,
-    color: '#999',
-    marginTop: 12,
+    color: '#C48FA3',
+    marginTop: 8,
     textAlign: 'center',
   },
-  recentSection: {
+  section: {
     width: '100%',
-    marginTop: 32,
+    marginTop: 28,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: '700',
+    color: '#7F5BA6',
     marginBottom: 12,
   },
-  recentRow: {
+  memberCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     backgroundColor: '#FFF',
-    borderRadius: 16,
+    borderRadius: 20,
     marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  recentEmoji: {
-    fontSize: 20,
-    marginRight: 10,
+  memberEmoji: {
+    fontSize: 24,
+    marginRight: 12,
   },
-  recentName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+  memberInfo: {
     flex: 1,
   },
-  recentTime: {
-    fontSize: 14,
-    color: '#999',
+  memberName: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#333',
+  },
+  memberTime: {
+    fontSize: 13,
+    color: '#BBB',
+    marginTop: 2,
+  },
+  bottomPadding: {
+    height: 40,
   },
 });

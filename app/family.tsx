@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Pressable,
   FlatList,
   RefreshControl,
   Share,
@@ -14,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '../src/store/useAppStore';
 import { getFamilyStatus } from '../src/api/family';
 import { MemberRow } from '../src/components/MemberRow';
+import { PressableScale } from '../src/components/PressableScale';
 
 interface FamilyMember {
   id: string;
@@ -55,7 +55,7 @@ export default function FamilyScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Dołącz do mojej rodziny w Cmok! Kod: ${code}`,
+        message: `Dołącz do mojej rodziny w Cmok! 💜 Kod: ${code}`,
       });
     } catch (error) {
       console.log('Share error:', error);
@@ -84,45 +84,52 @@ export default function FamilyScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()}>
-          <Text style={styles.backButton}>Wstecz</Text>
-        </Pressable>
-        <Text style={styles.title}>Rodzina</Text>
-        <View style={{ width: 60 }} />
+        <PressableScale onPress={() => router.back()}>
+          <Text style={styles.backButton}>← Wstecz</Text>
+        </PressableScale>
+        <Text style={styles.title}>👨‍👩‍👧‍👦 Rodzina</Text>
+        <View style={{ width: 70 }} />
       </View>
 
       <FlatList
         data={members}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <MemberRow
             name={item.name}
             lastCmokAt={item.last_cmok_at}
             status={item.status}
+            index={index}
           />
         )}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#E8578B"
+          />
         }
         ListFooterComponent={
           <View style={styles.codeSection}>
-            <Text style={styles.codeLabel}>Kod rodziny:</Text>
+            <Text style={styles.codeLabel}>🔑 Kod rodziny</Text>
             <View style={styles.codeBox}>
               <Text style={styles.codeText}>{code}</Text>
             </View>
-            <Pressable style={styles.shareButton} onPress={handleShare}>
+
+            <PressableScale onPress={handleShare} style={styles.shareButton}>
               <Text style={styles.shareButtonText}>
-                Udostępnij kod
+                📤 Udostępnij kod
               </Text>
-            </Pressable>
+            </PressableScale>
+
             <Text style={styles.codeHint}>
-              Wyślij ten kod bliskim, żeby dołączyli do Twojej rodziny
+              Wyślij ten kod bliskim, żeby dołączyli do Twojej rodziny 💜
             </Text>
 
-            <Pressable style={styles.resetButton} onPress={handleReset}>
+            <PressableScale onPress={handleReset} style={styles.resetButton}>
               <Text style={styles.resetButtonText}>Resetuj apkę</Text>
-            </Pressable>
+            </PressableScale>
           </View>
         }
       />
@@ -144,12 +151,12 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   backButton: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#7F5BA6',
     fontWeight: '600',
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: '#E8578B',
   },
@@ -161,27 +168,30 @@ const styles = StyleSheet.create({
     marginTop: 32,
     paddingTop: 24,
     borderTopWidth: 1,
-    borderTopColor: '#F0E0E5',
+    borderTopColor: '#FDDDE6',
   },
   codeLabel: {
     fontSize: 16,
-    color: '#999',
-    marginBottom: 8,
+    color: '#7F5BA6',
+    fontWeight: '600',
+    marginBottom: 12,
   },
   codeBox: {
     backgroundColor: '#FFF',
-    paddingHorizontal: 28,
-    paddingVertical: 16,
-    borderRadius: 20,
-    marginBottom: 16,
+    paddingHorizontal: 32,
+    paddingVertical: 18,
+    borderRadius: 24,
+    marginBottom: 20,
     shadowColor: '#E8578B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
+    borderWidth: 2,
+    borderColor: '#FDDDE6',
   },
   codeText: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: '800',
     color: '#E8578B',
     letterSpacing: 6,
@@ -189,9 +199,14 @@ const styles = StyleSheet.create({
   shareButton: {
     backgroundColor: '#7F5BA6',
     paddingHorizontal: 28,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 24,
-    marginBottom: 12,
+    marginBottom: 16,
+    shadowColor: '#7F5BA6',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   shareButtonText: {
     color: '#FFF',
@@ -200,9 +215,10 @@ const styles = StyleSheet.create({
   },
   codeHint: {
     fontSize: 14,
-    color: '#999',
+    color: '#C48FA3',
     textAlign: 'center',
     paddingHorizontal: 32,
+    lineHeight: 22,
   },
   resetButton: {
     marginTop: 48,
@@ -211,10 +227,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#E57373',
+    borderColor: '#E0B0B0',
   },
   resetButtonText: {
-    color: '#E57373',
+    color: '#C48080',
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',

@@ -1,21 +1,113 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
   Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../src/store/useAppStore';
 import { usePushToken } from '../src/notifications/usePushToken';
 import { createFamily, joinFamily } from '../src/api/family';
+import { PressableScale } from '../src/components/PressableScale';
+
+const CONFETTI = ['💜', '💗', '💕', '🩷', '💖', '✨', '🎉', '💝'];
 
 type Step = 'welcome' | 'name' | 'choice' | 'create' | 'join' | 'code-display';
+
+function PulsingHeart() {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, { toValue: 1.15, duration: 800, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: 800, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [scale]);
+
+  return (
+    <Animated.Text style={[styles.bigHeart, { transform: [{ scale }] }]}>
+      💜
+    </Animated.Text>
+  );
+}
+
+function ConfettiOverlay() {
+  const particles = useRef(
+    Array.from({ length: 16 }, () => ({
+      x: new Animated.Value(0),
+      y: new Animated.Value(0),
+      opacity: new Animated.Value(1),
+      scale: new Animated.Value(0),
+    }))
+  ).current;
+
+  useEffect(() => {
+    const animations = particles.map((p, i) => {
+      const angle = (i / particles.length) * Math.PI * 2 + Math.random() * 0.5;
+      const distance = 100 + Math.random() * 80;
+
+      return Animated.parallel([
+        Animated.timing(p.x, { toValue: Math.cos(angle) * distance, duration: 1200, useNativeDriver: true }),
+        Animated.timing(p.y, { toValue: Math.sin(angle) * distance - 50, duration: 1200, useNativeDriver: true }),
+        Animated.sequence([
+          Animated.timing(p.scale, { toValue: 1.5, duration: 300, useNativeDriver: true }),
+          Animated.timing(p.scale, { toValue: 0, duration: 900, useNativeDriver: true }),
+        ]),
+        Animated.sequence([
+          Animated.delay(600),
+          Animated.timing(p.opacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+        ]),
+      ]);
+    });
+
+    Animated.stagger(50, animations).start();
+  }, [particles]);
+
+  return (
+    <View style={styles.confettiContainer}>
+      {particles.map((p, i) => (
+        <Animated.Text
+          key={i}
+          style={[
+            styles.confettiParticle,
+            {
+              transform: [{ translateX: p.x }, { translateY: p.y }, { scale: p.scale }],
+              opacity: p.opacity,
+            },
+          ]}
+        >
+          {CONFETTI[i % CONFETTI.length]}
+        </Animated.Text>
+      ))}
+    </View>
+  );
+}
+
+function FadeInView({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 500, delay, useNativeDriver: true }),
+      Animated.spring(translateY, { toValue: 0, delay, useNativeDriver: true, speed: 14, bounciness: 6 }),
+    ]).start();
+  }, [opacity, translateY, delay]);
+
+  return (
+    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
+      {children}
+    </Animated.View>
+  );
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -73,13 +165,22 @@ export default function OnboardingScreen() {
   if (step === 'welcome') {
     return (
       <View style={styles.container}>
-        <Text style={styles.logo}>Cmok</Text>
-        <Text style={styles.subtitle}>
-          Wyślij buziaczka{'\n'}komuś bliskiemu
-        </Text>
-        <Pressable style={styles.primaryButton} onPress={() => setStep('name')}>
-          <Text style={styles.primaryButtonText}>Zaczynamy!</Text>
-        </Pressable>
+        <FadeInView>
+          <PulsingHeart />
+        </FadeInView>
+        <FadeInView delay={200}>
+          <Text style={styles.logo}>Cmok</Text>
+        </FadeInView>
+        <FadeInView delay={400}>
+          <Text style={styles.subtitle}>
+            Wyślij buziaczka{'\n'}komuś bliskiemu
+          </Text>
+        </FadeInView>
+        <FadeInView delay={600}>
+          <PressableScale onPress={() => setStep('name')} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Zaczynamy! 🎉</Text>
+          </PressableScale>
+        </FadeInView>
       </View>
     );
   }
@@ -90,24 +191,31 @@ export default function OnboardingScreen() {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Text style={styles.question}>Jak masz na imię?</Text>
+        <FadeInView>
+          <Text style={styles.question}>Jak masz na imię?</Text>
+        </FadeInView>
+        <FadeInView delay={200}>
+          <Text style={styles.warmHint}>
+            Twoi bliscy będą wiedzieć, że myślisz o nich 💜
+          </Text>
+        </FadeInView>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={setName}
           placeholder="np. Mama, Tomek, Kasia..."
-          placeholderTextColor="#CCC"
+          placeholderTextColor="#D4A0B0"
           autoFocus
           returnKeyType="next"
           onSubmitEditing={() => name.trim() && setStep('choice')}
         />
-        <Pressable
-          style={[styles.primaryButton, !name.trim() && styles.disabledButton]}
+        <PressableScale
           onPress={() => setStep('choice')}
           disabled={!name.trim()}
+          style={[styles.primaryButton, !name.trim() && styles.disabledButton]}
         >
           <Text style={styles.primaryButtonText}>Dalej</Text>
-        </Pressable>
+        </PressableScale>
       </KeyboardAvoidingView>
     );
   }
@@ -115,20 +223,22 @@ export default function OnboardingScreen() {
   if (step === 'choice') {
     return (
       <View style={styles.container}>
-        <Text style={styles.greeting}>Cześć, {name}!</Text>
-        <Text style={styles.question}>Co chcesz zrobić?</Text>
-        <Pressable
-          style={styles.primaryButton}
-          onPress={() => setStep('create')}
-        >
-          <Text style={styles.primaryButtonText}>Stwórz rodzinę</Text>
-        </Pressable>
-        <Pressable
-          style={styles.secondaryButton}
-          onPress={() => setStep('join')}
-        >
-          <Text style={styles.secondaryButtonText}>Dołącz do rodziny</Text>
-        </Pressable>
+        <FadeInView>
+          <Text style={styles.greeting}>Cześć, {name}! 👋</Text>
+        </FadeInView>
+        <FadeInView delay={100}>
+          <Text style={styles.question}>Co chcesz zrobić?</Text>
+        </FadeInView>
+        <FadeInView delay={200}>
+          <PressableScale onPress={() => setStep('create')} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>🏠 Stwórz rodzinę</Text>
+          </PressableScale>
+        </FadeInView>
+        <FadeInView delay={300}>
+          <PressableScale onPress={() => setStep('join')} style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>🤝 Dołącz do rodziny</Text>
+          </PressableScale>
+        </FadeInView>
       </View>
     );
   }
@@ -136,20 +246,26 @@ export default function OnboardingScreen() {
   if (step === 'create') {
     return (
       <View style={styles.container}>
-        <Text style={styles.question}>Tworzymy Twoją rodzinę!</Text>
-        <Text style={styles.hint}>
-          Dostaniesz kod, który wyślij bliskim
-        </Text>
+        <FadeInView>
+          <Text style={styles.question}>Tworzymy Twoją rodzinę! 🏠</Text>
+        </FadeInView>
+        <FadeInView delay={100}>
+          <Text style={styles.hint}>
+            Dostaniesz kod, który wyślij bliskim
+          </Text>
+        </FadeInView>
         {loading ? (
-          <ActivityIndicator size="large" color="#E8578B" />
+          <ActivityIndicator size="large" color="#E8578B" style={{ marginVertical: 20 }} />
         ) : (
-          <Pressable style={styles.primaryButton} onPress={handleCreateFamily}>
-            <Text style={styles.primaryButtonText}>Stwórz!</Text>
-          </Pressable>
+          <FadeInView delay={200}>
+            <PressableScale onPress={handleCreateFamily} style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>Stwórz! ✨</Text>
+            </PressableScale>
+          </FadeInView>
         )}
-        <Pressable onPress={() => setStep('choice')}>
-          <Text style={styles.backLink}>Wstecz</Text>
-        </Pressable>
+        <PressableScale onPress={() => setStep('choice')}>
+          <Text style={styles.backLink}>← Wstecz</Text>
+        </PressableScale>
       </View>
     );
   }
@@ -160,37 +276,38 @@ export default function OnboardingScreen() {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Text style={styles.question}>Wpisz kod rodziny</Text>
-        <Text style={styles.hint}>
-          Dostałeś go od bliskiej osoby
-        </Text>
+        <FadeInView>
+          <Text style={styles.question}>Wpisz kod rodziny</Text>
+        </FadeInView>
+        <FadeInView delay={100}>
+          <Text style={styles.hint}>
+            Dostałeś go od bliskiej osoby 💌
+          </Text>
+        </FadeInView>
         <TextInput
           style={styles.codeInput}
           value={familyCode}
           onChangeText={setFamilyCode}
           placeholder="np. ABC123"
-          placeholderTextColor="#CCC"
+          placeholderTextColor="#D4A0B0"
           autoCapitalize="characters"
           autoFocus
           maxLength={6}
         />
         {loading ? (
-          <ActivityIndicator size="large" color="#E8578B" />
+          <ActivityIndicator size="large" color="#E8578B" style={{ marginVertical: 20 }} />
         ) : (
-          <Pressable
-            style={[
-              styles.primaryButton,
-              familyCode.trim().length < 4 && styles.disabledButton,
-            ]}
+          <PressableScale
             onPress={handleJoinFamily}
             disabled={familyCode.trim().length < 4}
+            style={[styles.primaryButton, familyCode.trim().length < 4 && styles.disabledButton]}
           >
-            <Text style={styles.primaryButtonText}>Dołącz!</Text>
-          </Pressable>
+            <Text style={styles.primaryButtonText}>Dołącz! 🎉</Text>
+          </PressableScale>
         )}
-        <Pressable onPress={() => setStep('choice')}>
-          <Text style={styles.backLink}>Wstecz</Text>
-        </Pressable>
+        <PressableScale onPress={() => setStep('choice')}>
+          <Text style={styles.backLink}>← Wstecz</Text>
+        </PressableScale>
       </KeyboardAvoidingView>
     );
   }
@@ -198,20 +315,28 @@ export default function OnboardingScreen() {
   if (step === 'code-display') {
     return (
       <View style={styles.container}>
-        <Text style={styles.question}>Twoja rodzina gotowa!</Text>
-        <Text style={styles.hint}>Wyślij ten kod bliskim:</Text>
-        <View style={styles.codeBox}>
-          <Text style={styles.codeText}>{displayCode}</Text>
-        </View>
-        <Text style={styles.hint}>
-          Bliscy wpiszą ten kod w aplikacji Cmok
-        </Text>
-        <Pressable
-          style={styles.primaryButton}
-          onPress={() => router.replace('/home')}
-        >
-          <Text style={styles.primaryButtonText}>Przejdź do aplikacji</Text>
-        </Pressable>
+        <ConfettiOverlay />
+        <FadeInView>
+          <Text style={styles.question}>Twoja rodzina gotowa! 🎉</Text>
+        </FadeInView>
+        <FadeInView delay={200}>
+          <Text style={styles.hint}>Wyślij ten kod bliskim:</Text>
+        </FadeInView>
+        <FadeInView delay={400}>
+          <View style={styles.codeBox}>
+            <Text style={styles.codeText}>{displayCode}</Text>
+          </View>
+        </FadeInView>
+        <FadeInView delay={600}>
+          <Text style={styles.warmHint}>
+            Bliscy wpiszą ten kod w aplikacji Cmok 💜
+          </Text>
+        </FadeInView>
+        <FadeInView delay={800}>
+          <PressableScale onPress={() => router.replace('/home')} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Przejdź do aplikacji →</Text>
+          </PressableScale>
+        </FadeInView>
       </View>
     );
   }
@@ -226,6 +351,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFF5F7',
     padding: 32,
+  },
+  bigHeart: {
+    fontSize: 80,
+    marginBottom: 8,
+  },
+  confettiContainer: {
+    position: 'absolute',
+    top: '40%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confettiParticle: {
+    position: 'absolute',
+    fontSize: 28,
   },
   logo: {
     fontSize: 64,
@@ -259,6 +398,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
+  warmHint: {
+    fontSize: 16,
+    color: '#C48FA3',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
   input: {
     width: '100%',
     fontSize: 22,
@@ -283,15 +429,17 @@ const styles = StyleSheet.create({
   },
   codeBox: {
     backgroundColor: '#FFF',
-    paddingHorizontal: 32,
-    paddingVertical: 20,
-    borderRadius: 20,
-    marginBottom: 16,
+    paddingHorizontal: 36,
+    paddingVertical: 22,
+    borderRadius: 24,
+    marginBottom: 20,
     shadowColor: '#E8578B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 2,
+    borderColor: '#FDDDE6',
   },
   codeText: {
     fontSize: 40,
@@ -307,6 +455,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     minWidth: 200,
     alignItems: 'center',
+    shadowColor: '#E8578B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   primaryButtonText: {
     color: '#FFF',
@@ -332,8 +485,9 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   backLink: {
-    color: '#999',
+    color: '#C48FA3',
     fontSize: 16,
-    marginTop: 8,
+    marginTop: 12,
+    fontWeight: '500',
   },
 });
