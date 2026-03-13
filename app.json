@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Cmok",
+    "slug": "cmok",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "cmok",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF5F7"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.hermit85.cmok"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF5F7",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#E8578B"
+        }
+      ]
+    ]
+  }
+}
