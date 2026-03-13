@@ -16,26 +16,43 @@ import { usePushToken } from '../src/notifications/usePushToken';
 import { createFamily, joinFamily } from '../src/api/family';
 import { PressableScale } from '../src/components/PressableScale';
 
-const CONFETTI = ['💜', '💗', '💕', '🩷', '💖', '✨', '🎉', '💝'];
+const FOLK_SHAPES = ['✦', '✧', '❋', '✿', '✻', '❊', '✾', '✽', '❁', '✺', '◆', '◇', '⬡', '⬢', '✦', '✧'];
 
 type Step = 'welcome' | 'name' | 'choice' | 'create' | 'join' | 'code-display';
 
 function PulsingHeart() {
   const scale = useRef(new Animated.Value(1)).current;
+  const glow = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.15, duration: 800, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1.1, duration: 1200, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1, duration: 1200, useNativeDriver: true }),
       ])
     ).start();
-  }, [scale]);
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glow, { toValue: 0.7, duration: 1200, useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0.3, duration: 1200, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [scale, glow]);
 
   return (
-    <Animated.Text style={[styles.bigHeart, { transform: [{ scale }] }]}>
-      💜
-    </Animated.Text>
+    <View style={styles.heartWrapper}>
+      <Animated.View style={[styles.heartGlow, { opacity: glow }]} />
+      <Animated.View style={[styles.heartContainer, { transform: [{ scale }] }]}>
+        {/* Geometric folk heart */}
+        <View style={styles.heartShape}>
+          <View style={[styles.heartLobe, styles.heartLeft]} />
+          <View style={[styles.heartLobe, styles.heartRight]} />
+        </View>
+        <View style={styles.innerDiamond} />
+        <View style={styles.centerDot} />
+      </Animated.View>
+    </View>
   );
 }
 
@@ -46,6 +63,7 @@ function ConfettiOverlay() {
       y: new Animated.Value(0),
       opacity: new Animated.Value(1),
       scale: new Animated.Value(0),
+      rotate: new Animated.Value(0),
     }))
   ).current;
 
@@ -57,6 +75,7 @@ function ConfettiOverlay() {
       return Animated.parallel([
         Animated.timing(p.x, { toValue: Math.cos(angle) * distance, duration: 1200, useNativeDriver: true }),
         Animated.timing(p.y, { toValue: Math.sin(angle) * distance - 50, duration: 1200, useNativeDriver: true }),
+        Animated.timing(p.rotate, { toValue: 1, duration: 1200, useNativeDriver: true }),
         Animated.sequence([
           Animated.timing(p.scale, { toValue: 1.5, duration: 300, useNativeDriver: true }),
           Animated.timing(p.scale, { toValue: 0, duration: 900, useNativeDriver: true }),
@@ -73,20 +92,26 @@ function ConfettiOverlay() {
 
   return (
     <View style={styles.confettiContainer}>
-      {particles.map((p, i) => (
-        <Animated.Text
-          key={i}
-          style={[
-            styles.confettiParticle,
-            {
-              transform: [{ translateX: p.x }, { translateY: p.y }, { scale: p.scale }],
-              opacity: p.opacity,
-            },
-          ]}
-        >
-          {CONFETTI[i % CONFETTI.length]}
-        </Animated.Text>
-      ))}
+      {particles.map((p, i) => {
+        const rotation = p.rotate.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0deg', '180deg'],
+        });
+        return (
+          <Animated.Text
+            key={i}
+            style={[
+              styles.confettiParticle,
+              {
+                transform: [{ translateX: p.x }, { translateY: p.y }, { scale: p.scale }, { rotate: rotation }],
+                opacity: p.opacity,
+              },
+            ]}
+          >
+            {FOLK_SHAPES[i % FOLK_SHAPES.length]}
+          </Animated.Text>
+        );
+      })}
     </View>
   );
 }
@@ -165,6 +190,12 @@ export default function OnboardingScreen() {
   if (step === 'welcome') {
     return (
       <View style={styles.container}>
+        {/* Decorative corner elements */}
+        <View style={styles.cornerTL}><Text style={styles.cornerText}>✦</Text></View>
+        <View style={styles.cornerTR}><Text style={styles.cornerText}>✦</Text></View>
+        <View style={styles.cornerBL}><Text style={styles.cornerText}>✧</Text></View>
+        <View style={styles.cornerBR}><Text style={styles.cornerText}>✧</Text></View>
+
         <FadeInView>
           <PulsingHeart />
         </FadeInView>
@@ -178,7 +209,7 @@ export default function OnboardingScreen() {
         </FadeInView>
         <FadeInView delay={600}>
           <PressableScale onPress={() => setStep('name')} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>Zaczynamy! 🎉</Text>
+            <Text style={styles.primaryButtonText}>Zaczynamy ✦</Text>
           </PressableScale>
         </FadeInView>
       </View>
@@ -196,7 +227,7 @@ export default function OnboardingScreen() {
         </FadeInView>
         <FadeInView delay={200}>
           <Text style={styles.warmHint}>
-            Twoi bliscy będą wiedzieć, że myślisz o nich 💜
+            Twoi bliscy będą wiedzieć, że myślisz o nich ✦
           </Text>
         </FadeInView>
         <TextInput
@@ -204,7 +235,7 @@ export default function OnboardingScreen() {
           value={name}
           onChangeText={setName}
           placeholder="np. Mama, Tomek, Kasia..."
-          placeholderTextColor="#D4A0B0"
+          placeholderTextColor="rgba(212,165,116,0.35)"
           autoFocus
           returnKeyType="next"
           onSubmitEditing={() => name.trim() && setStep('choice')}
@@ -224,19 +255,19 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.container}>
         <FadeInView>
-          <Text style={styles.greeting}>Cześć, {name}! 👋</Text>
+          <Text style={styles.greeting}>Cześć, {name}! ✦</Text>
         </FadeInView>
         <FadeInView delay={100}>
           <Text style={styles.question}>Co chcesz zrobić?</Text>
         </FadeInView>
         <FadeInView delay={200}>
           <PressableScale onPress={() => setStep('create')} style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>🏠 Stwórz rodzinę</Text>
+            <Text style={styles.primaryButtonText}>✦ Stwórz rodzinę</Text>
           </PressableScale>
         </FadeInView>
         <FadeInView delay={300}>
           <PressableScale onPress={() => setStep('join')} style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>🤝 Dołącz do rodziny</Text>
+            <Text style={styles.secondaryButtonText}>✧ Dołącz do rodziny</Text>
           </PressableScale>
         </FadeInView>
       </View>
@@ -247,7 +278,7 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.container}>
         <FadeInView>
-          <Text style={styles.question}>Tworzymy Twoją rodzinę! 🏠</Text>
+          <Text style={styles.question}>Tworzymy Twoją rodzinę! ✦</Text>
         </FadeInView>
         <FadeInView delay={100}>
           <Text style={styles.hint}>
@@ -255,11 +286,11 @@ export default function OnboardingScreen() {
           </Text>
         </FadeInView>
         {loading ? (
-          <ActivityIndicator size="large" color="#E8578B" style={{ marginVertical: 20 }} />
+          <ActivityIndicator size="large" color="#D4A574" style={{ marginVertical: 20 }} />
         ) : (
           <FadeInView delay={200}>
             <PressableScale onPress={handleCreateFamily} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Stwórz! ✨</Text>
+              <Text style={styles.primaryButtonText}>Stwórz! ✦</Text>
             </PressableScale>
           </FadeInView>
         )}
@@ -281,28 +312,28 @@ export default function OnboardingScreen() {
         </FadeInView>
         <FadeInView delay={100}>
           <Text style={styles.hint}>
-            Dostałeś go od bliskiej osoby 💌
+            Dostałeś go od bliskiej osoby ✦
           </Text>
         </FadeInView>
         <TextInput
           style={styles.codeInput}
           value={familyCode}
           onChangeText={setFamilyCode}
-          placeholder="np. ABC123"
-          placeholderTextColor="#D4A0B0"
+          placeholder="ABC123"
+          placeholderTextColor="rgba(212,165,116,0.25)"
           autoCapitalize="characters"
           autoFocus
           maxLength={6}
         />
         {loading ? (
-          <ActivityIndicator size="large" color="#E8578B" style={{ marginVertical: 20 }} />
+          <ActivityIndicator size="large" color="#D4A574" style={{ marginVertical: 20 }} />
         ) : (
           <PressableScale
             onPress={handleJoinFamily}
             disabled={familyCode.trim().length < 4}
             style={[styles.primaryButton, familyCode.trim().length < 4 && styles.disabledButton]}
           >
-            <Text style={styles.primaryButtonText}>Dołącz! 🎉</Text>
+            <Text style={styles.primaryButtonText}>Dołącz! ✦</Text>
           </PressableScale>
         )}
         <PressableScale onPress={() => setStep('choice')}>
@@ -317,7 +348,7 @@ export default function OnboardingScreen() {
       <View style={styles.container}>
         <ConfettiOverlay />
         <FadeInView>
-          <Text style={styles.question}>Twoja rodzina gotowa! 🎉</Text>
+          <Text style={styles.question}>Twoja rodzina gotowa! ✦</Text>
         </FadeInView>
         <FadeInView delay={200}>
           <Text style={styles.hint}>Wyślij ten kod bliskim:</Text>
@@ -329,7 +360,7 @@ export default function OnboardingScreen() {
         </FadeInView>
         <FadeInView delay={600}>
           <Text style={styles.warmHint}>
-            Bliscy wpiszą ten kod w aplikacji Cmok 💜
+            Bliscy wpiszą ten kod w aplikacji Cmok ✦
           </Text>
         </FadeInView>
         <FadeInView delay={800}>
@@ -349,13 +380,74 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF5F7',
+    backgroundColor: '#1A1A2E',
     padding: 32,
   },
-  bigHeart: {
-    fontSize: 80,
-    marginBottom: 8,
+  // Decorative corners
+  cornerTL: { position: 'absolute', top: 60, left: 24 },
+  cornerTR: { position: 'absolute', top: 60, right: 24 },
+  cornerBL: { position: 'absolute', bottom: 40, left: 24 },
+  cornerBR: { position: 'absolute', bottom: 40, right: 24 },
+  cornerText: { fontSize: 20, color: 'rgba(212,165,116,0.2)' },
+  // Heart
+  heartWrapper: {
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
+  heartGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(200,90,90,0.15)',
+  },
+  heartContainer: {
+    width: 80,
+    height: 75,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heartShape: {
+    width: 60,
+    height: 52,
+    position: 'relative',
+  },
+  heartLobe: {
+    position: 'absolute',
+    top: 0,
+    width: 34,
+    height: 52,
+    borderRadius: 34,
+    backgroundColor: '#C85A5A',
+  },
+  heartLeft: {
+    left: 2,
+    transform: [{ rotate: '-45deg' }],
+  },
+  heartRight: {
+    right: 2,
+    transform: [{ rotate: '45deg' }],
+  },
+  innerDiamond: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    backgroundColor: '#D4A574',
+    transform: [{ rotate: '45deg' }],
+    top: 30,
+  },
+  centerDot: {
+    position: 'absolute',
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#F0E6D3',
+    top: 34,
+  },
+  // Confetti
   confettiContainer: {
     position: 'absolute',
     top: '40%',
@@ -364,17 +456,20 @@ const styles = StyleSheet.create({
   },
   confettiParticle: {
     position: 'absolute',
-    fontSize: 28,
+    fontSize: 22,
+    color: '#D4A574',
   },
+  // Typography
   logo: {
     fontSize: 64,
     fontWeight: '800',
-    color: '#E8578B',
+    color: '#F0E6D3',
     marginBottom: 8,
+    letterSpacing: 2,
   },
   subtitle: {
     fontSize: 22,
-    color: '#7F5BA6',
+    color: 'rgba(212,165,116,0.7)',
     textAlign: 'center',
     marginBottom: 48,
     lineHeight: 32,
@@ -382,110 +477,118 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#E8578B',
+    color: '#D4A574',
     marginBottom: 8,
   },
   question: {
     fontSize: 26,
     fontWeight: '700',
-    color: '#333',
+    color: '#F0E6D3',
     textAlign: 'center',
     marginBottom: 12,
   },
   hint: {
     fontSize: 16,
-    color: '#999',
+    color: 'rgba(240,230,211,0.45)',
     textAlign: 'center',
     marginBottom: 24,
   },
   warmHint: {
     fontSize: 16,
-    color: '#C48FA3',
+    color: 'rgba(212,165,116,0.6)',
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 24,
   },
+  // Inputs
   input: {
     width: '100%',
     fontSize: 22,
-    borderBottomWidth: 3,
-    borderBottomColor: '#E8578B',
+    borderBottomWidth: 2,
+    borderBottomColor: '#D4A574',
     paddingVertical: 12,
     textAlign: 'center',
-    color: '#333',
+    color: '#F0E6D3',
     marginBottom: 32,
   },
   codeInput: {
     width: '80%',
     fontSize: 32,
     fontWeight: '700',
-    borderBottomWidth: 3,
-    borderBottomColor: '#E8578B',
+    borderBottomWidth: 2,
+    borderBottomColor: '#D4A574',
     paddingVertical: 12,
     textAlign: 'center',
-    color: '#333',
+    color: '#F0E6D3',
     marginBottom: 32,
     letterSpacing: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
   codeBox: {
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     paddingHorizontal: 36,
     paddingVertical: 22,
-    borderRadius: 24,
+    borderRadius: 16,
     marginBottom: 20,
-    shadowColor: '#E8578B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
+    borderWidth: 2,
+    borderColor: '#D4A574',
+    shadowColor: '#D4A574',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 6,
-    borderWidth: 2,
-    borderColor: '#FDDDE6',
   },
   codeText: {
     fontSize: 40,
     fontWeight: '800',
-    color: '#E8578B',
+    color: '#D4A574',
     letterSpacing: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
   },
+  // Buttons
   primaryButton: {
-    backgroundColor: '#E8578B',
+    backgroundColor: 'rgba(200,90,90,0.9)',
     paddingHorizontal: 40,
     paddingVertical: 16,
-    borderRadius: 30,
+    borderRadius: 16,
     marginBottom: 16,
     minWidth: 200,
     alignItems: 'center',
-    shadowColor: '#E8578B',
+    borderWidth: 1,
+    borderColor: 'rgba(212,165,116,0.3)',
+    shadowColor: '#C85A5A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   primaryButtonText: {
-    color: '#FFF',
+    color: '#F0E6D3',
     fontSize: 20,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   secondaryButton: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#7F5BA6',
+    borderColor: '#D4A574',
     paddingHorizontal: 40,
     paddingVertical: 16,
-    borderRadius: 30,
+    borderRadius: 16,
     minWidth: 200,
     alignItems: 'center',
   },
   secondaryButtonText: {
-    color: '#7F5BA6',
+    color: '#D4A574',
     fontSize: 20,
     fontWeight: '700',
+    letterSpacing: 0.5,
   },
   disabledButton: {
     opacity: 0.4,
   },
   backLink: {
-    color: '#C48FA3',
+    color: 'rgba(212,165,116,0.5)',
     fontSize: 16,
     marginTop: 12,
     fontWeight: '500',

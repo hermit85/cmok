@@ -90,19 +90,21 @@ export default function HomeScreen() {
 
   const otherMembers = members.filter((m) => m.id !== memberId);
 
+  const getStatusEmoji = (status: string) => {
+    if (status === '🟢') return '✨';
+    if (status === '🟡') return '✦';
+    return '💛';
+  };
+
   return (
     <View style={styles.container}>
-      {/* Gradient-like background layers */}
-      <View style={styles.bgTop} />
-      <View style={styles.bgBottom} />
-
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Cmok 💜</Text>
+          <Text style={styles.title}>Cmok ✦</Text>
           <Text style={styles.subtitle}>Wyślij buziaczka bliskim</Text>
         </View>
         <PressableScale onPress={() => router.push('/family')} style={styles.familyButton}>
-          <Text style={styles.familyLink}>👨‍👩‍👧‍👦 Rodzina</Text>
+          <Text style={styles.familyLink}>✦ Rodzina</Text>
         </PressableScale>
       </View>
 
@@ -127,12 +129,12 @@ export default function HomeScreen() {
 
             {otherMembers.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>👨‍👩‍👧 Bliscy</Text>
+                <Text style={styles.sectionTitle}>✦ Bliscy</Text>
                 {otherMembers.map((member) => (
                   <View key={member.id} style={styles.memberCard}>
-                    <Text style={styles.memberEmoji}>
-                      {member.status === '🟢' ? '💚' : member.status === '🟡' ? '💛' : '❤️\u200D🩹'}
-                    </Text>
+                    <View style={styles.memberDot}>
+                      <Text style={styles.memberDotText}>{getStatusEmoji(member.status)}</Text>
+                    </View>
                     <View style={styles.memberInfo}>
                       <Text style={styles.memberName}>{member.name}</Text>
                       <Text style={styles.memberTime}>
@@ -146,7 +148,7 @@ export default function HomeScreen() {
 
             {recentCmoks.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>💌 Ostatnie cmoki</Text>
+                <Text style={styles.sectionTitle}>✧ Ostatnie cmoki</Text>
                 {recentCmoks.map((cmok, index) => (
                   <CmokRow
                     key={cmok.id}
@@ -165,7 +167,7 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#E8578B"
+            tintColor="#D4A574"
           />
         }
       />
@@ -176,23 +178,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF5F7',
-  },
-  bgTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-    backgroundColor: '#FFFBFC',
-  },
-  bgBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 200,
-    backgroundColor: '#FFF0F3',
+    backgroundColor: '#1A1A2E',
   },
   header: {
     flexDirection: 'row',
@@ -205,27 +191,25 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#E8578B',
+    color: '#F0E6D3',
+    letterSpacing: 1,
   },
   subtitle: {
     fontSize: 14,
-    color: '#C48FA3',
+    color: 'rgba(212,165,116,0.6)',
     marginTop: 2,
   },
   familyButton: {
-    backgroundColor: '#FFF0F3',
+    backgroundColor: 'rgba(212,165,116,0.1)',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
-    shadowColor: '#E8578B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 2,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(212,165,116,0.3)',
   },
   familyLink: {
     fontSize: 15,
-    color: '#7F5BA6',
+    color: '#D4A574',
     fontWeight: '600',
   },
   content: {
@@ -239,7 +223,7 @@ const styles = StyleSheet.create({
   },
   cooldownText: {
     fontSize: 14,
-    color: '#C48FA3',
+    color: 'rgba(212,165,116,0.5)',
     marginTop: 8,
     textAlign: 'center',
   },
@@ -250,38 +234,46 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#7F5BA6',
+    color: '#D4A574',
     marginBottom: 12,
+    letterSpacing: 0.5,
   },
   memberCard: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFF',
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(212,165,116,0.15)',
   },
-  memberEmoji: {
-    fontSize: 24,
+  memberDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(212,165,116,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(212,165,116,0.2)',
+  },
+  memberDotText: {
+    fontSize: 14,
   },
   memberInfo: {
     flex: 1,
   },
   memberName: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#F0E6D3',
   },
   memberTime: {
-    fontSize: 13,
-    color: '#BBB',
+    fontSize: 12,
+    color: 'rgba(240,230,211,0.35)',
     marginTop: 2,
   },
   bottomPadding: {

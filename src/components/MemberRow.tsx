@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { timeAgo } from '../utils/time';
 
-const AVATAR_COLORS = ['#E8578B', '#7F5BA6', '#4CAF50', '#FF9800', '#2196F3', '#9C27B0', '#F44336', '#00BCD4'];
+const AVATAR_COLORS = ['#C85A5A', '#D4A574', '#7B8EC8', '#8B6FAE', '#5A9E8F', '#C87A5A', '#6B8BBD', '#9E7BA5'];
 
 interface MemberRowProps {
   name: string;
@@ -12,9 +12,9 @@ interface MemberRowProps {
 }
 
 function getStatusInfo(status: string): { emoji: string; label: string; color: string } {
-  if (status === '🟢') return { emoji: '💚', label: 'Aktywny/a dziś', color: '#4CAF50' };
-  if (status === '🟡') return { emoji: '💛', label: 'Wczoraj', color: '#FF9800' };
-  return { emoji: '❤️\u200D🩹', label: 'Dawno nie było cmoka...', color: '#E57373' };
+  if (status === '🟢') return { emoji: '✨', label: 'Aktywny/a dziś', color: '#D4A574' };
+  if (status === '🟡') return { emoji: '✦', label: 'Był(a) wczoraj', color: 'rgba(212,165,116,0.6)' };
+  return { emoji: '💛', label: 'Dawno nie było cmoka...', color: 'rgba(200,90,90,0.7)' };
 }
 
 function getAvatarColor(name: string): string {
@@ -37,11 +37,12 @@ export function MemberRow({ name, lastCmokAt, status, index = 0 }: MemberRowProp
         delay: index * 100,
         useNativeDriver: true,
       }),
-      Animated.timing(slideAnim, {
+      Animated.spring(slideAnim, {
         toValue: 0,
-        duration: 400,
         delay: index * 100,
         useNativeDriver: true,
+        speed: 14,
+        bounciness: 6,
       }),
     ]).start();
   }, [fadeAnim, slideAnim, index]);
@@ -60,8 +61,10 @@ export function MemberRow({ name, lastCmokAt, status, index = 0 }: MemberRowProp
         },
       ]}
     >
-      <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
-        <Text style={styles.avatarText}>{initial}</Text>
+      <View style={[styles.avatar, { backgroundColor: avatarColor + '25' }]}>
+        <View style={[styles.avatarBorder, { borderColor: avatarColor }]}>
+          <Text style={[styles.avatarText, { color: avatarColor }]}>{initial}</Text>
+        </View>
       </View>
       <View style={styles.info}>
         <Text style={styles.name}>{name}</Text>
@@ -83,35 +86,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(212,165,116,0.15)',
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 14,
   },
+  avatarBorder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
   avatarText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#FFF',
   },
   info: {
     flex: 1,
   },
   name: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
-    color: '#333',
+    color: '#F0E6D3',
   },
   statusRow: {
     flexDirection: 'row',
@@ -119,16 +127,16 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   statusEmoji: {
-    fontSize: 14,
-    marginRight: 4,
+    fontSize: 13,
+    marginRight: 5,
   },
   statusLabel: {
     fontSize: 13,
     fontWeight: '500',
   },
   time: {
-    fontSize: 13,
-    color: '#BBB',
+    fontSize: 12,
+    color: 'rgba(240,230,211,0.35)',
     marginTop: 2,
   },
 });

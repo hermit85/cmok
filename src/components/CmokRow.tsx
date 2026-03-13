@@ -10,7 +10,7 @@ interface CmokRowProps {
 
 export function CmokRow({ senderName, createdAt, index }: CmokRowProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -40,11 +40,13 @@ export function CmokRow({ senderName, createdAt, index }: CmokRowProps) {
         },
       ]}
     >
-      <Text style={styles.emoji}>💜</Text>
+      <View style={styles.iconContainer}>
+        <Text style={styles.icon}>✦</Text>
+      </View>
       <View style={styles.content}>
         <Text style={styles.text}>
           <Text style={styles.name}>{senderName}</Text>
-          {' wysłał(a) cmoka 💜'}
+          {' przesyła cmoka'}
         </Text>
         <Text style={styles.time}>{timeAgo(createdAt)}</Text>
       </View>
@@ -57,36 +59,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#FFF5F8',
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#FDDDE6',
-    shadowColor: '#E8578B',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
+    borderColor: 'rgba(212,165,116,0.2)',
   },
-  emoji: {
-    fontSize: 22,
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(200,90,90,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
+  },
+  icon: {
+    fontSize: 16,
+    color: '#C85A5A',
   },
   content: {
     flex: 1,
   },
   text: {
     fontSize: 15,
-    color: '#555',
+    color: '#F0E6D3',
   },
   name: {
     fontWeight: '700',
-    color: '#E8578B',
+    color: '#D4A574',
   },
   time: {
     fontSize: 12,
-    color: '#BBB',
+    color: 'rgba(240,230,211,0.4)',
     marginTop: 3,
   },
 });
