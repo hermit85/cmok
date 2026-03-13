@@ -50,6 +50,7 @@ export async function getFamilyStatus(memberId: string) {
   if (error) throw error;
   return data as {
     members: Array<{
+      id: string;
       name: string;
       last_cmok_at: string | null;
       status: string;
