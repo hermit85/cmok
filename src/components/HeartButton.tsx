@@ -35,7 +35,7 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
       <Pressable onPress={handlePress} disabled={disabled} style={styles.inner}>
         <Text style={styles.heart}>{sent ? '\uD83D\uDC9C' : '\uD83E\uDD0D'}</Text>
         <Text style={styles.label}>
-          {sent ? 'Cmok wyslany!' : 'Kliknij aby wyslac cmoka'}
+          {sent ? 'Cmok wysłany!' : 'Kliknij aby wysłać cmoka'}
         </Text>
       </Pressable>
     </Animated.View>

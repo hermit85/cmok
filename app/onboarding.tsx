@@ -44,7 +44,7 @@ export default function OnboardingScreen() {
       setDisplayCode(result.family_code);
       setStep('code-display');
     } catch (error: any) {
-      Alert.alert('Blad', error.message || 'Nie udalo sie stworzyc rodziny');
+      Alert.alert('Błąd', error.message || 'Nie udało się stworzyć rodziny');
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ export default function OnboardingScreen() {
       setFamily(result.family_id, '');
       router.replace('/home');
     } catch (error: any) {
-      Alert.alert('Blad', error.message || 'Nie znaleziono rodziny z tym kodem');
+      Alert.alert('Błąd', error.message || 'Nie znaleziono rodziny z tym kodem');
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ export default function OnboardingScreen() {
       <View style={styles.container}>
         <Text style={styles.logo}>Cmok</Text>
         <Text style={styles.subtitle}>
-          Wyslij buziaczka{'\n'}komus bliskiemu
+          Wyślij buziaczka{'\n'}komuś bliskiemu
         </Text>
         <Pressable style={styles.primaryButton} onPress={() => setStep('name')}>
           <Text style={styles.primaryButtonText}>Zaczynamy!</Text>
@@ -90,7 +90,7 @@ export default function OnboardingScreen() {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Text style={styles.question}>Jak masz na imie?</Text>
+        <Text style={styles.question}>Jak masz na imię?</Text>
         <TextInput
           style={styles.input}
           value={name}
@@ -115,19 +115,19 @@ export default function OnboardingScreen() {
   if (step === 'choice') {
     return (
       <View style={styles.container}>
-        <Text style={styles.greeting}>Czesc, {name}!</Text>
-        <Text style={styles.question}>Co chcesz zrobic?</Text>
+        <Text style={styles.greeting}>Cześć, {name}!</Text>
+        <Text style={styles.question}>Co chcesz zrobić?</Text>
         <Pressable
           style={styles.primaryButton}
           onPress={() => setStep('create')}
         >
-          <Text style={styles.primaryButtonText}>Stworz rodzine</Text>
+          <Text style={styles.primaryButtonText}>Stwórz rodzinę</Text>
         </Pressable>
         <Pressable
           style={styles.secondaryButton}
           onPress={() => setStep('join')}
         >
-          <Text style={styles.secondaryButtonText}>Dolacz do rodziny</Text>
+          <Text style={styles.secondaryButtonText}>Dołącz do rodziny</Text>
         </Pressable>
       </View>
     );
@@ -136,15 +136,15 @@ export default function OnboardingScreen() {
   if (step === 'create') {
     return (
       <View style={styles.container}>
-        <Text style={styles.question}>Tworzymy Twoja rodzine!</Text>
+        <Text style={styles.question}>Tworzymy Twoją rodzinę!</Text>
         <Text style={styles.hint}>
-          Dostaniesz kod, ktory wyslij bliskim
+          Dostaniesz kod, który wyślij bliskim
         </Text>
         {loading ? (
           <ActivityIndicator size="large" color="#E8578B" />
         ) : (
           <Pressable style={styles.primaryButton} onPress={handleCreateFamily}>
-            <Text style={styles.primaryButtonText}>Stworz!</Text>
+            <Text style={styles.primaryButtonText}>Stwórz!</Text>
           </Pressable>
         )}
         <Pressable onPress={() => setStep('choice')}>
@@ -162,7 +162,7 @@ export default function OnboardingScreen() {
       >
         <Text style={styles.question}>Wpisz kod rodziny</Text>
         <Text style={styles.hint}>
-          Dostales go od bliskiej osoby
+          Dostałeś go od bliskiej osoby
         </Text>
         <TextInput
           style={styles.codeInput}
@@ -185,7 +185,7 @@ export default function OnboardingScreen() {
             onPress={handleJoinFamily}
             disabled={familyCode.trim().length < 4}
           >
-            <Text style={styles.primaryButtonText}>Dolacz!</Text>
+            <Text style={styles.primaryButtonText}>Dołącz!</Text>
           </Pressable>
         )}
         <Pressable onPress={() => setStep('choice')}>
@@ -199,18 +199,18 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.container}>
         <Text style={styles.question}>Twoja rodzina gotowa!</Text>
-        <Text style={styles.hint}>Wyslij ten kod bliskim:</Text>
+        <Text style={styles.hint}>Wyślij ten kod bliskim:</Text>
         <View style={styles.codeBox}>
           <Text style={styles.codeText}>{displayCode}</Text>
         </View>
         <Text style={styles.hint}>
-          Bliscy wpisza ten kod w aplikacji Cmok
+          Bliscy wpiszą ten kod w aplikacji Cmok
         </Text>
         <Pressable
           style={styles.primaryButton}
           onPress={() => router.replace('/home')}
         >
-          <Text style={styles.primaryButtonText}>Przejdz do aplikacji</Text>
+          <Text style={styles.primaryButtonText}>Przejdź do aplikacji</Text>
         </Pressable>
       </View>
     );

@@ -258,8 +258,8 @@ async function notifyFamilyOfNewMember(newMemberId: string, memberName: string, 
       body: JSON.stringify(
         tokens.map((to) => ({
           to,
-          title: 'Nowy czlonek rodziny!',
-          body: `${memberName} dolaczyl/a do rodziny!`,
+          title: 'Nowy członek rodziny!',
+          body: `${memberName} dołączył(a) do rodziny!`,
           sound: 'default',
         }))
       ),

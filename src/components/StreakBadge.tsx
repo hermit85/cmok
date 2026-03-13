@@ -21,12 +21,12 @@ export function StreakBadge({ streak }: StreakBadgeProps) {
 
   if (streak < 1) return null;
 
-  const daysLabel = streak === 1 ? 'dzien' : 'dni';
+  const daysLabel = streak === 1 ? 'dzień' : 'dni';
 
   return (
     <Animated.View style={[styles.container, { transform: [{ scale }] }]}>
       <Text style={styles.text}>
-        Seria: {streak} {daysLabel} z rzedu
+        Seria: {streak} {daysLabel} z rzędu
       </Text>
     </Animated.View>
   );

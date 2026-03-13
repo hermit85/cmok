@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppStore } from '../src/store/useAppStore';
-import { sendCmok } from '../src/api/cmok';
+import { sendCmok, getRecentCmoks, RecentCmok } from '../src/api/cmok';
 import { getFamilyStatus } from '../src/api/family';
 import { HeartButton } from '../src/components/HeartButton';
 import { StreakBadge } from '../src/components/StreakBadge';
@@ -31,6 +31,7 @@ export default function HomeScreen() {
   const setLastCmokAt = useAppStore((s) => s.setLastCmokAt);
 
   const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [recentCmoks, setRecentCmoks] = useState<RecentCmok[]>([]);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,6 +47,13 @@ export default function HomeScreen() {
       const data = await getFamilyStatus(memberId);
       setMembers(data.members);
       setStreak(data.streak);
+
+      // Fetch recent cmoks
+      const familyId = useAppStore.getState().familyId;
+      if (familyId) {
+        const cmoks = await getRecentCmoks(familyId);
+        setRecentCmoks(cmoks);
+      }
     } catch (error) {
       console.log('Failed to fetch status:', error);
     }
@@ -103,7 +111,7 @@ export default function HomeScreen() {
               />
               {isCooldown && !sent && (
                 <Text style={styles.cooldownText}>
-                  Mozesz wyslac kolejnego cmoka za chwile
+                  Możesz wysłać kolejnego cmoka za chwilę
                 </Text>
               )}
             </View>
@@ -121,6 +129,21 @@ export default function HomeScreen() {
                     <Text style={styles.recentName}>{member.name}</Text>
                     <Text style={styles.recentTime}>
                       {timeAgo(member.last_cmok_at)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {recentCmoks.length > 0 && (
+              <View style={styles.recentSection}>
+                <Text style={styles.sectionTitle}>Ostatnie cmoki:</Text>
+                {recentCmoks.map((cmok) => (
+                  <View key={cmok.id} style={styles.recentRow}>
+                    <Text style={styles.recentEmoji}>💜</Text>
+                    <Text style={styles.recentName}>{cmok.sender_name}</Text>
+                    <Text style={styles.recentTime}>
+                      {timeAgo(cmok.created_at)}
                     </Text>
                   </View>
                 ))}

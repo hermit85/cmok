@@ -7,8 +7,10 @@ import {
   FlatList,
   RefreshControl,
   Share,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppStore } from '../src/store/useAppStore';
 import { getFamilyStatus } from '../src/api/family';
 import { MemberRow } from '../src/components/MemberRow';
@@ -53,11 +55,30 @@ export default function FamilyScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Dolacz do mojej rodziny w Cmok! Kod: ${code}`,
+        message: `Dołącz do mojej rodziny w Cmok! Kod: ${code}`,
       });
     } catch (error) {
       console.log('Share error:', error);
     }
+  };
+
+  const handleReset = () => {
+    Alert.alert(
+      'Resetuj apkę',
+      'Czy na pewno chcesz zresetować aplikację? Utracisz powiązanie z rodziną.',
+      [
+        { text: 'Anuluj', style: 'cancel' },
+        {
+          text: 'Resetuj',
+          style: 'destructive',
+          onPress: async () => {
+            await AsyncStorage.clear();
+            useAppStore.getState().reset();
+            router.replace('/onboarding');
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -92,12 +113,16 @@ export default function FamilyScreen() {
             </View>
             <Pressable style={styles.shareButton} onPress={handleShare}>
               <Text style={styles.shareButtonText}>
-                Udostepnij kod
+                Udostępnij kod
               </Text>
             </Pressable>
             <Text style={styles.codeHint}>
-              Wyslij ten kod bliskim, zeby dolaczyli do Twojej rodziny
+              Wyślij ten kod bliskim, żeby dołączyli do Twojej rodziny
             </Text>
+
+            <Pressable style={styles.resetButton} onPress={handleReset}>
+              <Text style={styles.resetButtonText}>Resetuj apkę</Text>
+            </Pressable>
           </View>
         }
       />
@@ -178,5 +203,20 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     paddingHorizontal: 32,
+  },
+  resetButton: {
+    marginTop: 48,
+    marginBottom: 32,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E57373',
+  },
+  resetButtonText: {
+    color: '#E57373',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

@@ -1,5 +1,52 @@
 import { supabase } from './supabase';
 
+export interface RecentCmok {
+  id: string;
+  sender_name: string;
+  created_at: string;
+}
+
+export async function getRecentCmoks(familyId: string): Promise<RecentCmok[]> {
+  const { data, error } = await supabase
+    .from('cmoks')
+    .select('id, created_at, sender_id, members!cmoks_sender_id_fkey(name)')
+    .eq('family_id', familyId)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (error) {
+    // Fallback: if join doesn't work, fetch cmoks and members separately
+    const { data: cmoks } = await supabase
+      .from('cmoks')
+      .select('id, created_at, sender_id')
+      .eq('family_id', familyId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!cmoks || cmoks.length === 0) return [];
+
+    const senderIds = [...new Set(cmoks.map((c) => c.sender_id))];
+    const { data: members } = await supabase
+      .from('members')
+      .select('id, name')
+      .in('id', senderIds);
+
+    const nameMap = new Map((members || []).map((m) => [m.id, m.name]));
+
+    return cmoks.map((c) => ({
+      id: c.id,
+      sender_name: nameMap.get(c.sender_id) || 'Nieznany',
+      created_at: c.created_at,
+    }));
+  }
+
+  return (data || []).map((c: any) => ({
+    id: c.id,
+    sender_name: c.members?.name || 'Nieznany',
+    created_at: c.created_at,
+  }));
+}
+
 export async function sendCmok(memberId: string) {
   // Get sender info
   const { data: sender, error: senderError } = await supabase
@@ -99,7 +146,7 @@ async function sendPushToFamily(senderId: string, senderName: string, familyId: 
         tokens.map((to) => ({
           to,
           title: 'Cmok!',
-          body: `${senderName} wysłał/a Ci cmoka 💜`,
+          body: `${senderName} wysłał(a) Ci cmoka 💜`,
           sound: 'default',
           badge: 1,
         }))

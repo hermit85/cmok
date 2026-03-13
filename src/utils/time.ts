@@ -9,7 +9,7 @@ export function timeAgo(dateString: string | null): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMinutes < 1) return 'przed chwila';
+  if (diffMinutes < 1) return 'przed chwilą';
   if (diffMinutes < 60) return `${diffMinutes} min. temu`;
   if (diffHours < 24) return `${diffHours} godz. temu`;
   if (diffDays === 1) return 'wczoraj';
