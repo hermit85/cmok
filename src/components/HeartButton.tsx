@@ -1,14 +1,6 @@
-import { Pressable, Text, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSequence,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated';
+import { useRef } from 'react';
+import { Pressable, Text, StyleSheet, Animated } from 'react-native';
 import * as Haptics from 'expo-haptics';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface HeartButtonProps {
   onPress: () => void;
@@ -17,45 +9,36 @@ interface HeartButtonProps {
 }
 
 export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
+  const scale = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
-    // Haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     // Pulse animation
-    scale.value = withSequence(
-      withSpring(1.2, { damping: 4, stiffness: 300 }),
-      withSpring(0.9, { damping: 4, stiffness: 300 }),
-      withSpring(1.05, { damping: 6, stiffness: 200 }),
-      withSpring(1, { damping: 8, stiffness: 200 })
-    );
+    Animated.sequence([
+      Animated.spring(scale, { toValue: 1.2, useNativeDriver: true, speed: 50, bounciness: 12 }),
+      Animated.spring(scale, { toValue: 0.9, useNativeDriver: true, speed: 50, bounciness: 8 }),
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 30, bounciness: 6 }),
+    ]).start();
 
-    opacity.value = withSequence(
-      withTiming(0.7, { duration: 100 }),
-      withTiming(1, { duration: 200 })
-    );
+    Animated.sequence([
+      Animated.timing(opacity, { toValue: 0.7, duration: 100, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
 
     onPress();
   };
 
   return (
-    <AnimatedPressable
-      style={[styles.button, disabled && styles.disabled, animatedStyle]}
-      onPress={handlePress}
-      disabled={disabled}
-    >
-      <Text style={styles.heart}>{sent ? '💜' : '🤍'}</Text>
-      <Text style={styles.label}>
-        {sent ? 'Cmok wyslany!' : 'Kliknij aby wyslac cmoka'}
-      </Text>
-    </AnimatedPressable>
+    <Animated.View style={[styles.button, disabled && styles.disabled, { transform: [{ scale }], opacity }]}>
+      <Pressable onPress={handlePress} disabled={disabled} style={styles.inner}>
+        <Text style={styles.heart}>{sent ? '\uD83D\uDC9C' : '\uD83E\uDD0D'}</Text>
+        <Text style={styles.label}>
+          {sent ? 'Cmok wyslany!' : 'Kliknij aby wyslac cmoka'}
+        </Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -75,6 +58,10 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.5,
+  },
+  inner: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   heart: {
     fontSize: 80,

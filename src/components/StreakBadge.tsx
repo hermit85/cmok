@@ -1,43 +1,30 @@
-import { useEffect } from 'react';
-import { Text, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+import { useEffect, useRef } from 'react';
+import { Text, StyleSheet, Animated } from 'react-native';
 
 interface StreakBadgeProps {
   streak: number;
 }
 
 export function StreakBadge({ streak }: StreakBadgeProps) {
-  const scale = useSharedValue(1);
+  const scale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (streak > 0) {
-      scale.value = withRepeat(
-        withSequence(
-          withTiming(1.05, { duration: 800 }),
-          withTiming(1, { duration: 800 })
-        ),
-        -1,
-        true
-      );
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(scale, { toValue: 1.05, duration: 800, useNativeDriver: true }),
+          Animated.timing(scale, { toValue: 1, duration: 800, useNativeDriver: true }),
+        ])
+      ).start();
     }
   }, [streak, scale]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   if (streak < 1) return null;
 
   const daysLabel = streak === 1 ? 'dzien' : 'dni';
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <Animated.View style={[styles.container, { transform: [{ scale }] }]}>
       <Text style={styles.text}>
         Seria: {streak} {daysLabel} z rzedu
       </Text>
