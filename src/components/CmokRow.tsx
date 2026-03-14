@@ -10,13 +10,13 @@ interface CmokRowProps {
 
 export function CmokRow({ senderName, createdAt, index }: CmokRowProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(40)).current; // slide from right
+  const slideAnim = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 500,
+        duration: 400,
         delay: index * 80,
         useNativeDriver: true,
       }),
@@ -38,13 +38,10 @@ export function CmokRow({ senderName, createdAt, index }: CmokRowProps) {
         styles.row,
         {
           opacity: fadeAnim,
-          transform: [{ translateX: slideAnim }],
+          transform: [{ translateY: slideAnim }],
         },
       ]}
     >
-      {/* Gold left border accent */}
-      <View style={styles.leftBorder} />
-
       {/* Avatar circle */}
       <View style={styles.avatarCircle}>
         <Text style={styles.avatarLetter}>{initial}</Text>
@@ -55,8 +52,9 @@ export function CmokRow({ senderName, createdAt, index }: CmokRowProps) {
           <Text style={styles.name}>{senderName}</Text>
           {' przesyła cmoka'}
         </Text>
-        <Text style={styles.time}>{timeAgo(createdAt)}</Text>
       </View>
+
+      <Text style={styles.time}>{timeAgo(createdAt)}</Text>
     </Animated.View>
   );
 }
@@ -65,53 +63,48 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    paddingLeft: 18,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     marginBottom: 8,
-    overflow: 'hidden',
-  },
-  leftBorder: {
-    position: 'absolute',
-    left: 0,
-    top: 8,
-    bottom: 8,
-    width: 3,
-    borderRadius: 2,
-    backgroundColor: '#D4A574',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   avatarCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(26,26,46,0.8)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E07A5F',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
-    borderWidth: 1.5,
-    borderColor: '#D4A574',
   },
   avatarLetter: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
-    color: '#F0E6D3',
+    color: '#FFFFFF',
+    fontFamily: 'Nunito_700Bold',
   },
   content: {
     flex: 1,
   },
   text: {
     fontSize: 15,
-    color: '#F0E6D3',
+    color: '#3D2C2C',
+    fontFamily: 'Nunito_400Regular',
   },
   name: {
     fontWeight: '700',
-    color: '#D4A574',
+    fontFamily: 'Nunito_700Bold',
   },
   time: {
-    fontSize: 12,
-    color: 'rgba(240,230,211,0.35)',
-    marginTop: 3,
+    fontSize: 14,
+    color: '#8B7E7E',
+    marginLeft: 8,
+    fontFamily: 'Nunito_400Regular',
   },
 });

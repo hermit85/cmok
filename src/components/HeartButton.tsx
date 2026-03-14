@@ -1,10 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet, Animated, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { GeometricHeart } from './GeometricHeart';
 
-const HEART_EMOJIS = ['💕', '❤️', '💜', '💗', '💖', '🩷', '💘', '💝', '💓', '❤️‍🔥', '💕', '💗', '💜', '💖', '💗'];
-const PARTICLE_COUNT = 15;
+const HEART_EMOJIS = ['💕', '❤️', '🧡', '💛', '💗', '💖', '🩷', '💘', '💝', '💓', '💕', '❤️'];
+const PARTICLE_COUNT = 12;
 
 interface HeartButtonProps {
   onPress: () => void;
@@ -15,8 +14,7 @@ interface HeartButtonProps {
 export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
   const idleScale = useRef(new Animated.Value(1)).current;
-  const glowOpacity = useRef(new Animated.Value(0.2)).current;
-  const innerGlow = useRef(new Animated.Value(0)).current;
+  const shadowRadius = useRef(new Animated.Value(12)).current;
   const labelOpacity = useRef(new Animated.Value(1)).current;
   const sentLabelOpacity = useRef(new Animated.Value(0)).current;
   const tapCount = useRef(0);
@@ -35,29 +33,20 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
   const [showParticles, setShowParticles] = useState(false);
   const [showSentLabel, setShowSentLabel] = useState(false);
 
-  // Idle breathing animation
+  // Idle breathing — very subtle
   useEffect(() => {
     if (!disabled) {
       const breathe = () => {
         Animated.sequence([
-          Animated.timing(idleScale, { toValue: 1.03, duration: 2000, useNativeDriver: true }),
-          Animated.timing(idleScale, { toValue: 1.0, duration: 2000, useNativeDriver: true }),
+          Animated.timing(idleScale, { toValue: 1.02, duration: 1500, useNativeDriver: true }),
+          Animated.timing(idleScale, { toValue: 1.0, duration: 1500, useNativeDriver: true }),
         ]).start(() => breathe());
       };
       breathe();
-
-      // Glow ring gentle pulse
-      const glowPulse = () => {
-        Animated.sequence([
-          Animated.timing(glowOpacity, { toValue: 0.35, duration: 2500, useNativeDriver: true }),
-          Animated.timing(glowOpacity, { toValue: 0.15, duration: 2500, useNativeDriver: true }),
-        ]).start(() => glowPulse());
-      };
-      glowPulse();
     }
-  }, [disabled, idleScale, glowOpacity]);
+  }, [disabled, idleScale]);
 
-  // Sent label animation
+  // Sent label swap
   useEffect(() => {
     if (sent) {
       setShowSentLabel(true);
@@ -71,7 +60,7 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
           Animated.timing(sentLabelOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
           Animated.timing(labelOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
         ]).start(() => setShowSentLabel(false));
-      }, 2000);
+      }, 2500);
 
       return () => clearTimeout(timer);
     }
@@ -80,7 +69,7 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
   const explodeHearts = () => {
     setShowParticles(true);
     const animations = particles.map((p, i) => {
-      const angle = (i / PARTICLE_COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+      const angle = (i / PARTICLE_COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
       const distance = 100 + Math.random() * 150;
 
       p.x.setValue(0);
@@ -91,11 +80,11 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
 
       return Animated.parallel([
         Animated.timing(p.x, { toValue: Math.cos(angle) * distance, duration: 800, useNativeDriver: true }),
-        Animated.timing(p.y, { toValue: Math.sin(angle) * distance - 30, duration: 800, useNativeDriver: true }),
+        Animated.timing(p.y, { toValue: Math.sin(angle) * distance - 40, duration: 800, useNativeDriver: true }),
         Animated.timing(p.rotate, { toValue: Math.random() * 2 - 1, duration: 800, useNativeDriver: true }),
         Animated.sequence([
-          Animated.timing(p.scale, { toValue: 0.8 + Math.random() * 0.4, duration: 250, useNativeDriver: true }),
-          Animated.timing(p.scale, { toValue: 0, duration: 550, useNativeDriver: true }),
+          Animated.timing(p.scale, { toValue: 0.7 + Math.random() * 0.5, duration: 200, useNativeDriver: true }),
+          Animated.timing(p.scale, { toValue: 0, duration: 600, useNativeDriver: true }),
         ]),
         Animated.sequence([
           Animated.delay(400),
@@ -105,6 +94,19 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
     });
 
     Animated.parallel(animations).start(() => setShowParticles(false));
+  };
+
+  const handlePressIn = () => {
+    if (disabled) return;
+    // Press down — like a real button
+    Animated.timing(scale, { toValue: 0.92, duration: 100, useNativeDriver: true }).start();
+  };
+
+  const handlePressOut = () => {
+    if (disabled) return;
+    // Release bounce
+    scale.stopAnimation();
+    scale.setValue(0.92);
   };
 
   const handlePress = () => {
@@ -122,30 +124,26 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
 
     if (disabled) return;
 
-    // 1. Haptic: Heavy
+    // Heavy haptic
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // 2. BIG spring bounce: 1.0 → 1.4 → 0.9 → 1.05 → 1.0
+    // Bounce: 1.0 → 1.3 → 0.95 → 1.05 → 1.0
     scale.stopAnimation();
-    scale.setValue(1);
     Animated.sequence([
-      Animated.spring(scale, { toValue: 1.4, useNativeDriver: true, speed: 50, bounciness: 0 }),
-      Animated.spring(scale, { toValue: 0.9, useNativeDriver: true, speed: 40, bounciness: 0 }),
+      Animated.spring(scale, { toValue: 1.3, useNativeDriver: true, speed: 50, bounciness: 0 }),
+      Animated.spring(scale, { toValue: 0.95, useNativeDriver: true, speed: 40, bounciness: 0 }),
       Animated.spring(scale, { toValue: 1.05, useNativeDriver: true, speed: 30, bounciness: 0 }),
       Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 8 }),
     ]).start();
 
-    // 3. Gold flash effect
+    // Shadow bounce (non-native for shadow)
     Animated.sequence([
-      Animated.timing(innerGlow, { toValue: 1, duration: 150, useNativeDriver: true }),
-      Animated.timing(innerGlow, { toValue: 0, duration: 500, useNativeDriver: true }),
+      Animated.timing(shadowRadius, { toValue: 25, duration: 150, useNativeDriver: false }),
+      Animated.timing(shadowRadius, { toValue: 12, duration: 400, useNativeDriver: false }),
     ]).start();
 
-    // 4. Heart emoji explosion
+    // Heart emoji explosion
     explodeHearts();
-
-    // 5. Additional haptic feedback
-    setTimeout(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success), 300);
 
     onPress();
   };
@@ -158,7 +156,7 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
           {particles.map((p, i) => {
             const rotation = p.rotate.interpolate({
               inputRange: [-1, 0, 1],
-              outputRange: ['-45deg', '0deg', '45deg'],
+              outputRange: ['-30deg', '0deg', '30deg'],
             });
             return (
               <Animated.Text
@@ -183,33 +181,34 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
         </View>
       )}
 
-      {/* Outer glow ring */}
-      <Animated.View style={[styles.outerRing, { opacity: glowOpacity }]} />
+      {/* Plate / base circle */}
+      <View style={styles.plate} />
 
-      {/* Inner ring */}
-      <View style={styles.innerRing} />
-
-      {/* Main heart button */}
+      {/* Main heart button — neumorphism */}
       <Animated.View
         style={[
-          styles.button,
-          disabled && !sent && styles.disabled,
-          { transform: [{ scale: Animated.multiply(scale, idleScale) }] },
+          styles.heartCircle,
+          disabled && !sent && styles.heartDisabled,
+          {
+            transform: [{ scale: Animated.multiply(scale, idleScale) }],
+            shadowRadius: shadowRadius,
+          },
         ]}
       >
-        <Pressable onPress={handlePress} style={styles.pressable}>
-          {/* Gold glow overlay (flash) */}
-          <Animated.View style={[styles.goldFlash, { opacity: innerGlow }]} />
-
-          {/* SVG Heart */}
-          <GeometricHeart size={120} />
+        <Pressable
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          onPress={handlePress}
+          style={styles.pressable}
+        >
+          <Text style={styles.heartEmoji}>❤️</Text>
         </Pressable>
       </Animated.View>
 
       {/* Label */}
       <View style={styles.labelContainer}>
         <Animated.Text style={[styles.label, { opacity: labelOpacity }]}>
-          {disabled && !sent ? '' : 'Wyślij cmoka ✦'}
+          {disabled && !sent ? '' : 'Kliknij aby wysłać cmoka'}
         </Animated.Text>
         {showSentLabel && (
           <Animated.Text style={[styles.sentLabel, { opacity: sentLabelOpacity }]}>
@@ -225,7 +224,7 @@ const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 300,
+    height: 290,
   },
   particlesContainer: {
     position: 'absolute',
@@ -237,42 +236,35 @@ const styles = StyleSheet.create({
   },
   particle: {
     position: 'absolute',
-    fontSize: 24,
+    fontSize: 26,
   },
-  outerRing: {
+  plate: {
     position: 'absolute',
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: '#D4A574',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  innerRing: {
-    position: 'absolute',
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(212,165,116,0.15)',
-  },
-  button: {
-    width: 190,
-    height: 190,
-    borderRadius: 95,
-    backgroundColor: 'rgba(30,42,74,0.8)',
+  heartCircle: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: '#FDF6F0',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(212,165,116,0.4)',
-    shadowColor: '#D4A574',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 25,
-    elevation: 10,
+    // Neumorphism shadow
+    shadowColor: '#E07A5F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  disabled: {
+  heartDisabled: {
     opacity: 0.5,
   },
   pressable: {
@@ -280,32 +272,29 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 95,
-    overflow: 'hidden',
+    borderRadius: 100,
   },
-  goldFlash: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 95,
-    backgroundColor: 'rgba(212,165,116,0.25)',
+  heartEmoji: {
+    fontSize: 80,
   },
   labelContainer: {
-    height: 30,
+    height: 28,
     marginTop: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   label: {
-    fontSize: 17,
-    color: '#D4A574',
+    fontSize: 16,
+    color: '#E07A5F',
     textAlign: 'center',
-    fontWeight: '600',
-    letterSpacing: 1,
+    fontFamily: 'Nunito_400Regular',
   },
   sentLabel: {
     position: 'absolute',
     fontSize: 20,
-    color: '#F0E6D3',
+    color: '#3D2C2C',
     textAlign: 'center',
     fontWeight: '700',
+    fontFamily: 'Nunito_700Bold',
   },
 });

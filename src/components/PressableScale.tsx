@@ -1,5 +1,6 @@
 import { useRef, ReactNode } from 'react';
 import { Pressable, Animated, ViewStyle, StyleProp } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 interface PressableScaleProps {
   onPress: () => void;
@@ -7,6 +8,7 @@ interface PressableScaleProps {
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
   scaleDown?: number;
+  noHaptic?: boolean;
 }
 
 export function PressableScale({
@@ -14,7 +16,8 @@ export function PressableScale({
   disabled,
   style,
   children,
-  scaleDown = 0.95,
+  scaleDown = 0.96,
+  noHaptic,
 }: PressableScaleProps) {
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -36,10 +39,17 @@ export function PressableScale({
     }).start();
   };
 
+  const handlePress = () => {
+    if (!noHaptic) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    onPress();
+  };
+
   return (
     <Animated.View style={[style, { transform: [{ scale }] }]}>
       <Pressable
-        onPress={onPress}
+        onPress={handlePress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled}

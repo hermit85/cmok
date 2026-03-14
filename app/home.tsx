@@ -17,7 +17,7 @@ import { HeartButton } from '../src/components/HeartButton';
 import { StreakBadge } from '../src/components/StreakBadge';
 import { CmokRow } from '../src/components/CmokRow';
 import { PressableScale } from '../src/components/PressableScale';
-import { FloatingStars } from '../src/components/FloatingStars';
+import { SurpriseOverlay, markTodaySurpriseDiscovered } from '../src/components/SurpriseOverlay';
 import { timeAgo } from '../src/utils/time';
 
 interface FamilyMember {
@@ -40,8 +40,10 @@ export default function HomeScreen() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showSurprise, setShowSurprise] = useState(false);
+  const [justSentCmok, setJustSentCmok] = useState(false);
 
-  // Logo easter egg: rotate 360 on tap
+  // Logo easter egg
   const logoRotation = useRef(new Animated.Value(0)).current;
   const [logoTapCount, setLogoTapCount] = useState(0);
 
@@ -55,12 +57,10 @@ export default function HomeScreen() {
   const [cooldownMs, setCooldownMs] = useState(getCooldownRemaining());
   const isCooldown = cooldownMs > 0;
 
-  // Update cooldown timer every second
   useEffect(() => {
     if (!lastCmokAt) return;
     const interval = setInterval(() => {
-      const remaining = getCooldownRemaining();
-      setCooldownMs(remaining);
+      setCooldownMs(getCooldownRemaining());
     }, 1000);
     return () => clearInterval(interval);
   }, [lastCmokAt, getCooldownRemaining]);
@@ -101,6 +101,14 @@ export default function HomeScreen() {
       setSent(true);
       setStreak(result.streak);
       setLastCmokAt(new Date().toISOString());
+      setJustSentCmok(true);
+
+      // Show surprise after a short delay + save discovery
+      setTimeout(() => {
+        setShowSurprise(true);
+        markTodaySurpriseDiscovered();
+      }, 1500);
+
       setTimeout(() => setSent(false), 3000);
       fetchStatus();
     } catch (error) {
@@ -119,7 +127,6 @@ export default function HomeScreen() {
   const handleLogoTap = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setLogoTapCount(prev => prev + 1);
-    // Easter egg: logo tap → heart spins 360
     Animated.timing(logoRotation, {
       toValue: logoTapCount + 1,
       duration: 600,
@@ -134,24 +141,16 @@ export default function HomeScreen() {
 
   const otherMembers = members.filter((m) => m.id !== memberId);
 
-  const getStatusEmoji = (status: string) => {
-    if (status === '🟢') return '✨';
-    if (status === '🟡') return '✦';
-    return '💛';
-  };
-
   return (
     <View style={styles.container}>
-      <FloatingStars />
-
       <View style={styles.header}>
         <Pressable onPress={handleLogoTap}>
           <Animated.Text style={[styles.title, { transform: [{ rotate: logoSpin }] }]}>
-            Cmok ✦
+            Cmok
           </Animated.Text>
         </Pressable>
         <PressableScale onPress={() => router.push('/family')} style={styles.familyButton}>
-          <Text style={styles.familyLink}>✦ Rodzina</Text>
+          <Text style={styles.familyLink}>Rodzina</Text>
         </PressableScale>
       </View>
 
@@ -166,34 +165,13 @@ export default function HomeScreen() {
                 sent={sent}
               />
               {isCooldown && !sent && (
-                <View style={styles.cooldownContainer}>
-                  <Text style={styles.cooldownText}>
-                    Kolejny cmok za {formatCooldown(cooldownMs)} ⏳
-                  </Text>
-                </View>
+                <Text style={styles.cooldownText}>
+                  Kolejny cmok za {formatCooldown(cooldownMs)} ⏳
+                </Text>
               )}
             </View>
 
             <StreakBadge streak={streak} />
-
-            {otherMembers.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>✦ Bliscy</Text>
-                {otherMembers.map((member) => (
-                  <View key={member.id} style={styles.memberCard}>
-                    <View style={styles.memberDot}>
-                      <Text style={styles.memberDotText}>{getStatusEmoji(member.status)}</Text>
-                    </View>
-                    <View style={styles.memberInfo}>
-                      <Text style={styles.memberName}>{member.name}</Text>
-                      <Text style={styles.memberTime}>
-                        {timeAgo(member.last_cmok_at)}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )}
 
             {recentCmoks.length > 0 && (
               <View style={styles.section}>
@@ -209,6 +187,12 @@ export default function HomeScreen() {
               </View>
             )}
 
+            {justSentCmok && (
+              <View style={styles.tomorrowHint}>
+                <Text style={styles.tomorrowText}>Jutro czeka nowa niespodzianka... 🎁</Text>
+              </View>
+            )}
+
             <View style={styles.bottomPadding} />
           </View>
         )}
@@ -216,9 +200,15 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#D4A574"
+            tintColor="#E07A5F"
           />
         }
+      />
+
+      {/* Surprise overlay */}
+      <SurpriseOverlay
+        visible={showSurprise}
+        onClose={() => setShowSurprise(false)}
       />
     </View>
   );
@@ -227,7 +217,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: '#FDF6F0',
   },
   header: {
     flexDirection: 'row',
@@ -236,26 +226,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 8,
-    zIndex: 10,
   },
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#F0E6D3',
-    letterSpacing: 1,
+    color: '#3D2C2C',
+    fontFamily: 'Nunito_800ExtraBold',
   },
   familyButton: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(212,165,116,0.3)',
+    paddingVertical: 8,
   },
   familyLink: {
-    fontSize: 15,
-    color: '#D4A574',
+    fontSize: 16,
+    color: '#E07A5F',
     fontWeight: '600',
+    fontFamily: 'Nunito_600SemiBold',
   },
   content: {
     alignItems: 'center',
@@ -266,17 +252,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 0,
   },
-  cooldownContainer: {
-    marginTop: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
   cooldownText: {
-    fontSize: 14,
-    color: 'rgba(212,165,116,0.5)',
+    fontSize: 15,
+    color: '#8B7E7E',
+    marginTop: 8,
     textAlign: 'center',
+    fontFamily: 'Nunito_400Regular',
   },
   section: {
     width: '100%',
@@ -285,45 +266,28 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#F0E6D3',
+    color: '#3D2C2C',
     marginBottom: 14,
-    letterSpacing: 0.5,
+    fontFamily: 'Nunito_700Bold',
   },
-  memberCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  tomorrowHint: {
+    marginTop: 24,
     paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 20,
-    marginBottom: 8,
+    paddingHorizontal: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
-  memberDot: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(212,165,116,0.08)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(212,165,116,0.2)',
-  },
-  memberDotText: {
+  tomorrowText: {
     fontSize: 15,
-  },
-  memberInfo: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#F0E6D3',
-  },
-  memberTime: {
-    fontSize: 12,
-    color: 'rgba(240,230,211,0.35)',
-    marginTop: 2,
+    color: '#8B7E7E',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    fontFamily: 'Nunito_400Regular',
   },
   bottomPadding: {
     height: 40,

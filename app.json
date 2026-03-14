@@ -32,7 +32,8 @@
           "icon": "./assets/icon.png",
           "color": "#E8578B"
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }
