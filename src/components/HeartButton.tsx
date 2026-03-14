@@ -14,7 +14,6 @@ interface HeartButtonProps {
 export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
   const scale = useRef(new Animated.Value(1)).current;
   const idleScale = useRef(new Animated.Value(1)).current;
-  const shadowRadius = useRef(new Animated.Value(12)).current;
   const labelOpacity = useRef(new Animated.Value(1)).current;
   const sentLabelOpacity = useRef(new Animated.Value(0)).current;
   const tapCount = useRef(0);
@@ -98,13 +97,11 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
 
   const handlePressIn = () => {
     if (disabled) return;
-    // Press down — like a real button
     Animated.timing(scale, { toValue: 0.92, duration: 100, useNativeDriver: true }).start();
   };
 
   const handlePressOut = () => {
     if (disabled) return;
-    // Release bounce
     scale.stopAnimation();
     scale.setValue(0.92);
   };
@@ -114,7 +111,6 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
     if (tapTimer.current) clearTimeout(tapTimer.current);
     tapTimer.current = setTimeout(() => { tapCount.current = 0; }, 2000);
 
-    // Easter egg: 5 rapid taps
     if (tapCount.current >= 5) {
       tapCount.current = 0;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -124,7 +120,6 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
 
     if (disabled) return;
 
-    // Heavy haptic
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
     // Bounce: 1.0 → 1.3 → 0.95 → 1.05 → 1.0
@@ -136,15 +131,7 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
       Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 8 }),
     ]).start();
 
-    // Shadow bounce (non-native for shadow)
-    Animated.sequence([
-      Animated.timing(shadowRadius, { toValue: 25, duration: 150, useNativeDriver: false }),
-      Animated.timing(shadowRadius, { toValue: 12, duration: 400, useNativeDriver: false }),
-    ]).start();
-
-    // Heart emoji explosion
     explodeHearts();
-
     onPress();
   };
 
@@ -181,18 +168,12 @@ export function HeartButton({ onPress, disabled, sent }: HeartButtonProps) {
         </View>
       )}
 
-      {/* Plate / base circle */}
-      <View style={styles.plate} />
-
-      {/* Main heart button — neumorphism */}
+      {/* Main heart button */}
       <Animated.View
         style={[
-          styles.heartCircle,
+          styles.heartButton,
           disabled && !sent && styles.heartDisabled,
-          {
-            transform: [{ scale: Animated.multiply(scale, idleScale) }],
-            shadowRadius: shadowRadius,
-          },
+          { transform: [{ scale: Animated.multiply(scale, idleScale) }] },
         ]}
       >
         <Pressable
@@ -224,7 +205,7 @@ const styles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    height: 290,
+    height: 260,
   },
   particlesContainer: {
     position: 'absolute',
@@ -238,30 +219,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     fontSize: 26,
   },
-  plate: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+  heartButton: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  heartCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: '#FDF6F0',
     justifyContent: 'center',
     alignItems: 'center',
-    // Neumorphism shadow
     shadowColor: '#E07A5F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
     elevation: 8,
   },
   heartDisabled: {
@@ -272,10 +240,10 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 100,
+    borderRadius: 80,
   },
   heartEmoji: {
-    fontSize: 80,
+    fontSize: 72,
   },
   labelContainer: {
     height: 28,
