@@ -1,12 +1,7 @@
 import { Redirect } from 'expo-router';
-import { useAppStore } from '../src/store/useAppStore';
 
+// TODO: check auth state and role to decide initial route
+// For now, always go to onboarding
 export default function Index() {
-  const memberId = useAppStore((s) => s.memberId);
-
-  if (memberId) {
-    return <Redirect href="/home" />;
-  }
-
   return <Redirect href="/onboarding" />;
 }
