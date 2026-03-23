@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { useCarePair } from '../hooks/useCarePair';
+import { useSOS } from '../hooks/useSOS';
 import { supabase } from '../services/supabase';
 import type { DailyCheckin, AlertCase } from '../types';
 
@@ -16,11 +17,9 @@ function getLocalDate(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
-function formatCheckinTime(isoString: string): string {
+function formatTime(isoString: string): string {
   const d = new Date(isoString);
-  const h = d.getHours().toString().padStart(2, '0');
-  const m = d.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
+  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 }
 
 // ── Sub-components ──
@@ -45,7 +44,6 @@ function StatusBadge({ status }: { status: SeniorStatus }) {
 
 function PulsingSOSBadge() {
   const opacity = useRef(new Animated.Value(0.8)).current;
-
   useEffect(() => {
     const pulse = Animated.loop(
       Animated.sequence([
@@ -71,7 +69,6 @@ function WeekDots({ weekData }: { weekData: Array<{ day: string; status: DayStat
         let bg = Colors.disabled;
         if (item.status === 'ok') bg = Colors.primary;
         if (item.status === 'missing') bg = Colors.danger;
-
         return (
           <View key={i} style={styles.dayColumn}>
             <View style={[styles.dayDot, { backgroundColor: bg }]} />
@@ -83,37 +80,93 @@ function WeekDots({ weekData }: { weekData: Array<{ day: string; status: DayStat
   );
 }
 
-function SOSOverlay({
+// ── SOS Overlay — dwuetapowy: open → acknowledged → resolve ──
+
+function SOSOverlayView({
+  alert,
   seniorName,
-  sosTime,
+  callPhone,
   onAcknowledge,
+  onResolve,
   onCall,
 }: {
+  alert: AlertCase;
   seniorName: string;
-  sosTime: string;
+  callPhone: string;
   onAcknowledge: () => void;
+  onResolve: () => void;
   onCall: () => void;
 }) {
   const opacity = useRef(new Animated.Value(0.8)).current;
+  const isAcknowledged = alert.state === 'acknowledged';
 
   useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 600, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 0.8, duration: 600, useNativeDriver: true }),
-      ])
-    );
-    pulse.start();
-    return () => pulse.stop();
-  }, [opacity]);
+    if (!isAcknowledged) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 0.8, duration: 600, useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      opacity.setValue(1);
+    }
+  }, [isAcknowledged, opacity]);
 
+  const hasLocation = alert.latitude != null && alert.longitude != null;
+
+  // ── Stan: acknowledged → pokaż potwierdzenie ──
+  if (isAcknowledged) {
+    return (
+      <View style={[styles.sosOverlay, { backgroundColor: Colors.dangerDark }]}>
+        <SafeAreaView style={styles.sosOverlayInner}>
+          <View style={styles.sosContentCenter}>
+            <Text style={styles.sosTitle}>Alarm potwierdzony.</Text>
+            <Text style={styles.sosSubInfo}>Skontaktuj się z {seniorName}.</Text>
+
+            {hasLocation && (
+              <Text style={styles.sosCoords}>
+                📍 Lokalizacja: {alert.latitude!.toFixed(4)}, {alert.longitude!.toFixed(4)}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.sosActions}>
+            <Pressable
+              onPress={onCall}
+              style={({ pressed }) => [styles.acknowledgeButton, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.acknowledgeText}>📞 Zadzwoń do {seniorName}</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={onResolve}
+              style={({ pressed }) => [styles.resolveButton, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.resolveText}>Zamknij alarm</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  // ── Stan: open → pulsujący alarm ──
   return (
     <Animated.View style={[styles.sosOverlay, { opacity }]}>
       <SafeAreaView style={styles.sosOverlayInner}>
-        <View style={styles.sosContent}>
+        <View style={styles.sosContentCenter}>
           <Text style={styles.sosTitle}>🚨 {seniorName.toUpperCase()} POTRZEBUJE POMOCY!</Text>
-          <Text style={styles.sosTime}>SOS o {sosTime}</Text>
-          <Text style={styles.sosLocation}>📍 Lokalizacja została wysłana</Text>
+          <Text style={styles.sosTime}>SOS o {formatTime(alert.triggered_at)}</Text>
+          {hasLocation ? (
+            <Text style={styles.sosCoords}>
+              📍 Lokalizacja: {alert.latitude!.toFixed(4)}, {alert.longitude!.toFixed(4)}
+            </Text>
+          ) : (
+            <Text style={styles.sosCoords}>📍 Lokalizacja niedostępna</Text>
+          )}
         </View>
 
         <View style={styles.sosActions}>
@@ -137,6 +190,7 @@ function SOSOverlay({
 
 export function CaregiverDashboardScreen() {
   const { carePair, seniorName, seniorId, callPhone, loading: pairLoading } = useCarePair();
+  const { acknowledgeSOS, resolveSOS } = useSOS();
 
   const [seniorStatus, setSeniorStatus] = useState<SeniorStatus>('ok');
   const [weekData, setWeekData] = useState<Array<{ day: string; status: DayStatus }>>([]);
@@ -146,12 +200,9 @@ export function CaregiverDashboardScreen() {
 
   const targetSeniorId = seniorId || carePair?.senior_id;
 
-  // ── Fetch data ──
   const fetchData = useCallback(async () => {
     if (!targetSeniorId) return;
-
     try {
-      // Pobierz check-iny z ostatnich 7 dni
       const today = new Date();
       const sevenDaysAgo = new Date(today);
       sevenDaysAgo.setDate(today.getDate() - 6);
@@ -164,16 +215,15 @@ export function CaregiverDashboardScreen() {
         .lte('local_date', getLocalDate(today))
         .order('local_date', { ascending: true });
 
-      // Pobierz otwarte alerty
       const { data: alerts } = await supabase
         .from('alert_cases')
         .select('*')
         .eq('senior_id', targetSeniorId)
-        .eq('state', 'open')
+        .in('state', ['open', 'acknowledged'])
         .order('triggered_at', { ascending: false })
         .limit(1);
 
-      // Zbuduj historię tygodnia
+      // Build week
       const checkinDates = new Set((checkins || []).map((c: DailyCheckin) => c.local_date));
       const todayStr = getLocalDate(today);
       const week: Array<{ day: string; status: DayStatus }> = [];
@@ -189,29 +239,20 @@ export function CaregiverDashboardScreen() {
         } else if (checkinDates.has(dateStr)) {
           week.push({ day: dayLabel, status: 'ok' });
         } else if (dateStr === todayStr) {
-          // Dziś — jeszcze nie wiemy (szary)
           week.push({ day: dayLabel, status: 'future' });
         } else {
           week.push({ day: dayLabel, status: 'missing' });
         }
       }
-
       setWeekData(week);
 
-      // Ostatni check-in
+      // Last checkin time
       const todayCheckin = (checkins || []).find((c: DailyCheckin) => c.local_date === todayStr);
-      if (todayCheckin) {
-        setLastCheckinTime(formatCheckinTime(todayCheckin.checked_at));
-      } else if (checkins && checkins.length > 0) {
-        const last = checkins[checkins.length - 1];
-        setLastCheckinTime(null); // nie dziś
-      } else {
-        setLastCheckinTime(null);
-      }
+      setLastCheckinTime(todayCheckin ? formatTime(todayCheckin.checked_at) : null);
 
-      // Ustal status
-      const hasOpenSOS = alerts && alerts.length > 0 && alerts[0].type === 'sos';
-      if (hasOpenSOS) {
+      // Status
+      const openSOS = alerts && alerts.length > 0 && alerts[0].type === 'sos';
+      if (openSOS) {
         setSeniorStatus('sos');
         setSosAlert(alerts![0]);
       } else if (todayCheckin) {
@@ -221,92 +262,62 @@ export function CaregiverDashboardScreen() {
         setSeniorStatus('missing');
         setSosAlert(null);
       }
-
-      // Jeśli dziś jest check-in, zaktualizuj czas
-      if (todayCheckin) {
-        setLastCheckinTime(formatCheckinTime(todayCheckin.checked_at));
-      }
     } catch (err) {
-      console.error('CaregiverDashboard fetchData error:', err);
+      console.error('fetchData error:', err);
     } finally {
       setDataLoading(false);
     }
   }, [targetSeniorId]);
 
-  // ── Initial fetch ──
   useEffect(() => {
-    if (targetSeniorId) {
-      fetchData();
-    }
+    if (targetSeniorId) fetchData();
   }, [targetSeniorId, fetchData]);
 
-  // ── Realtime subscriptions ──
+  // Realtime
   useEffect(() => {
     if (!targetSeniorId) return;
 
-    const checkinChannel = supabase
-      .channel('checkins-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'daily_checkins',
-          filter: `senior_id=eq.${targetSeniorId}`,
-        },
-        () => {
-          fetchData();
-        }
-      )
+    const checkinCh = supabase
+      .channel('cg-checkins')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_checkins', filter: `senior_id=eq.${targetSeniorId}` }, () => fetchData())
       .subscribe();
 
-    const alertChannel = supabase
-      .channel('alerts-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'alert_cases',
-          filter: `senior_id=eq.${targetSeniorId}`,
-        },
-        () => {
-          fetchData();
-        }
-      )
+    const alertCh = supabase
+      .channel('cg-alerts')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'alert_cases', filter: `senior_id=eq.${targetSeniorId}` }, () => fetchData())
       .subscribe();
 
     return () => {
-      supabase.removeChannel(checkinChannel);
-      supabase.removeChannel(alertChannel);
+      supabase.removeChannel(checkinCh);
+      supabase.removeChannel(alertCh);
     };
   }, [targetSeniorId, fetchData]);
 
-  const handleCall = () => {
-    Linking.openURL(`tel:${callPhone || '+48000000000'}`);
-  };
+  const handleCall = () => Linking.openURL(`tel:${callPhone || '+48000000000'}`);
 
-  const handleAcknowledgeSOS = async () => {
+  const handleAcknowledge = async () => {
     if (!sosAlert) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      await supabase
-        .from('alert_cases')
-        .update({
-          state: 'acknowledged',
-          acknowledged_by: user?.id,
-          acknowledged_at: new Date().toISOString(),
-        })
-        .eq('id', sosAlert.id);
-
-      setSeniorStatus('ok');
-      setSosAlert(null);
+      await acknowledgeSOS(sosAlert.id);
+      // Odśwież dane — zmieni state na acknowledged
+      fetchData();
     } catch (err) {
-      console.error('Acknowledge SOS error:', err);
+      console.error('Acknowledge error:', err);
     }
   };
 
-  // ── Loading ──
+  const handleResolve = async () => {
+    if (!sosAlert) return;
+    try {
+      await resolveSOS(sosAlert.id);
+      setSosAlert(null);
+      setSeniorStatus('ok');
+    } catch (err) {
+      console.error('Resolve error:', err);
+    }
+  };
+
+  // Loading
   if (pairLoading || dataLoading) {
     return (
       <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -316,19 +327,21 @@ export function CaregiverDashboardScreen() {
     );
   }
 
-  // ── SOS overlay ──
+  // SOS overlay
   if (seniorStatus === 'sos' && sosAlert) {
     return (
-      <SOSOverlay
+      <SOSOverlayView
+        alert={sosAlert}
         seniorName={seniorName}
-        sosTime={formatCheckinTime(sosAlert.triggered_at)}
-        onAcknowledge={handleAcknowledgeSOS}
+        callPhone={callPhone}
+        onAcknowledge={handleAcknowledge}
+        onResolve={handleResolve}
         onCall={handleCall}
       />
     );
   }
 
-  // ── Normalny dashboard ──
+  // Normal dashboard
   const lastCheckinLabel = lastCheckinTime
     ? `Ostatni znak: dziś, ${lastCheckinTime}`
     : seniorStatus === 'missing'
@@ -337,13 +350,11 @@ export function CaregiverDashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Nagłówek */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Cmok</Text>
         <Text style={styles.headerSubtitle}>Twoi bliscy</Text>
       </View>
 
-      {/* Karta seniora */}
       <View style={styles.card}>
         <View style={styles.cardTop}>
           <Text style={styles.seniorName}>{seniorName}</Text>
@@ -369,165 +380,46 @@ export function CaregiverDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.screenBg,
-  },
+  container: { flex: 1, backgroundColor: Colors.screenBg },
 
-  // ── Nagłówek ──
-  header: {
-    alignItems: 'center',
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  headerTitle: {
-    fontSize: Typography.caregiverTitle,
-    fontWeight: '700',
-    color: Colors.accent,
-  },
-  headerSubtitle: {
-    fontSize: Typography.caregiverBody,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
+  header: { alignItems: 'center', paddingTop: 16, paddingBottom: 12 },
+  headerTitle: { fontSize: Typography.caregiverTitle, fontWeight: '700', color: Colors.accent },
+  headerSubtitle: { fontSize: Typography.caregiverBody, color: Colors.textSecondary, marginTop: 2 },
 
-  // ── Karta seniora ──
   card: {
-    backgroundColor: Colors.cardBg,
-    borderRadius: 16,
-    marginHorizontal: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: Colors.cardBg, borderRadius: 16, marginHorizontal: 16, padding: 20,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  seniorName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text,
-    marginRight: 12,
-  },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  lastCheckin: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 20,
-  },
+  cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  seniorName: { fontSize: 24, fontWeight: '700', color: Colors.text, marginRight: 12 },
+  badge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  badgeText: { fontSize: 14, fontWeight: '700' },
+  lastCheckin: { fontSize: 14, color: Colors.textSecondary, marginBottom: 20 },
 
-  // ── Historia tygodnia ──
-  weekSection: {
-    marginBottom: 20,
-  },
-  weekRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  dayColumn: {
-    alignItems: 'center',
-  },
-  dayDot: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginBottom: 4,
-  },
-  dayLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
+  weekSection: { marginBottom: 20 },
+  weekRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  dayColumn: { alignItems: 'center' },
+  dayDot: { width: 32, height: 32, borderRadius: 16, marginBottom: 4 },
+  dayLabel: { fontSize: 12, color: Colors.textSecondary },
 
-  // ── Przycisk dzwoń ──
-  callButton: {
-    backgroundColor: Colors.accent,
-    borderRadius: 12,
-    minHeight: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  callButtonText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
+  callButton: { backgroundColor: Colors.accent, borderRadius: 12, minHeight: 56, justifyContent: 'center', alignItems: 'center' },
+  callButtonText: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
 
-  // ── SOS Overlay ──
-  sosOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: Colors.danger,
-    zIndex: 100,
-  },
-  sosOverlayInner: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  sosContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  sosTitle: {
-    fontSize: Typography.seniorTitle,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  sosTime: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    marginBottom: 12,
-  },
-  sosLocation: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    opacity: 0.9,
-  },
-  sosActions: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-  },
-  acknowledgeButton: {
-    backgroundColor: Colors.dangerDark,
-    borderRadius: 16,
-    minHeight: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  acknowledgeText: {
-    fontSize: Typography.seniorButton,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  sosCallLink: {
-    minHeight: Typography.minCaregiverTouch,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sosCallText: {
-    fontSize: 18,
-    color: '#FFFFFF',
-    textDecorationLine: 'underline',
-  },
+  // SOS Overlay
+  sosOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: Colors.danger, zIndex: 100 },
+  sosOverlayInner: { flex: 1, justifyContent: 'space-between' },
+  sosContentCenter: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  sosTitle: { fontSize: Typography.seniorTitle, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', marginBottom: 16 },
+  sosSubInfo: { fontSize: Typography.seniorBody, color: '#FFFFFF', textAlign: 'center', marginBottom: 12 },
+  sosTime: { fontSize: 18, color: '#FFFFFF', marginBottom: 12 },
+  sosCoords: { fontSize: 16, color: '#FFFFFF', opacity: 0.85, marginBottom: 8 },
+  sosActions: { paddingHorizontal: 24, paddingBottom: 32 },
+  acknowledgeButton: { backgroundColor: Colors.dangerDark, borderRadius: 16, minHeight: 80, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  acknowledgeText: { fontSize: Typography.seniorButton, fontWeight: '800', color: '#FFFFFF' },
+  resolveButton: { borderWidth: 2, borderColor: '#FFFFFF', borderRadius: 16, minHeight: 56, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  resolveText: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  sosCallLink: { minHeight: Typography.minCaregiverTouch, justifyContent: 'center', alignItems: 'center' },
+  sosCallText: { fontSize: 18, color: '#FFFFFF', textDecorationLine: 'underline' },
 
-  // ── Misc ──
-  spacer: {
-    flex: 1,
-  },
+  spacer: { flex: 1 },
 });

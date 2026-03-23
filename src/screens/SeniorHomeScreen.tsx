@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Linking, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -8,13 +8,23 @@ import { BigButton } from '../components/BigButton';
 import { SOSConfirmation } from '../components/SOSConfirmation';
 import { useCheckin } from '../hooks/useCheckin';
 import { useCarePair } from '../hooks/useCarePair';
+import { useSOS } from '../hooks/useSOS';
 
 export function SeniorHomeScreen() {
   const router = useRouter();
   const { checkedInToday, loading: checkinLoading, performCheckin } = useCheckin();
   const { seniorName, callPhone } = useCarePair();
-  const [showSOS, setShowSOS] = useState(false);
+  const { sosActive, currentAlert, loading: sosLoading, triggerSOS, cancelSOS } = useSOS();
+
+  const [showSOSModal, setShowSOSModal] = useState(false);
   const [sosTriggered, setSosTriggered] = useState(false);
+
+  // Jeśli przy otwarciu apki jest aktywny SOS → od razu pokaż ekran "Pomoc wezwana"
+  useEffect(() => {
+    if (sosActive && currentAlert) {
+      setSosTriggered(true);
+    }
+  }, [sosActive, currentAlert]);
 
   const handleCheckin = async () => {
     try {
@@ -24,14 +34,29 @@ export function SeniorHomeScreen() {
     }
   };
 
-  const handleSOSConfirm = () => {
-    setShowSOS(false);
+  const handleSOSConfirm = async () => {
+    setShowSOSModal(false);
     setSosTriggered(true);
-    // TODO: wyślij alert SOS do backendu
+    try {
+      await triggerSOS();
+    } catch {
+      Alert.alert('Błąd', 'Nie udało się wysłać alarmu. Zadzwoń na 112.');
+    }
   };
 
   const handleSOSCancel = () => {
-    setShowSOS(false);
+    setShowSOSModal(false);
+  };
+
+  const handleCancelAlarm = async () => {
+    if (currentAlert) {
+      try {
+        await cancelSOS(currentAlert.id);
+      } catch {
+        // Nawet jeśli cancel się nie uda — zamknij ekran
+      }
+    }
+    setSosTriggered(false);
   };
 
   const phoneToCall = callPhone || '+48000000000';
@@ -45,6 +70,12 @@ export function SeniorHomeScreen() {
         <View style={styles.sosContent}>
           <Text style={styles.sosTitle}>Powiadomiliśmy bliskiego.</Text>
           <Text style={styles.sosSubtitle}>Pomoc jest w drodze.</Text>
+
+          {currentAlert?.latitude && currentAlert?.longitude && (
+            <Text style={styles.sosLocation}>
+              📍 Twoja lokalizacja została wysłana
+            </Text>
+          )}
 
           <BigButton
             title="Zadzwoń do bliskiego"
@@ -61,10 +92,7 @@ export function SeniorHomeScreen() {
           </Pressable>
         </View>
 
-        <Pressable
-          onPress={() => setSosTriggered(false)}
-          style={styles.cancelAlarmLink}
-        >
+        <Pressable onPress={handleCancelAlarm} style={styles.cancelAlarmLink}>
           <Text style={styles.cancelAlarmText}>Fałszywy alarm? Anuluj</Text>
         </Pressable>
       </SafeAreaView>
@@ -77,12 +105,12 @@ export function SeniorHomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <SOSConfirmation
-        visible={showSOS}
+        visible={showSOSModal}
         onConfirm={handleSOSConfirm}
         onCancel={handleSOSCancel}
       />
 
-      {/* Ustawienia — zębatka w prawym górnym rogu */}
+      {/* Ustawienia */}
       <View style={styles.topBar}>
         <View style={styles.spacer} />
         <Pressable
@@ -97,7 +125,7 @@ export function SeniorHomeScreen() {
       {/* Powitanie */}
       <Text style={styles.greeting}>Cześć, Mamo!</Text>
 
-      {/* Przycisk JESTEM OK — wycentrowany */}
+      {/* Przycisk JESTEM OK */}
       <View style={styles.centerArea}>
         {checkedInToday ? (
           <View style={styles.checkedCircle}>
@@ -118,10 +146,10 @@ export function SeniorHomeScreen() {
         )}
       </View>
 
-      {/* Przycisk POTRZEBUJĘ POMOCY — dół ekranu */}
+      {/* Przycisk POTRZEBUJĘ POMOCY */}
       <BigButton
         title="POTRZEBUJĘ POMOCY"
-        onPress={() => setShowSOS(true)}
+        onPress={() => setShowSOSModal(true)}
         color={Colors.danger}
         style={styles.sosButton}
       />
@@ -130,7 +158,6 @@ export function SeniorHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  // ── Normalny ekran ──
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -141,9 +168,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 8,
   },
-  spacer: {
-    flex: 1,
-  },
+  spacer: { flex: 1 },
   settingsButton: {
     width: Typography.minSeniorTouch,
     height: Typography.minSeniorTouch,
@@ -228,7 +253,13 @@ const styles = StyleSheet.create({
     fontSize: Typography.seniorBody,
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 48,
+    marginBottom: 16,
+  },
+  sosLocation: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    marginBottom: 32,
   },
   callButton: {
     width: '100%',
