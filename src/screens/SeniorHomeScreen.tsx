@@ -56,7 +56,7 @@ export function SeniorHomeScreen() {
           onPress={() => setSosTriggered(false)}
           style={styles.cancelAlarmLink}
         >
-          <Text style={styles.cancelAlarmText}>Anuluj alarm</Text>
+          <Text style={styles.cancelAlarmText}>Fałszywy alarm? Anuluj</Text>
         </Pressable>
       </SafeAreaView>
     );
