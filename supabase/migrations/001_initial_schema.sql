@@ -149,14 +149,23 @@ CREATE POLICY "care_pairs_senior_select" ON public.care_pairs
 CREATE POLICY "care_pairs_caregiver_select" ON public.care_pairs
   FOR SELECT USING (auth.uid() = caregiver_id);
 
--- Senior może tworzyć zaproszenia (insert)
-CREATE POLICY "care_pairs_senior_insert" ON public.care_pairs
-  FOR INSERT WITH CHECK (auth.uid() = senior_id);
+-- Caregiver tworzy zaproszenie (insert — caregiver_id = auth.uid())
+CREATE POLICY "care_pairs_caregiver_insert" ON public.care_pairs
+  FOR INSERT WITH CHECK (auth.uid() = caregiver_id);
 
--- Caregiver może aktualizować status pary (accept invite)
+-- Senior aktualizuje parę (akceptuje zaproszenie — senior_id = auth.uid())
+CREATE POLICY "care_pairs_senior_update" ON public.care_pairs
+  FOR UPDATE USING (auth.uid() = senior_id)
+  WITH CHECK (auth.uid() = senior_id);
+
+-- Caregiver może aktualizować status pary
 CREATE POLICY "care_pairs_caregiver_update" ON public.care_pairs
   FOR UPDATE USING (auth.uid() = caregiver_id)
   WITH CHECK (auth.uid() = caregiver_id);
+
+-- Odczyt care_pairs po invite_code (potrzebne do JoinScreen — senior szuka po kodzie)
+CREATE POLICY "care_pairs_select_by_invite" ON public.care_pairs
+  FOR SELECT USING (invite_code IS NOT NULL AND status = 'pending');
 
 -- ── daily_checkins ──
 -- Senior wstawia i widzi swoje check-iny
