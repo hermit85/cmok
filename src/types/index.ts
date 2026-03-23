@@ -4,31 +4,38 @@ export interface User {
   name: string;
   role: 'senior' | 'caregiver';
   checkin_time: string | null;
-  push_token: string | null;
+  timezone: string;
 }
 
-export interface Circle {
+export interface CarePair {
   id: string;
   senior_id: string;
   caregiver_id: string;
-  role_in_circle: 'primary' | 'secondary' | 'neighbor';
-  phone_for_sms: string;
+  priority: number;
+  sms_fallback_phone: string;
+  invite_code: string | null;
+  invite_expires_at: string | null;
+  status: 'pending' | 'active';
+  joined_at: string | null;
 }
 
-export interface CheckIn {
+export interface DailyCheckin {
   id: string;
   senior_id: string;
+  local_date: string;
   checked_at: string;
-  source: 'app' | 'widget' | 'notification';
+  source: 'app' | 'notification';
 }
 
-export interface SOSAlert {
+export interface AlertCase {
   id: string;
   senior_id: string;
+  type: 'sos' | 'missed_checkin';
+  state: 'open' | 'acknowledged' | 'resolved' | 'cancelled';
   triggered_at: string;
   latitude: number | null;
   longitude: number | null;
-  status: 'active' | 'acknowledged' | 'resolved';
   acknowledged_by: string | null;
   acknowledged_at: string | null;
+  resolved_at: string | null;
 }

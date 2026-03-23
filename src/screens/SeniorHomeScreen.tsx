@@ -1,20 +1,27 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { BigButton } from '../components/BigButton';
 import { SOSConfirmation } from '../components/SOSConfirmation';
+import { useCheckin } from '../hooks/useCheckin';
+import { useCarePair } from '../hooks/useCarePair';
 
 export function SeniorHomeScreen() {
   const router = useRouter();
-  const [checkedIn, setCheckedIn] = useState(false);
+  const { checkedInToday, loading: checkinLoading, performCheckin } = useCheckin();
+  const { seniorName, callPhone } = useCarePair();
   const [showSOS, setShowSOS] = useState(false);
   const [sosTriggered, setSosTriggered] = useState(false);
 
-  const handleCheckin = () => {
-    setCheckedIn(true);
+  const handleCheckin = async () => {
+    try {
+      await performCheckin();
+    } catch {
+      Alert.alert('Błąd', 'Nie udało się zapisać. Spróbuj ponownie.');
+    }
   };
 
   const handleSOSConfirm = () => {
@@ -26,6 +33,8 @@ export function SeniorHomeScreen() {
   const handleSOSCancel = () => {
     setShowSOS(false);
   };
+
+  const phoneToCall = callPhone || '+48000000000';
 
   // ──────────────────────────────────────
   // Ekran "Pomoc wezwana"
@@ -39,7 +48,7 @@ export function SeniorHomeScreen() {
 
           <BigButton
             title="Zadzwoń do bliskiego"
-            onPress={() => Linking.openURL('tel:+48000000000')}
+            onPress={() => Linking.openURL(`tel:${phoneToCall}`)}
             color={Colors.dangerDark}
             style={styles.callButton}
           />
@@ -90,9 +99,13 @@ export function SeniorHomeScreen() {
 
       {/* Przycisk JESTEM OK — wycentrowany */}
       <View style={styles.centerArea}>
-        {checkedIn ? (
+        {checkedInToday ? (
           <View style={styles.checkedCircle}>
             <Text style={styles.checkedText}>{'✔ Dziękuję!\nDo jutra.'}</Text>
+          </View>
+        ) : checkinLoading ? (
+          <View style={styles.checkedCircle}>
+            <ActivityIndicator size="large" color={Colors.primary} />
           </View>
         ) : (
           <BigButton
