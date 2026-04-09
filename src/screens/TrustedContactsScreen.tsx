@@ -6,6 +6,7 @@ import { Colors } from '../constants/colors';
 import { Radius, Spacing } from '../constants/tokens';
 import { useRelationship } from '../hooks/useRelationship';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
+import { shareCircleInvite } from '../utils/invite';
 
 function normalizePhone(phone: string) {
   return phone.replace(/[^\d+]/g, '');
@@ -92,6 +93,13 @@ export function TrustedContactsScreen() {
               </Pressable>
             </View>
 
+            <Pressable
+              onPress={() => shareCircleInvite()}
+              style={({ pressed }) => [styles.shareLink, pressed && { opacity: 0.6 }]}
+            >
+              <Text style={styles.shareLinkText}>Zaproś kogoś do Cmok</Text>
+            </Pressable>
+
             <View style={styles.listSection}>
               <Text style={styles.sectionLabel}>W kręgu</Text>
               {loading ? (
@@ -158,6 +166,8 @@ const styles = StyleSheet.create({
   },
   addButtonDisabled: { backgroundColor: Colors.disabled },
   addButtonText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  shareLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  shareLinkText: { fontSize: 14, fontWeight: '600', color: Colors.accent },
   listSection: { marginTop: 4 },
   emptyText: { fontSize: 15, color: Colors.textMuted },
   contactRow: {
