@@ -34,16 +34,13 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             { opacity: logoOpacity, transform: [{ translateY: logoTranslateY }] },
           ]}
         >
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>Codzienny kontakt bez napięcia</Text>
-          </View>
           <Text style={styles.logo}>Cmok</Text>
           <BrandMotif size={72} />
           <Text style={styles.tagline}>
-            Jeden spokojny znak{'\n'}na dziś.
+            Jeden spokojny znak{'\n'}dziennie od bliskiej osoby
           </Text>
           <Text style={styles.supporting}>
-            Mniej dzwonienia z niepokoju. Więcej zwykłej bliskości.
+            Gdy coś się dzieje, krąg bliskich wie od razu.
           </Text>
         </Animated.View>
       </View>
@@ -79,21 +76,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     maxWidth: 340,
   },
-  badge: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: Colors.accentWash,
-    borderWidth: 1,
-    borderColor: Colors.accentLight,
-    marginBottom: 18,
-  },
-  badgeText: {
-    fontSize: Typography.caption,
-    fontWeight: '700',
-    color: Colors.accentStrong,
-    letterSpacing: 0.2,
-  },
   logo: {
     fontSize: Typography.display,
     fontWeight: '800',
@@ -101,7 +83,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   tagline: {
-    fontSize: 30,
+    fontSize: 28,
     color: Colors.text,
     textAlign: 'center',
     lineHeight: 36,
@@ -127,7 +109,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 0,
     shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.12,
