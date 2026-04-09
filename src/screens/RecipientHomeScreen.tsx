@@ -18,7 +18,7 @@ import { Colors } from '../constants/colors';
 import { Radius, Spacing } from '../constants/tokens';
 import { useCircle } from '../hooks/useCircle';
 import { useSignals } from '../hooks/useSignals';
-import { useSOS } from '../hooks/useSOS';
+import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { haptics } from '../utils/haptics';
 import { openPhoneCall } from '../utils/linking';
 import { supabase } from '../services/supabase';
@@ -171,7 +171,7 @@ const PREVIEW_SUPPORT_PARTICIPANTS: SupportParticipantType[] = [
 export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHomePreview | null }) {
   const router = useRouter();
   const { signalers, loading: circleLoading } = useCircle();
-  const { supportCase, currentAlert, acknowledgeSOS, resolveSOS, loading: supportLoading } = useSOS();
+  const { urgentCase, currentAlert, claim, resolve, loading: urgentLoading } = useUrgentSignal();
 
   const signaler = signalers[0] || null;
   const [previewMode, setPreviewMode] = useState<RecipientHomePreview | null>(preview);
@@ -227,13 +227,13 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
       setTodayCheckinTime(todayCheckin ? formatTime(todayCheckin.checked_at) : null);
       setLastContactText(formatRelativeMoment(latestCheckin?.local_date ?? null, latestCheckin?.checked_at ?? null));
-      setSignalerStatus(supportCase?.viewerRole === 'primary' && currentAlert ? 'sos' : todayCheckin ? 'ok' : 'missing');
+      setSignalerStatus(urgentCase?.viewerRole === 'primary' && currentAlert ? 'sos' : todayCheckin ? 'ok' : 'missing');
     } catch (error) {
       console.error('fetchData error:', error);
     } finally {
       setDataLoading(false);
     }
-  }, [signalerId, supportCase?.viewerRole, currentAlert]);
+  }, [signalerId, urgentCase?.viewerRole, currentAlert]);
 
   useEffect(() => {
     if (previewEnabled) { setDataLoading(false); return; }
@@ -258,13 +258,13 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   const handleAcknowledge = async () => {
     if (!currentAlert) return;
-    try { await acknowledgeSOS(currentAlert.id); }
+    try { await claim(currentAlert.id); }
     catch { Alert.alert('Coś poszło nie tak', 'Nie udało się przejąć.'); }
   };
 
   const handleResolve = async () => {
     if (!currentAlert) return;
-    try { await resolveSOS(currentAlert.id); }
+    try { await resolve(currentAlert.id); }
     catch { Alert.alert('Coś poszło nie tak', 'Nie udało się zamknąć.'); }
   };
 
@@ -314,7 +314,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     participants: PREVIEW_SUPPORT_PARTICIPANTS,
   } : null;
 
-  const effectiveSupportCase = previewEnabled ? previewSupportCase : supportCase;
+  const effectiveSupportCase = previewEnabled ? previewSupportCase : urgentCase;
   const effectiveAlert = previewEnabled ? previewSupportCase?.alert ?? null : currentAlert;
 
   if (effectiveSupportCase?.viewerRole === 'primary' && effectiveAlert) {
@@ -350,7 +350,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             {!isClaimed ? (
               <Pressable
                 onPress={handleAcknowledge}
-                disabled={supportLoading}
+                disabled={urgentLoading}
                 style={({ pressed }) => [st.primaryBtn, pressed && { opacity: 0.9 }]}
               >
                 <Text style={st.primaryBtnText}>Zajmuję się tym</Text>
@@ -359,7 +359,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             {isClaimedByMe ? (
               <Pressable
                 onPress={handleResolve}
-                disabled={supportLoading}
+                disabled={urgentLoading}
                 style={({ pressed }) => [st.secondaryBtn, pressed && { opacity: 0.8 }]}
               >
                 <Text style={st.secondaryBtnText}>Wszystko OK — zamknij</Text>

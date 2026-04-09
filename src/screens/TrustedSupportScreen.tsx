@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
 import { Radius, Spacing } from '../constants/tokens';
 import { SupportParticipants } from '../components/SupportParticipants';
-import { useSOS } from '../hooks/useSOS';
+import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { openPhoneCall } from '../utils/linking';
 
 function formatTime(isoString: string) {
@@ -14,17 +14,17 @@ function formatTime(isoString: string) {
 
 export function TrustedSupportScreen() {
   const router = useRouter();
-  const { supportCase, currentAlert, loading, refreshing, acknowledgeSOS, resolveSOS } = useSOS();
+  const { urgentCase, currentAlert, loading, refreshing, claim, resolve } = useUrgentSignal();
 
   const handleClaim = async () => {
     if (!currentAlert) return;
-    try { await acknowledgeSOS(currentAlert.id); }
+    try { await claim(currentAlert.id); }
     catch { Alert.alert('Coś poszło nie tak', 'Nie udało się przejąć.'); }
   };
 
   const handleResolve = async () => {
     if (!currentAlert) return;
-    try { await resolveSOS(currentAlert.id); }
+    try { await resolve(currentAlert.id); }
     catch { Alert.alert('Coś poszło nie tak', 'Nie udało się zamknąć.'); }
   };
 
@@ -38,7 +38,7 @@ export function TrustedSupportScreen() {
 
   /* ─── empty state ─── */
 
-  if (!supportCase || !currentAlert) {
+  if (!urgentCase || !currentAlert) {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
@@ -61,19 +61,19 @@ export function TrustedSupportScreen() {
   /* ─── active support case ─── */
 
   const hasLocation = currentAlert.latitude != null && currentAlert.longitude != null;
-  const isClaimed = !!supportCase.claimerId;
-  const isClaimedByMe = supportCase.claimerId === supportCase.viewerUserId;
+  const isClaimed = !!urgentCase.claimerId;
+  const isClaimedByMe = urgentCase.claimerId === urgentCase.viewerUserId;
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.urgentLabel}>Pilne</Text>
-        <Text style={styles.urgentTitle}>{supportCase.signalerName} potrzebuje pomocy</Text>
+        <Text style={styles.urgentTitle}>{urgentCase.signalerName} potrzebuje pomocy</Text>
         <Text style={styles.urgentBody}>
           {isClaimed
             ? isClaimedByMe
               ? 'Zajmujesz się tym.'
-              : `${supportCase.claimerName} już się tym zajmuje.`
+              : `${urgentCase.claimerName} już się tym zajmuje.`
             : 'Nikt jeszcze nie odpowiedział.'}
         </Text>
 
@@ -105,11 +105,11 @@ export function TrustedSupportScreen() {
           </Pressable>
         ) : null}
 
-        <SupportParticipants participants={supportCase.participants} />
+        <SupportParticipants participants={urgentCase.participants} />
 
-        {isClaimedByMe && supportCase.participants[0]?.phone ? (
+        {isClaimedByMe && urgentCase.participants[0]?.phone ? (
           <Pressable
-            onPress={() => openPhoneCall(supportCase.participants[0].phone, 'Nie udało się połączyć.')}
+            onPress={() => openPhoneCall(urgentCase.participants[0].phone, 'Nie udało się połączyć.')}
             style={({ pressed }) => [styles.callLink, pressed && { opacity: 0.7 }]}
           >
             <Text style={styles.callLinkText}>Zadzwoń</Text>

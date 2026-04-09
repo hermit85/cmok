@@ -14,7 +14,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { StatusPill } from '../components/StatusPill';
 import { Particles } from '../components/Particles';
-import { SOSConfirmation } from '../components/SOSConfirmation';
+import { UrgentConfirmation } from '../components/UrgentConfirmation';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
 import { Radius, Spacing, Shadows } from '../constants/tokens';
@@ -23,7 +23,7 @@ import { openPhoneCall } from '../utils/linking';
 import { useCheckin } from '../hooks/useCheckin';
 import { useCircle } from '../hooks/useCircle';
 import { useSignals } from '../hooks/useSignals';
-import { useSOS } from '../hooks/useSOS';
+import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync';
 import type { Signal, SupportParticipant } from '../types';
 import type { SignalerHomePreview } from '../dev/homePreview';
@@ -105,16 +105,16 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const { recipients } = useCircle();
   const { todaySignals } = useSignals();
   const {
-    sosActive,
+    isActive: urgentActive,
     currentAlert,
-    supportCase,
-    loading: supportLoading,
-    triggerSOS,
-    retrySOS,
-    cancelSOS,
-  } = useSOS();
+    urgentCase,
+    loading: urgentLoading,
+    sendUrgentSignal,
+    retrySend,
+    cancel: cancelUrgent,
+  } = useUrgentSignal();
 
-  const [showSOSModal, setShowSOSModal] = useState(false);
+  const [showUrgentModal, setShowUrgentModal] = useState(false);
   const [localSupportState, setLocalSupportState] = useState<'none' | 'offline'>('none');
   const [isOffline, setIsOffline] = useState(false);
   const [pendingSaved, setPendingSaved] = useState(false);
@@ -269,8 +269,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     }
   }, [previewEnabled, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, playSuccessRelease]);
 
-  const handleSOSConfirm = async () => {
-    setShowSOSModal(false);
+  const handleUrgentConfirm = async () => {
+    setShowUrgentModal(false);
     if (previewEnabled) { setPreviewMode('support'); return; }
     if (!authReady || !isAuthenticated) {
       Alert.alert('Zaloguj ten telefon ponownie', 'Żeby wysłać pilny sygnał, ten telefon musi być połączony z kontem.');
@@ -278,7 +278,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     }
     if (isOffline) { setLocalSupportState('offline'); return; }
     try {
-      await triggerSOS();
+      await sendUrgentSignal();
       setLocalSupportState('none');
     } catch {
       Alert.alert('Coś poszło nie tak', 'Nie udało się wysłać sygnału.');
@@ -288,7 +288,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const handleCancelAlarm = async () => {
     if (!currentAlert) { setLocalSupportState('none'); return; }
     try {
-      await cancelSOS(currentAlert.id);
+      await cancelUrgent(currentAlert.id);
       setLocalSupportState('none');
     } catch {
       Alert.alert('Coś poszło nie tak', 'Nie udało się anulować.');
@@ -297,7 +297,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   const handleRetry = async () => {
     if (isOffline || localSupportState === 'offline') { setLocalSupportState('offline'); return; }
-    try { await retrySOS(); } catch {
+    try { await retrySend(); } catch {
       Alert.alert('Coś poszło nie tak', 'Nie udało się ponowić.');
     }
   };
@@ -332,12 +332,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         viewerRole: 'signaler' as const,
         participants: DEV_PREVIEW_PARTICIPANTS,
       }
-    : supportCase;
+    : urgentCase;
 
   const shouldShowSupport =
     localSupportState === 'offline' ||
     previewIsSupport ||
-    (sosActive && effectiveAlert && effectiveSupportCase?.viewerRole === 'signaler');
+    (urgentActive && effectiveAlert && effectiveSupportCase?.viewerRole === 'signaler');
 
   if (shouldShowSupport) {
     const hasLocation = effectiveAlert?.latitude != null && effectiveAlert?.longitude != null;
@@ -347,17 +347,17 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       <SafeAreaView style={s.container}>
         <ScrollView contentContainerStyle={s.supportScroll} showsVerticalScrollIndicator={false}>
           <Text style={s.urgentLabel}>Pilne</Text>
-          <Text style={s.urgentTitle}>
+          <Text style={s.urgentTitle} maxFontSizeMultiplier={1.3}>
             {localSupportState === 'offline'
-              ? 'Brak połączenia z internetem'
-              : 'Wysłaliśmy sygnał do bliskich'}
+              ? 'Brak internetu'
+              : 'Krąg bliskich dostał sygnał'}
           </Text>
           <Text style={s.urgentBody}>
             {localSupportState === 'offline'
-              ? 'Jeśli to nagła sytuacja, zadzwoń na 112. Bez internetu nie możemy wysłać sygnału.'
+              ? 'Bez internetu nie możemy wysłać sygnału. Jeśli to pilne, zadzwoń bezpośrednio.'
               : claimerName
                 ? `${claimerName} już się tym zajmuje.`
-                : 'Czekamy, aż ktoś odpowie.'}
+                : 'Czekamy, aż ktoś z kręgu odpowie.'}
           </Text>
 
           {effectiveAlert ? (
@@ -379,11 +379,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           <View style={s.urgentActions}>
             <Pressable
               onPress={handleRetry}
-              disabled={supportLoading || localSupportState === 'offline'}
+              disabled={urgentLoading || localSupportState === 'offline'}
               style={({ pressed }) => [
                 s.urgentPrimary,
-                (supportLoading || localSupportState === 'offline') && s.urgentPrimaryDisabled,
-                pressed && !supportLoading && localSupportState !== 'offline' && { opacity: 0.9 },
+                (urgentLoading || localSupportState === 'offline') && s.urgentPrimaryDisabled,
+                pressed && !urgentLoading && localSupportState !== 'offline' && { opacity: 0.9 },
               ]}
             >
               <Text style={s.urgentPrimaryText}>Wyślij ponownie</Text>
@@ -459,7 +459,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   return (
     <SafeAreaView style={s.container}>
-      <SOSConfirmation visible={showSOSModal} onConfirm={handleSOSConfirm} onCancel={() => setShowSOSModal(false)} />
+      <UrgentConfirmation visible={showUrgentModal} onConfirm={handleUrgentConfirm} onCancel={() => setShowUrgentModal(false)} />
 
       <ScreenHeader subtitle={relationName} />
 
@@ -546,7 +546,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                 Alert.alert('Zaloguj ten telefon ponownie', 'Żeby wysłać pilny sygnał, ten telefon musi być połączony z kontem.');
                 return;
               }
-              setShowSOSModal(true);
+              setShowUrgentModal(true);
             }}
             style={({ pressed }) => [
               s.urgentTrigger,
