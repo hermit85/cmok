@@ -2,26 +2,65 @@ import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 
+type ButtonVariant = 'solid' | 'outline' | 'soft';
+
 interface BigButtonProps {
   title: string;
   onPress: () => void;
   color?: string;
   textColor?: string;
   size?: 'large' | 'medium';
+  variant?: ButtonVariant;
+  elevation?: boolean;
   disabled?: boolean;
-  style?: ViewStyle;
+  style?: ViewStyle | ViewStyle[];
 }
 
 export function BigButton({
   title,
   onPress,
-  color = Colors.primary,
-  textColor = '#FFFFFF',
+  color = Colors.accent,
+  textColor,
   size = 'medium',
+  variant = 'solid',
+  elevation = false,
   disabled,
   style,
 }: BigButtonProps) {
   const isLarge = size === 'large';
+
+  // Resolve colors by variant
+  let bgColor: string;
+  let resolvedTextColor: string;
+  let borderWidth = 0;
+  let borderColor = 'transparent';
+
+  if (disabled) {
+    bgColor = Colors.surface;
+    resolvedTextColor = Colors.textMuted;
+    borderWidth = 1;
+    borderColor = Colors.border;
+  } else if (variant === 'outline') {
+    bgColor = 'transparent';
+    resolvedTextColor = textColor || color;
+    borderWidth = 1.5;
+    borderColor = color;
+  } else if (variant === 'soft') {
+    bgColor = color + '1F'; // ~12% opacity hex
+    resolvedTextColor = textColor || color;
+  } else {
+    // solid
+    bgColor = color;
+    resolvedTextColor = textColor || '#FFFFFF';
+  }
+
+  const elevationStyle = elevation ? {
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 } as const,
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 4,
+  } : {};
 
   return (
     <Pressable
@@ -31,16 +70,19 @@ export function BigButton({
         styles.button,
         isLarge ? styles.large : styles.medium,
         {
-          backgroundColor: color,
-          opacity: pressed ? 0.85 : 1,
+          backgroundColor: bgColor,
+          borderWidth,
+          borderColor,
         },
-        style,
+        elevationStyle,
+        style as ViewStyle,
+        pressed && !disabled && { opacity: 0.85, transform: [{ scale: 0.96 }] },
       ]}
     >
       <Text
         style={[
           styles.text,
-          { color: textColor },
+          { color: resolvedTextColor },
           isLarge && styles.largeText,
         ]}
       >
@@ -54,17 +96,12 @@ const styles = StyleSheet.create({
   button: {
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 6,
+    minHeight: 44,
   },
   medium: {
-    minHeight: Typography.minSeniorTouch,
-    borderRadius: 16,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
+    minHeight: 58,
+    borderRadius: 18,
+    paddingHorizontal: 28,
   },
   large: {
     width: 180,
@@ -72,12 +109,14 @@ const styles = StyleSheet.create({
     borderRadius: 90,
   },
   text: {
-    fontSize: Typography.seniorButton,
-    fontWeight: '700',
+    fontSize: 16,
+    fontFamily: Typography.fontFamilyMedium,
     textAlign: 'center',
+    letterSpacing: 0.1,
   },
   largeText: {
-    fontSize: Typography.seniorButton,
-    fontWeight: '800',
+    fontSize: Typography.heading,
+    fontFamily: Typography.fontFamilyBold,
+    letterSpacing: 0,
   },
 });

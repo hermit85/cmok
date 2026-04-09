@@ -1,22 +1,24 @@
-export interface User {
+export type AppRole = 'signaler' | 'recipient';
+export type RelationshipStatus = 'none' | 'pending' | 'active';
+
+export interface AppProfile {
   id: string;
   phone: string;
   name: string;
-  role: 'senior' | 'caregiver';
-  checkin_time: string | null;
+  role: AppRole;
+  checkinTime: string | null;
   timezone: string;
 }
 
-export interface CarePair {
+export interface Relationship {
   id: string;
-  senior_id: string;
-  caregiver_id: string;
-  priority: number;
-  sms_fallback_phone: string;
-  invite_code: string | null;
-  invite_expires_at: string | null;
-  status: 'pending' | 'active';
-  joined_at: string | null;
+  signalerUserId: string | null;
+  recipientUserId: string;
+  signalerLabel: string | null;
+  inviteCode: string | null;
+  inviteExpiresAt: string | null;
+  status: Exclude<RelationshipStatus, 'none'>;
+  joinedAt: string | null;
 }
 
 export interface DailyCheckin {
@@ -38,4 +40,58 @@ export interface AlertCase {
   acknowledged_by: string | null;
   acknowledged_at: string | null;
   resolved_at: string | null;
+}
+
+export type SupportViewerRole = 'signaler' | 'primary' | 'trusted';
+export type SupportRecipientKind = 'primary' | 'trusted';
+export type SupportDeliveryState = 'sent' | 'failed' | 'pending';
+
+export interface TrustedContact {
+  id: string;
+  relationshipId: string;
+  userId: string;
+  name: string;
+  phone: string;
+  status: 'active' | 'removed';
+}
+
+export interface SupportParticipant {
+  userId: string;
+  name: string;
+  phone: string;
+  kind: SupportRecipientKind;
+  deliveryStatus: SupportDeliveryState;
+  isClaimedBy: boolean;
+}
+
+export interface SupportCase {
+  alert: AlertCase;
+  relationshipId: string;
+  viewerUserId: string;
+  signalerId: string;
+  signalerName: string;
+  primaryRecipientId: string;
+  claimerId: string | null;
+  claimerName: string | null;
+  viewerRole: SupportViewerRole;
+  participants: SupportParticipant[];
+}
+
+export interface Signal {
+  id: string;
+  from_user_id: string;
+  to_user_id: string;
+  type: 'reaction' | 'nudge';
+  emoji: string | null;
+  message: string | null;
+  created_at: string;
+  seen_at: string | null;
+}
+
+export interface CircleMember {
+  userId: string;
+  name: string;
+  phone: string;
+  role: AppRole;
+  relationshipId: string;
 }

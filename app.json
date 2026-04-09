@@ -7,11 +7,15 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "cmok",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#F7F3EE"
     },
     "ios": {
       "supportsTablet": false,
@@ -22,7 +26,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF",
+        "backgroundColor": "#F7F3EE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -42,7 +46,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#27AE60"
+          "color": "#6F8F72"
         }
       ],
       "expo-secure-store",
@@ -51,7 +55,8 @@
         {
           "locationWhenInUsePermission": "Cmok potrzebuje lokalizacji do wysłania alertu SOS z Twoją pozycją."
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

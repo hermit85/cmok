@@ -80,7 +80,7 @@ serve(async (_req) => {
           .eq('senior_id', senior.id)
           .eq('local_date', todayStr)
           .limit(1)
-          .single();
+          .maybeSingle();
 
         if (todayCheckin) continue; // Jest check-in → OK
 
@@ -101,7 +101,7 @@ serve(async (_req) => {
             .eq('channel', 'push')
             .gte('sent_at', todayStr + 'T00:00:00Z')
             .limit(1)
-            .single();
+            .maybeSingle();
 
           if (existingReminder) continue; // Już wysłano
 
@@ -140,7 +140,7 @@ serve(async (_req) => {
             .in('state', ['open', 'acknowledged'])
             .gte('triggered_at', todayStr + 'T00:00:00Z')
             .limit(1)
-            .single();
+            .maybeSingle();
 
           if (existingAlert) continue; // Już jest alert
 

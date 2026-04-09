@@ -1,16 +1,42 @@
 export const Colors = {
-  primary: '#27AE60',          // zielony — check-in OK
-  danger: '#E74C3C',           // czerwony — SOS
-  dangerDark: '#C0392B',       // ciemniejszy czerwony — przycisk na tle SOS
-  accent: '#2E86C1',           // niebieski — info
-  disabled: '#BDC3C7',         // szary — nieaktywne elementy
-  background: '#FFFFFF',
-  screenBg: '#F5F5F5',         // lekko szare tło ekranu
-  cardBg: '#FFFFFF',           // tło kart
-  text: '#1A1A1A',
-  textSecondary: '#555555',
-  statusOkBg: '#E8F8F5',       // badge "OK" — tło
-  statusOkText: '#0E6655',     // badge "OK" — tekst
-  statusMissingBg: '#FDEDEC',  // badge "brak znaku" — tło
-  statusMissingText: '#922B21', // badge "brak znaku" — tekst
+  // Canvas
+  background: '#FAF6F1',
+  backgroundSoft: '#F4EEE7',
+  card: '#FFFCF8',
+  cardStrong: '#FFFFFF',
+  surface: '#F1EBE3',
+  surfaceWarm: '#F9EEE7',
+
+  // Brand
+  accent: '#D87461',
+  accentStrong: '#C96351',
+  accentLight: '#F8E8E1',
+  accentWash: '#FDF3EF',
+  safe: '#738F76',
+  safeStrong: '#5F7C62',
+  safeLight: '#ECF3EC',
+  safeWash: '#F5F9F4',
+
+  // Text
+  text: '#222633',
+  textSecondary: '#6E6862',
+  textMuted: '#AAA299',
+  textSoft: '#BEB5AC',
+
+  // Alert
+  alert: '#C55345',
+  alertLight: '#FCEBE8',
+  alertDark: '#A54337',
+
+  // UI
+  border: '#E6DDD4',
+  borderStrong: '#DDCFC1',
+  disabled: '#D9D1C8',
+  shadow: '#201813',
+
+  // Status
+  statusOkBg: '#ECF3EC',
+  statusOkText: '#557159',
+  statusMissingBg: '#F8EEE8',
+  statusMissingText: '#B5644F',
 } as const;

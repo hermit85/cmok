@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-const SUPABASE_URL = 'https://pckpxspcecbvjprxmdja.supabase.co';
+export const SUPABASE_URL = 'https://pckpxspcecbvjprxmdja.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_vTRaZ3u4_r0xZjyJwxGmEg_z7ylSAnP';
 
 const StorageAdapter = {

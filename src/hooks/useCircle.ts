@@ -1,0 +1,117 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../services/supabase';
+import type { AppRole, CircleMember } from '../types';
+import { normalizeAppRole } from '../utils/roles';
+
+export function useCircle() {
+  const [members, setMembers] = useState<CircleMember[]>([]);
+  const [userRole, setUserRole] = useState<AppRole | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCircle = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        setError(profileError.message);
+        return;
+      }
+
+      if (!profile) return;
+      const normalizedRole = normalizeAppRole(profile.role);
+      if (!normalizedRole) {
+        setError('Unknown user role');
+        return;
+      }
+      setUserRole(normalizedRole);
+
+      const { data: pairs, error: pairsError } = await supabase
+        .from('care_pairs')
+        .select('*')
+        .or(`senior_id.eq.${user.id},caregiver_id.eq.${user.id}`)
+        .eq('status', 'active');
+
+      if (pairsError) {
+        setError(pairsError.message);
+        return;
+      }
+
+      if (!pairs || pairs.length === 0) {
+        setMembers([]);
+        return;
+      }
+
+      const otherIds = pairs
+        .map((pair) => (pair.senior_id === user.id ? pair.caregiver_id : pair.senior_id))
+        .filter(Boolean);
+
+      const uniqueIds = [...new Set(otherIds)];
+
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, phone, role')
+        .in('id', uniqueIds);
+
+      if (usersError) {
+        console.error('[useCircle] users query error:', usersError);
+      }
+
+      const userMap = new Map((users || []).map((circleUser) => [circleUser.id, circleUser]));
+
+      const circleMembers: CircleMember[] = pairs
+        .map((pair) => {
+          const otherId = pair.senior_id === user.id ? pair.caregiver_id : pair.senior_id;
+          const otherUser = userMap.get(otherId);
+
+          if (!otherId) return null;
+
+          return {
+            userId: otherId,
+            name: otherUser?.name || pair.signaler_label || pair.senior_name || 'Bliska osoba',
+            phone: otherUser?.phone || '',
+            role: normalizeAppRole(otherUser?.role) || (pair.senior_id === user.id ? 'recipient' : 'signaler'),
+            relationshipId: pair.id,
+          };
+        })
+        .filter((member): member is CircleMember => !!member);
+
+      setMembers(circleMembers);
+    } catch (err) {
+      console.error('[useCircle] fetchCircle error:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCircle();
+  }, [fetchCircle]);
+
+  const signalers = members.filter((member) => member.role === 'signaler');
+  const recipients = members.filter((member) => member.role === 'recipient');
+
+  return {
+    members,
+    signalers,
+    recipients,
+    circleCount: members.length,
+    userRole,
+    loading,
+    error,
+    refreshCircle: fetchCircle,
+  };
+}

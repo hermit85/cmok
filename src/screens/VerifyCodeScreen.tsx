@@ -1,34 +1,57 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { supabase } from '../services/supabase';
+import type { AppRole, RelationshipStatus } from '../types';
+import { normalizeAppRole } from '../utils/roles';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
-import { supabase } from '../services/supabase';
 
-interface VerifyCodeScreenProps {
-  phone: string;
-  role: 'senior' | 'caregiver';
-  onVerified: () => void;
+export interface VerifyResult {
+  profile: { id: string; role: AppRole; name: string } | null;
+  relationshipStatus: RelationshipStatus;
 }
 
-export function VerifyCodeScreen({ phone, role, onVerified }: VerifyCodeScreenProps) {
+interface VerifyCodeScreenProps {
+  onBack: () => void;
+  phone: string;
+  relationLabel?: string;
+  onVerified: (result: VerifyResult) => void;
+}
+
+function CodeBoxes({ code }: { code: string }) {
+  const digits = code.padEnd(6, ' ').split('').slice(0, 6);
+
+  return (
+    <View style={styles.boxRow}>
+      {digits.map((digit, index) => {
+        const isFocused = index === code.length && code.length < 6;
+        const isFilled = digit.trim().length > 0;
+        return (
+          <View key={index} style={[styles.box, isFocused && styles.boxFocused]}>
+            {isFilled ? <Text style={styles.boxDigit}>{digit}</Text> : null}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+export function VerifyCodeScreen({ onBack, phone, relationLabel = 'bliskiej osoby', onVerified }: VerifyCodeScreenProps) {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(60);
   const inputRef = useRef<TextInput>(null);
 
-  // Format phone for display: +48 XXX XXX XXX
   const displayPhone = phone.replace(/(\+48)(\d{3})(\d{3})(\d{3})/, '$1 $2 $3 $4');
 
-  // Resend countdown
   useEffect(() => {
     if (resendCooldown <= 0) return;
-    const timer = setTimeout(() => setResendCooldown((p) => p - 1), 1000);
+    const timer = setTimeout(() => setResendCooldown((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
-  // Auto-verify when 6 digits entered
   useEffect(() => {
     if (code.length === 6) {
       handleVerify(code);
@@ -47,31 +70,46 @@ export function VerifyCodeScreen({ phone, role, onVerified }: VerifyCodeScreenPr
 
       if (verifyError) throw verifyError;
 
-      const userId = data.user?.id;
-      if (!userId) throw new Error('Brak ID użytkownika');
+      const user = data.user;
+      if (!user?.id) throw new Error('Brak ID użytkownika');
 
-      // Sprawdź czy user istnieje w public.users
-      const { data: existing } = await supabase
+      const { data: profile } = await supabase
         .from('users')
-        .select('id')
-        .eq('id', userId)
-        .single();
+        .select('id, role, name')
+        .eq('id', user.id)
+        .maybeSingle();
 
-      if (!existing) {
-        // Nowy użytkownik — utwórz profil
-        const { error: insertError } = await supabase.from('users').insert({
-          id: userId,
-          phone,
-          name: role === 'senior' ? 'Senior' : 'Bliski',
-          role,
-        });
-        if (insertError && !insertError.message.includes('duplicate')) {
-          throw insertError;
+      let relationshipStatus: RelationshipStatus = 'none';
+
+      if (profile) {
+        const role = normalizeAppRole(profile.role);
+        if (!role) throw new Error('Nieznana rola użytkownika');
+        const relationshipColumn = role === 'recipient' ? 'caregiver_id' : 'senior_id';
+        const allowedStatuses = role === 'recipient' ? ['active', 'pending'] : ['active'];
+
+        const { data: relationships } = await supabase
+          .from('care_pairs')
+          .select('id, status')
+          .eq(relationshipColumn, user.id)
+          .in('status', allowedStatuses)
+          .limit(5);
+
+        const preferredRelationship = (relationships || []).sort((a, b) => {
+          if (a.status === b.status) return 0;
+          return a.status === 'active' ? -1 : 1;
+        })[0];
+
+        if (preferredRelationship) {
+          relationshipStatus = preferredRelationship.status as Exclude<RelationshipStatus, 'none'>;
         }
       }
 
-      onVerified();
-    } catch (err: any) {
+      onVerified({
+        profile: profile ? { id: profile.id, role: normalizeAppRole(profile.role) as AppRole, name: profile.name } : null,
+        relationshipStatus,
+      });
+    } catch (err) {
+      console.error('[VERIFY] error:', err);
       setError('Nieprawidłowy kod. Spróbuj ponownie.');
       setCode('');
       inputRef.current?.focus();
@@ -87,26 +125,39 @@ export function VerifyCodeScreen({ phone, role, onVerified }: VerifyCodeScreenPr
       setResendCooldown(60);
       Alert.alert('Wysłano', 'Nowy kod SMS został wysłany.');
     } catch {
-      Alert.alert('Błąd', 'Nie udało się wysłać nowego kodu.');
+      Alert.alert('Coś poszło nie tak', 'Nie udało się wysłać nowego kodu.');
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Wpisz kod z SMS</Text>
-        <Text style={styles.subtitle}>Wysłaliśmy kod na {displayPhone}</Text>
+      <Text style={styles.miniLogo}>Cmok</Text>
 
-        <TextInput
-          ref={inputRef}
-          style={styles.codeInput}
-          value={code}
-          onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))}
-          keyboardType="number-pad"
-          autoFocus
-          maxLength={6}
-          textContentType="oneTimeCode"
-        />
+      <View style={styles.content}>
+        <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
+          <Text style={styles.backText}>← Wróć</Text>
+        </Pressable>
+
+        <Text style={styles.eyebrow}>Prawie gotowe</Text>
+        <Text style={styles.title}>Wpisz kod</Text>
+        <Text style={styles.subtitle}>To tylko szybkie wejście do relacji z {relationLabel}. Kod wysłaliśmy na {displayPhone}</Text>
+
+        <View style={styles.codeCard}>
+          <Pressable onPress={() => inputRef.current?.focus()}>
+            <CodeBoxes code={code} />
+          </Pressable>
+          <TextInput
+            ref={inputRef}
+            style={styles.hiddenInput}
+            value={code}
+            onChangeText={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
+            keyboardType="number-pad"
+            autoFocus
+            maxLength={6}
+            textContentType="oneTimeCode"
+          />
+        </View>
+          <Text style={styles.helper}>Kod służy tylko do wejścia do konta i po chwili wygaśnie.</Text>
 
         {loading && (
           <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: 16 }} />
@@ -117,9 +168,9 @@ export function VerifyCodeScreen({ phone, role, onVerified }: VerifyCodeScreenPr
         <Pressable
           onPress={handleResend}
           disabled={resendCooldown > 0}
-          style={styles.resendLink}
+          style={({ pressed }) => [styles.resendLink, pressed && resendCooldown <= 0 && { opacity: 0.6 }]}
         >
-          <Text style={[styles.resendText, resendCooldown > 0 && { color: Colors.disabled }]}>
+          <Text style={[styles.resendText, resendCooldown > 0 && { color: Colors.textSoft }]}>
             {resendCooldown > 0
               ? `Wyślij ponownie za ${resendCooldown}s`
               : 'Wyślij kod ponownie'}
@@ -131,56 +182,81 @@ export function VerifyCodeScreen({ phone, role, onVerified }: VerifyCodeScreenPr
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 32,
-    paddingTop: 60,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 8,
-    alignSelf: 'flex-start',
-  },
-  subtitle: {
+  container: { flex: 1, backgroundColor: Colors.background },
+  miniLogo: {
     fontSize: 16,
-    color: Colors.textSecondary,
-    marginBottom: 32,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.accent,
+    paddingHorizontal: 28,
+    paddingTop: 16,
+  },
+  content: { flex: 1, paddingHorizontal: 28, paddingTop: 38, alignItems: 'center' },
+  eyebrow: {
+    fontSize: Typography.caption,
+    fontFamily: Typography.fontFamilyBold,
+    color: Colors.accentStrong,
+    marginBottom: 10,
     alignSelf: 'flex-start',
   },
-  codeInput: {
+  title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 8, alignSelf: 'flex-start' },
+  subtitle: { fontSize: Typography.body, color: Colors.textSecondary, marginBottom: 24, alignSelf: 'flex-start' },
+  codeCard: {
     width: '100%',
-    fontSize: 28,
+    backgroundColor: Colors.card,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+  },
+  codeWrapper: {
+    width: '100%', backgroundColor: Colors.surface, borderRadius: 18,
+    minHeight: 60, justifyContent: 'center',
+  },
+  boxRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  box: {
+    flex: 1,
+    minHeight: 58,
+    borderRadius: 16,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxFocused: {
+    borderColor: Colors.accent,
+  },
+  boxDigit: {
+    fontSize: 26,
     fontWeight: '700',
     color: Colors.text,
-    textAlign: 'center',
-    letterSpacing: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.accent,
-    paddingVertical: 12,
-    marginBottom: 16,
   },
-  error: {
-    fontSize: 16,
-    color: Colors.danger,
-    textAlign: 'center',
+  hiddenInput: {
+    position: 'absolute',
+    opacity: 0,
+    height: 0,
+    width: 0,
+  },
+  helper: {
+    fontSize: Typography.caption,
+    lineHeight: 18,
+    color: Colors.textMuted,
     marginTop: 12,
   },
-  resendLink: {
-    minHeight: Typography.minSeniorTouch,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
+  error: { fontSize: 15, color: Colors.alert, textAlign: 'center', marginTop: 12 },
+  resendLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 24 },
+  resendText: { fontSize: 15, color: Colors.accent, textDecorationLine: 'underline' },
+  backButton: {
+    alignSelf: 'flex-start' as const,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    minHeight: 44,
+    marginBottom: 18,
+    marginLeft: -8,
   },
-  resendText: {
-    fontSize: 16,
-    color: Colors.accent,
-    textDecorationLine: 'underline',
-  },
+  backText: { fontSize: 16, fontWeight: '500', color: Colors.accent },
 });
