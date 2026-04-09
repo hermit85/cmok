@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { useRelationship } from '../hooks/useRelationship';
-import { shareInvite } from '../utils/invite';
+import { shareInvite, logInviteEvent } from '../utils/invite';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius } from '../constants/tokens';
@@ -32,6 +32,7 @@ export function WaitingForConnectionScreen() {
     if (!relationship?.inviteCode) return;
     try {
       await Clipboard.setStringAsync(relationship.inviteCode);
+      logInviteEvent('invite_code_copied', { code: relationship.inviteCode });
       Alert.alert('Skopiowano', 'Kod jest w schowku.');
     } catch { /* silent */ }
   };
