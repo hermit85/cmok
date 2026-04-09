@@ -41,7 +41,7 @@ export function RelationNameScreen({
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>Krok 3 z 4</Text>
+        <Text style={styles.eyebrow}>Nazwa</Text>
         <Text style={styles.title}>Jak ma się wyświetlać ta osoba?</Text>
         <Text style={styles.subtitle}>Możesz zostawić {relationType} albo wpisać własną nazwę.</Text>
 

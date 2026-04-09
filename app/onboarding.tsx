@@ -106,10 +106,16 @@ export default function OnboardingFlow() {
     setStep('relation-type');
   };
 
+  const STANDARD_RELATIONS = ['Mama', 'Tata', 'Babcia', 'Dziadek'];
+
   const handleRelationTypeSelected = (value: string) => {
     setRelationType(value);
     setRelationLabel(value);
-    setStep('relation-name');
+    if (STANDARD_RELATIONS.includes(value)) {
+      setStep('phone');
+    } else {
+      setStep('relation-name');
+    }
   };
 
   const handleRelationNameSelected = (value: string) => {
@@ -139,7 +145,11 @@ export default function OnboardingFlow() {
         setStep('relation-type');
         break;
       case 'phone':
-        setStep('relation-name');
+        if (STANDARD_RELATIONS.includes(relationType)) {
+          setStep('relation-type');
+        } else {
+          setStep('relation-name');
+        }
         break;
       case 'verify':
         setStep('phone');

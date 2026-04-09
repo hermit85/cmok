@@ -51,7 +51,7 @@ export function TrustedSupportScreen() {
 
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>Teraz jest spokojnie</Text>
-            <Text style={styles.emptyText}>Nie ma żadnego pilnego sygnału.</Text>
+            <Text style={styles.emptyText}>Gdy ktoś z kręgu wyśle pilny sygnał, zobaczysz go tutaj.</Text>
           </View>
         </ScrollView>
       </SafeAreaView>

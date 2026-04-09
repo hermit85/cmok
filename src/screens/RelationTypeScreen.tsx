@@ -37,7 +37,7 @@ export function RelationTypeScreen({ initialValue, onBack, onContinue }: Relatio
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>Krok 2 z 4</Text>
+        <Text style={styles.eyebrow}>Relacja</Text>
         <Text style={styles.title}>Kogo dotyczy ten kontakt?</Text>
         <Text style={styles.subtitle}>Wybierz relację. Własną nazwę wpiszesz dopiero po wyborze ostatniej opcji.</Text>
 

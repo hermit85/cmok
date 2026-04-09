@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import type { AppRole } from '../types';
@@ -43,56 +43,68 @@ export function PhoneAuthScreen({ onBack, onCodeSent, selectedRole, relationLabe
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.miniLogo}>Cmok</Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
+          <Text style={styles.miniLogo}>Cmok</Text>
 
-      <View style={styles.content}>
-        <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
-          <Text style={styles.backText}>← Wróć</Text>
-        </Pressable>
+          <View style={styles.content}>
+            <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
+              <Text style={styles.backText}>← Wróć</Text>
+            </Pressable>
 
-        <Text style={styles.eyebrow}>Wejście do konta</Text>
-        <Text style={styles.title}>Podaj swój numer</Text>
-        <Text style={styles.subtitle}>
-          {selectedRole === 'recipient'
-            ? `Na tym telefonie będziesz widzieć znak ${relationFrom(relationLabel)}.`
-            : selectedRole === 'signaler'
-              ? `To będzie telefon ${relationDisplay(relationLabel)}. Tutaj raz dziennie pojawi się prosty gest „u mnie dobrze”.`
-              : 'Numer potrzebny jest do wejścia do Cmok.'}
-        </Text>
+            <Text style={styles.eyebrow}>Wejście do konta</Text>
+            <Text style={styles.title}>Podaj swój numer</Text>
+            <Text style={styles.subtitle}>
+              {selectedRole === 'recipient'
+                ? `Na tym telefonie będziesz widzieć znak ${relationFrom(relationLabel)}.`
+                : selectedRole === 'signaler'
+                  ? `To będzie telefon ${relationDisplay(relationLabel)}. Tutaj raz dziennie pojawi się prosty gest „u mnie dobrze".`
+                  : 'Numer potrzebny jest do wejścia do Cmok.'}
+            </Text>
 
-        <View style={styles.inputCard}>
-          <View style={styles.inputWrapper}>
-          <Text style={styles.prefix}>+48</Text>
-          <TextInput
-            style={styles.input}
-            value={displayNumber}
-            onChangeText={(t) => setNumber(t.replace(/\D/g, '').slice(0, 9))}
-            keyboardType="phone-pad"
-            autoFocus
-            placeholder="600 100 200"
-            placeholderTextColor="#D1CBC4"
-            maxLength={11}
-          />
+            <View style={styles.inputCard}>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.prefix}>+48</Text>
+                <TextInput
+                  style={styles.input}
+                  value={displayNumber}
+                  onChangeText={(t) => setNumber(t.replace(/\D/g, '').slice(0, 9))}
+                  keyboardType="phone-pad"
+                  autoFocus
+                  placeholder="600 100 200"
+                  placeholderTextColor="#D1CBC4"
+                  maxLength={11}
+                />
+              </View>
+              <Text style={[styles.helper, isValid && styles.helperReady]}>{helperText}</Text>
+            </View>
+
+            {loading ? (
+              <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: 24 }} />
+            ) : (
+              <Pressable
+                onPress={handleSend}
+                disabled={!isValid}
+                style={({ pressed }) => [
+                  styles.sendBtn,
+                  isValid ? styles.sendBtnActive : styles.sendBtnDisabled,
+                  pressed && isValid && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+                ]}
+              >
+                <Text style={[styles.sendBtnText, !isValid && { color: Colors.textMuted }]}>Wyślij kod</Text>
+              </Pressable>
+            )}
           </View>
-          <Text style={[styles.helper, isValid && styles.helperReady]}>{helperText}</Text>
-        </View>
-
-        {loading ? (
-          <ActivityIndicator size="large" color="#D86C5B" style={{ marginTop: 24 }} />
-        ) : (
-          <Pressable
-            onPress={handleSend}
-            disabled={!isValid}
-            style={({ pressed }) => [
-              styles.sendBtn,
-              isValid ? styles.sendBtnActive : styles.sendBtnDisabled,
-              pressed && isValid && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-            ]}
-          >
-            <Text style={[styles.sendBtnText, !isValid && { color: '#A39E98' }]}>Wyślij kod</Text>
-          </Pressable>
-        )}
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

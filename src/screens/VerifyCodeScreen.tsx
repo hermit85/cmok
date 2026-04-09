@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import type { AppRole, RelationshipStatus } from '../types';
@@ -131,52 +131,64 @@ export function VerifyCodeScreen({ onBack, phone, relationLabel = 'bliskiej osob
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.miniLogo}>Cmok</Text>
-
-      <View style={styles.content}>
-        <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
-          <Text style={styles.backText}>← Wróć</Text>
-        </Pressable>
-
-        <Text style={styles.eyebrow}>Prawie gotowe</Text>
-        <Text style={styles.title}>Wpisz kod</Text>
-        <Text style={styles.subtitle}>To tylko szybkie wejście do relacji z {relationLabel}. Kod wysłaliśmy na {displayPhone}</Text>
-
-        <View style={styles.codeCard}>
-          <Pressable onPress={() => inputRef.current?.focus()}>
-            <CodeBoxes code={code} />
-          </Pressable>
-          <TextInput
-            ref={inputRef}
-            style={styles.hiddenInput}
-            value={code}
-            onChangeText={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
-            keyboardType="number-pad"
-            autoFocus
-            maxLength={6}
-            textContentType="oneTimeCode"
-          />
-        </View>
-          <Text style={styles.helper}>Kod służy tylko do wejścia do konta i po chwili wygaśnie.</Text>
-
-        {loading && (
-          <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: 16 }} />
-        )}
-
-        {!!error && <Text style={styles.error}>{error}</Text>}
-
-        <Pressable
-          onPress={handleResend}
-          disabled={resendCooldown > 0}
-          style={({ pressed }) => [styles.resendLink, pressed && resendCooldown <= 0 && { opacity: 0.6 }]}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
         >
-          <Text style={[styles.resendText, resendCooldown > 0 && { color: Colors.textSoft }]}>
-            {resendCooldown > 0
-              ? `Wyślij ponownie za ${resendCooldown}s`
-              : 'Wyślij kod ponownie'}
-          </Text>
-        </Pressable>
-      </View>
+          <Text style={styles.miniLogo}>Cmok</Text>
+
+          <View style={styles.content}>
+            <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
+              <Text style={styles.backText}>← Wróć</Text>
+            </Pressable>
+
+            <Text style={styles.eyebrow}>Prawie gotowe</Text>
+            <Text style={styles.title}>Wpisz kod</Text>
+            <Text style={styles.subtitle}>Kod wysłaliśmy na {displayPhone}</Text>
+
+            <View style={styles.codeCard}>
+              <Pressable onPress={() => inputRef.current?.focus()}>
+                <CodeBoxes code={code} />
+              </Pressable>
+              <TextInput
+                ref={inputRef}
+                style={styles.hiddenInput}
+                value={code}
+                onChangeText={(text) => setCode(text.replace(/\D/g, '').slice(0, 6))}
+                keyboardType="number-pad"
+                autoFocus
+                maxLength={6}
+                textContentType="oneTimeCode"
+              />
+            </View>
+            <Text style={styles.helper}>Kod wygaśnie za kilka minut.</Text>
+
+            {loading && (
+              <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: 16 }} />
+            )}
+
+            {!!error && <Text style={styles.error}>{error}</Text>}
+
+            <Pressable
+              onPress={handleResend}
+              disabled={resendCooldown > 0}
+              style={({ pressed }) => [styles.resendLink, pressed && resendCooldown <= 0 && { opacity: 0.6 }]}
+            >
+              <Text style={[styles.resendText, resendCooldown > 0 && { color: Colors.textSoft }]}>
+                {resendCooldown > 0
+                  ? `Wyślij ponownie za ${resendCooldown}s`
+                  : 'Wyślij kod ponownie'}
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

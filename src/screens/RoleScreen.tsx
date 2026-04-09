@@ -23,7 +23,6 @@ export function RoleScreen({ onSelectRole, onBack }: RoleScreenProps) {
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>Krok 1 z 4</Text>
         <Text style={styles.title}>Czyj to telefon?</Text>
         <Text style={styles.subtitle}>Wybierz tylko, po czyjej stronie relacji jest ten telefon.</Text>
 

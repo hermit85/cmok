@@ -273,7 +273,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     setShowSOSModal(false);
     if (previewEnabled) { setPreviewMode('support'); return; }
     if (!authReady || !isAuthenticated) {
-      Alert.alert('Zaloguj ten telefon ponownie', 'Żeby poprosić o wsparcie, ten telefon musi być znowu połączony z kontem.');
+      Alert.alert('Zaloguj ten telefon ponownie', 'Żeby wysłać pilny sygnał, ten telefon musi być połączony z kontem.');
       return;
     }
     if (isOffline) { setLocalSupportState('offline'); return; }
@@ -482,8 +482,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       >
         {/* ─── Hero: title + button + status ─── */}
         <View style={s.hero}>
-          <Text style={s.heroTitle}>{title}</Text>
-          {subtitle ? <Text style={s.heroSubtitle}>{subtitle}</Text> : null}
+          <Text style={s.heroTitle} maxFontSizeMultiplier={1.3}>{title}</Text>
+          {subtitle ? <Text style={s.heroSubtitle} maxFontSizeMultiplier={1.4}>{subtitle}</Text> : null}
 
           <View style={s.buttonArea}>
             <Animated.View
@@ -518,6 +518,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                       buttonDone && s.mainButtonTextDone,
                       buttonDisabled && s.mainButtonTextDisabled,
                     ]}
+                    maxFontSizeMultiplier={1.2}
                   >
                     {buttonLabel}
                   </Text>

@@ -52,7 +52,7 @@ export function SOSConfirmation({ visible, onConfirm, onCancel }: SOSConfirmatio
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
-        <Text style={styles.title}>Uruchamiasz wsparcie</Text>
+        <Text style={styles.title}>Wysyłamy pilny sygnał</Text>
 
         <View style={styles.countdownCircle}>
           <Text style={styles.countdownNumber}>{count}</Text>

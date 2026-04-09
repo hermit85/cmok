@@ -285,8 +285,14 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       <SafeAreaView style={st.container}>
         <ScreenHeader subtitle={relationFrom(signalerName)} />
         <View style={st.emptyState}>
-          <Text style={st.emptyTitle}>Brak aktywnego połączenia</Text>
-          <Text style={st.emptyText}>Wróć do początku i połączcie się jeszcze raz.</Text>
+          <Text style={st.emptyTitle}>Nie ma jeszcze połączenia</Text>
+          <Text style={st.emptyText}>Połącz się z bliską osobą, żeby widzieć codzienny znak.</Text>
+          <Pressable
+            onPress={() => router.replace('/onboarding')}
+            style={({ pressed }) => [st.emptyCta, pressed && { opacity: 0.85 }]}
+          >
+            <Text style={st.emptyCtaText}>Połącz się</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -397,7 +403,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const isOk = effectiveStatus === 'ok';
 
   const title = isOk
-    ? `${name} dał/a dziś znak`
+    ? `Dziś znak już dotarł`
     : 'Jeszcze bez znaku';
 
   const subtitle = isOk
@@ -421,8 +427,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         </View>
 
         {/* ─── Main status ─── */}
-        <Text style={st.title}>{title}</Text>
-        <Text style={st.subtitle}>{subtitle}</Text>
+        <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>
+        <Text style={st.subtitle} maxFontSizeMultiplier={1.4}>{subtitle}</Text>
 
         <View style={st.metaRow}>
           <StatusPill variant={pillVariant} label={pillLabel} />
@@ -556,5 +562,10 @@ const st = StyleSheet.create({
   /* empty state */
   emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
   emptyTitle: { fontSize: 22, fontWeight: '700', color: Colors.text, textAlign: 'center', marginBottom: 8 },
-  emptyText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, textAlign: 'center' },
+  emptyText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, textAlign: 'center', marginBottom: 20 },
+  emptyCta: {
+    backgroundColor: Colors.accent, minHeight: 52, borderRadius: Radius.sm,
+    paddingHorizontal: 32, justifyContent: 'center', alignItems: 'center',
+  },
+  emptyCtaText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 });

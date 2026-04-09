@@ -59,6 +59,12 @@ export function TrustedContactsScreen() {
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>Najpierw połącz główną relację</Text>
             <Text style={styles.infoText}>Wróć tutaj, gdy oba telefony będą połączone.</Text>
+            <Pressable
+              onPress={() => router.back()}
+              style={({ pressed }) => [styles.infoCta, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.infoCtaText}>Wróć</Text>
+            </Pressable>
           </View>
         ) : (
           <>
@@ -128,7 +134,12 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border, padding: Spacing.card,
   },
   infoTitle: { fontSize: 18, fontWeight: '700', color: Colors.text, marginBottom: 6 },
-  infoText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary },
+  infoText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 16 },
+  infoCta: {
+    backgroundColor: Colors.accent, minHeight: 48, borderRadius: Radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  infoCtaText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   addCard: {
     backgroundColor: Colors.card, borderRadius: Radius.md,
     borderWidth: 1, borderColor: Colors.border,

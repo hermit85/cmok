@@ -1,15 +1,17 @@
 import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
+import { Radius } from '../constants/tokens';
 
 type ButtonVariant = 'solid' | 'outline' | 'soft';
+type ButtonSize = 'small' | 'medium' | 'large';
 
 interface BigButtonProps {
   title: string;
   onPress: () => void;
   color?: string;
   textColor?: string;
-  size?: 'large' | 'medium';
+  size?: ButtonSize;
   variant?: ButtonVariant;
   elevation?: boolean;
   disabled?: boolean;
@@ -28,8 +30,8 @@ export function BigButton({
   style,
 }: BigButtonProps) {
   const isLarge = size === 'large';
+  const isSmall = size === 'small';
 
-  // Resolve colors by variant
   let bgColor: string;
   let resolvedTextColor: string;
   let borderWidth = 0;
@@ -46,10 +48,9 @@ export function BigButton({
     borderWidth = 1.5;
     borderColor = color;
   } else if (variant === 'soft') {
-    bgColor = color + '1F'; // ~12% opacity hex
+    bgColor = color + '1F';
     resolvedTextColor = textColor || color;
   } else {
-    // solid
     bgColor = color;
     resolvedTextColor = textColor || '#FFFFFF';
   }
@@ -68,12 +69,8 @@ export function BigButton({
       disabled={disabled}
       style={({ pressed }) => [
         styles.button,
-        isLarge ? styles.large : styles.medium,
-        {
-          backgroundColor: bgColor,
-          borderWidth,
-          borderColor,
-        },
+        isLarge ? styles.large : isSmall ? styles.small : styles.medium,
+        { backgroundColor: bgColor, borderWidth, borderColor },
         elevationStyle,
         style as ViewStyle,
         pressed && !disabled && { opacity: 0.85, transform: [{ scale: 0.96 }] },
@@ -84,7 +81,9 @@ export function BigButton({
           styles.text,
           { color: resolvedTextColor },
           isLarge && styles.largeText,
+          isSmall && styles.smallText,
         ]}
+        maxFontSizeMultiplier={1.3}
       >
         {title}
       </Text>
@@ -97,6 +96,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 44,
+  },
+  small: {
+    minHeight: 44,
+    borderRadius: Radius.sm,
+    paddingHorizontal: 20,
   },
   medium: {
     minHeight: 58,
@@ -113,6 +117,10 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fontFamilyMedium,
     textAlign: 'center',
     letterSpacing: 0.1,
+  },
+  smallText: {
+    fontSize: 14,
+    fontFamily: Typography.fontFamilyMedium,
   },
   largeText: {
     fontSize: Typography.heading,
