@@ -18,6 +18,7 @@ import { useCheckin } from '../hooks/useCheckin';
 import { useCircle } from '../hooks/useCircle';
 import { useSignals } from '../hooks/useSignals';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
+import { useWeekRhythm } from '../hooks/useWeekRhythm';
 import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync';
 import type { Signal, SupportParticipant } from '../types';
 import type { SignalerHomePreview } from '../dev/homePreview';
@@ -34,7 +35,7 @@ function formatTime(value: string | null): string | null {
 
 /* ─── preview data ─── */
 
-const DEV_PREVIEW_PARTICIPANTS: SupportParticipant[] = [
+const DEV_PARTICIPANTS: SupportParticipant[] = [
   { userId: 'r', name: 'Mama', phone: '+48600100200', kind: 'primary', deliveryStatus: 'sent', isClaimedBy: false },
   { userId: 't', name: 'Ela', phone: '+48600100300', kind: 'trusted', deliveryStatus: 'sent', isClaimedBy: true },
 ];
@@ -52,6 +53,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     isActive: urgentActive, currentAlert, urgentCase,
     loading: urgentLoading, sendUrgentSignal, retrySend, cancel: cancelUrgent,
   } = useUrgentSignal();
+  const { days: realWeekDays, refresh: refreshWeek } = useWeekRhythm(userId);
 
   const [showUrgentModal, setShowUrgentModal] = useState(false);
   const [localUrgentOffline, setLocalUrgentOffline] = useState(false);
@@ -65,20 +67,21 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const buttonScale = useRef(new Animated.Value(1)).current;
   const releaseRingScale = useRef(new Animated.Value(0.84)).current;
   const releaseRingOpacity = useRef(new Animated.Value(0)).current;
+  const afterFade = useRef(new Animated.Value(0)).current;
   const celebrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const circleNames = useMemo(
     () => new Map(recipients.map((m) => [m.userId, m.name])), [recipients],
   );
 
-  const previewEnabled = __DEV__ && !!previewMode;
-  const previewShowChecked = previewMode === 'after';
-  const previewIsSupport = previewMode === 'support';
-  const primaryName = previewEnabled ? 'Mama' : recipients[0]?.name || null;
+  const pv = __DEV__ && !!previewMode;
+  const pvChecked = previewMode === 'after';
+  const pvSupport = previewMode === 'support';
+  const primaryName = pv ? 'Mama' : recipients[0]?.name || null;
   const effectiveCircleNames = useMemo(() => {
-    if (!previewEnabled) return circleNames;
+    if (!pv) return circleNames;
     return new Map<string, string>([['r', primaryName || 'Mama'], ...circleNames.entries()]);
-  }, [previewEnabled, circleNames, primaryName]);
+  }, [pv, circleNames, primaryName]);
 
   /* ─── effects ─── */
 
@@ -89,24 +92,37 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       const off = !(state.isConnected && state.isInternetReachable !== false);
       setIsOffline(off);
       if (!off && pendingSaved) {
-        syncPendingCheckin().then((ok) => { if (ok) { setPendingSaved(false); setPendingCheckinTime(null); refreshCheckin(); } });
+        syncPendingCheckin().then((ok) => {
+          if (ok) { setPendingSaved(false); setPendingCheckinTime(null); refreshCheckin(); refreshWeek(); }
+        });
       }
     });
     return () => unsub();
-  }, [pendingSaved, refreshCheckin]);
+  }, [pendingSaved, refreshCheckin, refreshWeek]);
 
-  useEffect(() => { syncPendingCheckin().then((ok) => { if (ok) refreshCheckin(); }); }, [refreshCheckin]);
+  useEffect(() => { syncPendingCheckin().then((ok) => { if (ok) { refreshCheckin(); refreshWeek(); } }); }, [refreshCheckin, refreshWeek]);
   useEffect(() => () => { if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current); }, []);
 
   /* ─── derived ─── */
 
-  const showChecked = previewEnabled ? previewShowChecked : checkedInToday || pendingSaved || justChecked;
-  const displayTime = previewEnabled
-    ? previewShowChecked ? '08:14' : null
+  const showChecked = pv ? pvChecked : checkedInToday || pendingSaved || justChecked;
+  const displayTime = pv
+    ? pvChecked ? '08:14' : null
     : pendingSaved ? pendingCheckinTime : formatTime(lastCheckin?.checked_at ?? null);
-  const authBlocked = !previewEnabled && authReady && !isAuthenticated;
-  const canCheckin = previewEnabled ? !showChecked : authReady && isAuthenticated && !showChecked && !checkinLoading;
-  const canUrgent = previewEnabled ? true : authReady && isAuthenticated;
+  const authBlocked = !pv && authReady && !isAuthenticated;
+  const canCheckin = pv ? !showChecked : authReady && isAuthenticated && !showChecked && !checkinLoading;
+  const canUrgent = pv ? true : authReady && isAuthenticated;
+
+  /* ─── transition: animate afterFade when showChecked changes ─── */
+
+  useEffect(() => {
+    if (showChecked) {
+      afterFade.setValue(0);
+      Animated.timing(afterFade, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+    } else {
+      afterFade.setValue(0);
+    }
+  }, [showChecked, afterFade]);
 
   /* ─── animations ─── */
 
@@ -128,7 +144,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   /* ─── handlers ─── */
 
   const handleCheckin = useCallback(async () => {
-    if (previewEnabled) {
+    if (pv) {
       if (previewMode === 'before') { setPreviewMode('after'); setJustChecked(true); haptics.success(); playSuccess(); }
       return;
     }
@@ -144,16 +160,19 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       } catch { Alert.alert('Nie udało się', 'Spróbuj za chwilę.'); }
       return;
     }
-    try { await performCheckin(); setJustChecked(true); haptics.success(); playSuccess(); }
-    catch (e) {
+    try {
+      await performCheckin();
+      setJustChecked(true); haptics.success(); playSuccess();
+      refreshWeek();
+    } catch (e) {
       if (e instanceof Error && e.name === 'AUTH_REQUIRED') { Alert.alert('Zaloguj się', 'Ten telefon musi być połączony z kontem.'); return; }
       Alert.alert('Nie udało się', 'Spróbuj za chwilę.');
     }
-  }, [previewEnabled, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, playSuccess]);
+  }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, playSuccess, refreshWeek]);
 
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
-    if (previewEnabled) { setPreviewMode('support'); return; }
+    if (pv) { setPreviewMode('support'); return; }
     if (!authReady || !isAuthenticated) { Alert.alert('Zaloguj się', 'Żeby wysłać pilny sygnał, połącz telefon z kontem.'); return; }
     if (isOffline) { setLocalUrgentOffline(true); return; }
     try { await sendUrgentSignal(); setLocalUrgentOffline(false); }
@@ -162,21 +181,21 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   /* ─── urgent full state ─── */
 
-  const effectiveAlert = previewIsSupport
+  const effectiveAlert = pvSupport
     ? { id: 'pa', senior_id: 'ps', type: 'sos' as const, state: 'open' as const,
         triggered_at: new Date().toISOString(), latitude: 49.6218, longitude: 20.6971,
         acknowledged_by: 't', acknowledged_at: new Date().toISOString(), resolved_at: null }
     : currentAlert;
-  const effectiveUrgentCase = previewIsSupport
+  const effectiveUrgent = pvSupport
     ? { alert: effectiveAlert!, relationshipId: 'pr', viewerUserId: 'ps', signalerId: 'ps',
         signalerName: 'Mama', primaryRecipientId: 'r', claimerId: 't', claimerName: 'Ela',
-        viewerRole: 'signaler' as const, participants: DEV_PREVIEW_PARTICIPANTS }
+        viewerRole: 'signaler' as const, participants: DEV_PARTICIPANTS }
     : urgentCase;
-  const showUrgent = localUrgentOffline || previewIsSupport || (urgentActive && effectiveAlert && effectiveUrgentCase?.viewerRole === 'signaler');
+  const showUrgent = localUrgentOffline || pvSupport || (urgentActive && effectiveAlert && effectiveUrgent?.viewerRole === 'signaler');
 
   if (showUrgent) {
     const loc = effectiveAlert?.latitude != null;
-    const claimer = effectiveUrgentCase?.claimerName;
+    const claimer = effectiveUrgent?.claimerName;
     return (
       <SafeAreaView style={s.container}>
         <ScrollView contentContainerStyle={s.urgentScroll} showsVerticalScrollIndicator={false}>
@@ -195,7 +214,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               <Text style={s.urgentDetailText}>{loc ? 'Lokalizacja dołączona' : 'Bez lokalizacji'}</Text>
             </View>
           ) : null}
-          {effectiveUrgentCase ? <SupportParticipants participants={effectiveUrgentCase.participants} /> : null}
+          {effectiveUrgent ? <SupportParticipants participants={effectiveUrgent.participants} /> : null}
           <Pressable onPress={() => retrySend().catch(() => {})} disabled={urgentLoading || localUrgentOffline}
             style={({ pressed }) => [s.urgentBtn, (urgentLoading || localUrgentOffline) && s.urgentBtnOff, pressed && { opacity: 0.9 }]}>
             <Text style={s.urgentBtnText}>Wyślij ponownie</Text>
@@ -220,30 +239,29 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   const copyLine = showChecked
     ? hasName
-      ? displayTime ? `${name} już wie. Poszedł o ${displayTime}` : `${name} już wie`
-      : displayTime ? `Gotowe. Poszedł o ${displayTime}` : 'Gotowe'
+      ? displayTime ? `${name} już wie` : `${name} już wie`
+      : 'Gotowe'
     : hasName ? `Daj dziś znak ${rf.dative}` : 'Daj dziś spokojny znak';
 
+  const timeLine = showChecked && displayTime ? `o ${displayTime}` : null;
   const offlineLine = pendingSaved ? 'Wyślemy, gdy wróci internet' : null;
-  const buttonLabel = !previewEnabled && !authReady ? '...' : showChecked ? 'Gotowe' : authBlocked ? 'Zaloguj' : 'Daj znak';
+  const buttonLabel = !pv && !authReady ? '...' : showChecked ? 'Gotowe' : authBlocked ? 'Zaloguj' : 'Daj znak';
   const buttonDone = showChecked;
   const buttonDisabled = !canCheckin && !showChecked;
 
-  // Response signals — inline, no card
-  const signals = previewEnabled && showChecked
+  const signals = pv && showChecked
     ? [{ id: 'p1', from_user_id: 'r', to_user_id: 'ps', type: 'reaction' as const, emoji: '💛', message: null, created_at: new Date().toISOString(), seen_at: null }]
     : todaySignals;
   const responseInline = signals.length > 0
     ? signals.map((sig) => `${sig.emoji || '💛'} od ${relationDisplay(effectiveCircleNames.get(sig.from_user_id))}`).join('  ')
     : null;
 
-  // Week dots — simple array from last 7 days
-  const weekDots: Array<'ok' | 'missing' | 'future'> = previewEnabled
-    ? showChecked ? ['ok','ok','ok','ok','ok','ok','future'] : ['ok','ok','missing','ok','ok','missing','future']
-    : []; // Real data would come from a hook; for now empty = hidden
+  const weekDots = pv
+    ? showChecked ? ['ok','ok','ok','ok','ok','ok','ok'] as const : ['ok','ok','missing','ok','ok','missing','future'] as const
+    : realWeekDays;
 
   return (
-    <SafeAreaView style={s.container}>
+    <SafeAreaView style={[s.container, showChecked && s.containerAfter]}>
       <UrgentConfirmation visible={showUrgentModal} onConfirm={handleUrgentConfirm} onCancel={() => setShowUrgentModal(false)} />
       <ScreenHeader subtitle={name} />
 
@@ -275,14 +293,19 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             )}
           </View>
 
-          {/* ─── ONE LINE ─── */}
-          <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{offlineLine || copyLine}</Text>
-
-          {/* ─── RESPONSE (inline) ─── */}
-          {showChecked && responseInline ? <Text style={s.responseInline}>{responseInline}</Text> : null}
+          {/* ─── COPY ─── */}
+          {showChecked ? (
+            <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
+              <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{offlineLine || copyLine}</Text>
+              {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
+              {responseInline ? <Text style={s.responseInline}>{responseInline}</Text> : null}
+            </Animated.View>
+          ) : (
+            <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
+          )}
 
           {/* ─── WEEK DOTS ─── */}
-          {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots} /></View> : null}
+          {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} /></View> : null}
         </View>
 
         {/* ─── URGENT LINK ─── */}
@@ -306,6 +329,7 @@ const BTN = 200;
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  containerAfter: { backgroundColor: '#F7F4EE' },
   scroll: { flexGrow: 1, paddingHorizontal: 20, justifyContent: 'space-between' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8 },
   offlineBadge: { textAlign: 'center', fontSize: 12, fontWeight: '600', color: Colors.textSecondary, backgroundColor: Colors.surface, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', marginTop: 4 },
@@ -324,8 +348,9 @@ const s = StyleSheet.create({
 
   /* copy */
   copyLine: { fontSize: 17, lineHeight: 24, fontWeight: '600', color: Colors.textSecondary, textAlign: 'center', marginTop: 16, maxWidth: 280 },
-  responseInline: { fontSize: 15, color: Colors.textMuted, textAlign: 'center', marginTop: 10 },
-  dotsWrap: { marginTop: 20 },
+  timeLine: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
+  responseInline: { fontSize: 15, color: Colors.safe, textAlign: 'center', marginTop: 10 },
+  dotsWrap: { marginTop: 24 },
 
   /* urgent link */
   urgentLink: { alignItems: 'center', paddingVertical: 20, marginBottom: 16 },

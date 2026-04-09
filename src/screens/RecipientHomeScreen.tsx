@@ -13,6 +13,7 @@ import { Radius } from '../constants/tokens';
 import { useCircle } from '../hooks/useCircle';
 import { useSignals } from '../hooks/useSignals';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
+import { useWeekRhythm } from '../hooks/useWeekRhythm';
 import { haptics } from '../utils/haptics';
 import { openPhoneCall } from '../utils/linking';
 import { supabase } from '../services/supabase';
@@ -21,22 +22,20 @@ import type { RecipientHomePreview } from '../dev/homePreview';
 import { formatClock, formatLocalDateKey } from '../utils/date';
 import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils/relationCopy';
 
-/* ─── types & constants ─── */
+/* ─── helpers ─── */
 
 type DayStatus = 'ok' | 'missing' | 'future';
-const DAY_LABELS = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So'];
 const EMOJIS = ['💛', '☀️', '🤗', '😘'];
-
 function fmtTime(iso: string): string { return formatClock(iso) || '--:--'; }
-function fmtRelative(localDate: string | null, checkedAt: string | null): string | null {
-  if (!localDate || !checkedAt) return null;
+function fmtRelative(ld: string | null, ca: string | null): string | null {
+  if (!ld || !ca) return null;
   const today = formatLocalDateKey(new Date());
   const y = new Date(); y.setDate(y.getDate() - 1);
-  const time = fmtTime(checkedAt);
-  if (localDate === today) return `dziś o ${time}`;
-  if (localDate === formatLocalDateKey(y)) return `wczoraj o ${time}`;
-  const [yr, mo, dy] = localDate.split('-');
-  return `${dy}.${mo}.${yr} o ${time}`;
+  const t = fmtTime(ca);
+  if (ld === today) return `dziś o ${t}`;
+  if (ld === formatLocalDateKey(y)) return `wczoraj o ${t}`;
+  const [yr, mo, dy] = ld.split('-');
+  return `${dy}.${mo}.${yr} o ${t}`;
 }
 
 /* ─── Avatar ─── */
@@ -52,7 +51,7 @@ function Avatar({ name, ok }: { name: string; ok: boolean | null }) {
   );
 }
 
-/* ─── Emoji row (no card) ─── */
+/* ─── Emoji row ─── */
 
 function EmojiRow({ signalerName, signalerId, preview }: { signalerName: string; signalerId: string; preview: boolean }) {
   const { sendSignal } = useSignals();
@@ -93,8 +92,6 @@ function EmojiRow({ signalerName, signalerId, preview }: { signalerName: string;
 
 /* ─── preview data ─── */
 
-const PV_WEEK_OK: DayStatus[] = ['ok','ok','ok','ok','ok','ok','future'];
-const PV_WEEK_MISS: DayStatus[] = ['ok','missing','ok','ok','ok','missing','future'];
 const PV_PARTICIPANTS: SParticipant[] = [
   { userId: 'r', name: 'Ania', phone: '+48600100400', kind: 'primary', deliveryStatus: 'sent', isClaimedBy: true },
   { userId: 't', name: 'Ela', phone: '+48600100300', kind: 'trusted', deliveryStatus: 'sent', isClaimedBy: false },
@@ -114,11 +111,14 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const sigId = pv ? 'ps' : signaler?.userId || null;
   const callPhone = pv ? '+48600100200' : signaler?.phone || '';
 
+  const { days: realWeekDays, refresh: refreshWeek } = useWeekRhythm(sigId);
+
   const [isOk, setIsOk] = useState(false);
-  const [weekDots, setWeekDots] = useState<DayStatus[]>([]);
   const [todayTime, setTodayTime] = useState<string | null>(null);
   const [lastContact, setLastContact] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+
+  const afterFade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => { setPreviewMode(preview); }, [preview]);
 
@@ -128,28 +128,22 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     if (!sigId) return;
     try {
       const today = new Date();
-      const ago = new Date(today); ago.setDate(today.getDate() - 6);
-      const { data: checks } = await supabase.from('daily_checkins').select('*')
-        .eq('senior_id', sigId).gte('local_date', formatLocalDateKey(ago)).lte('local_date', formatLocalDateKey(today))
-        .order('local_date', { ascending: true });
-      const rows = (checks || []) as DailyCheckin[];
-      const dates = new Set(rows.map((r) => r.local_date));
       const todayStr = formatLocalDateKey(today);
-      const w: DayStatus[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(today); d.setDate(today.getDate() - i);
-        const ds = formatLocalDateKey(d);
-        w.push(dates.has(ds) ? 'ok' : ds === todayStr ? 'future' : 'missing');
-      }
-      setWeekDots(w);
-      const todayRow = rows.find((r) => r.local_date === todayStr);
-      const latest = rows.length > 0 ? rows[rows.length - 1] : null;
+      const { data } = await supabase.from('daily_checkins').select('local_date, checked_at')
+        .eq('senior_id', sigId).gte('local_date', todayStr).lte('local_date', todayStr).limit(1).maybeSingle();
+
+      const todayRow = data as DailyCheckin | null;
+
+      // Last contact from recent history
+      const ago = new Date(today); ago.setDate(today.getDate() - 6);
+      const { data: recent } = await supabase.from('daily_checkins').select('local_date, checked_at')
+        .eq('senior_id', sigId).gte('local_date', formatLocalDateKey(ago)).lte('local_date', todayStr)
+        .order('local_date', { ascending: false }).limit(1).maybeSingle();
+      const latestRow = recent as DailyCheckin | null;
+
       setTodayTime(todayRow ? fmtTime(todayRow.checked_at) : null);
-      setLastContact(fmtRelative(latest?.local_date ?? null, latest?.checked_at ?? null));
-      setIsOk(
-        urgentCase?.viewerRole === 'primary' && currentAlert ? false
-        : !!todayRow
-      );
+      setLastContact(fmtRelative(latestRow?.local_date ?? null, latestRow?.checked_at ?? null));
+      setIsOk(urgentCase?.viewerRole === 'primary' && currentAlert ? false : !!todayRow);
     } catch (e) { console.error('fetchData:', e); } finally { setDataLoading(false); }
   }, [sigId, urgentCase?.viewerRole, currentAlert]);
 
@@ -161,10 +155,23 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   useEffect(() => {
     if (pv || !sigId) return;
     const ch = supabase.channel('r-checkins')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_checkins', filter: `senior_id=eq.${sigId}` }, () => fetchData())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_checkins', filter: `senior_id=eq.${sigId}` }, () => { fetchData(); refreshWeek(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [pv, sigId, fetchData]);
+  }, [pv, sigId, fetchData, refreshWeek]);
+
+  /* ─── transition ─── */
+
+  const effOk = previewMode === 'before' ? false : previewMode === 'after' || previewMode === 'response' ? true : isOk;
+
+  useEffect(() => {
+    if (effOk) {
+      afterFade.setValue(0);
+      Animated.timing(afterFade, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+    } else {
+      afterFade.setValue(1);
+    }
+  }, [effOk, afterFade]);
 
   /* ─── handlers ─── */
   const handleClaim = async () => { if (!currentAlert) return; try { await claim(currentAlert.id); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
@@ -237,19 +244,20 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   /* ─── daily view ─── */
 
-  const effOk = previewMode === 'before' ? false : previewMode === 'after' || previewMode === 'response' ? true : isOk;
   const effTime = previewMode === 'after' || previewMode === 'response' ? '07:55' : todayTime;
   const effLast = previewMode === 'before' ? 'wczoraj o 19:40' : lastContact;
-  const effWeek = previewMode === 'before' ? PV_WEEK_MISS : previewMode === 'after' || previewMode === 'response' ? PV_WEEK_OK : weekDots;
+  const effWeek = previewMode === 'before' ? (['ok','missing','ok','ok','ok','missing','future'] as DayStatus[])
+    : previewMode === 'after' || previewMode === 'response' ? (['ok','ok','ok','ok','ok','ok','ok'] as DayStatus[])
+    : realWeekDays;
   const name = relationDisplay(sigName);
 
-  const title = effOk ? 'Dziś znak już dotarł' : 'Jeszcze bez znaku';
+  const title = effOk ? `Znak od ${relationFrom(sigName).replace('od ', '')}` : 'Jeszcze bez znaku';
   const sub = effOk
     ? effTime ? `o ${effTime}` : null
     : effLast ? `Ostatnio: ${effLast}` : null;
 
   return (
-    <SafeAreaView style={st.container}>
+    <SafeAreaView style={[st.container, effOk && st.containerAfter]}>
       <ScreenHeader subtitle={relationFrom(sigName)} />
       <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false} bounces={false}>
         <View style={st.center}>
@@ -257,14 +265,27 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           <Avatar name={name} ok={effOk ? true : null} />
 
           {/* Status */}
-          <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>
-          {sub ? <Text style={st.sub}>{sub}</Text> : null}
+          {effOk ? (
+            <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
+              <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>
+              {sub ? <Text style={st.sub}>{sub}</Text> : null}
+            </Animated.View>
+          ) : (
+            <View style={{ alignItems: 'center' }}>
+              <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>
+              {sub ? <Text style={st.sub}>{sub}</Text> : null}
+            </View>
+          )}
 
           {/* Week dots */}
           {effWeek.length > 0 ? <View style={st.dotsWrap}><WeekDots days={effWeek} /></View> : null}
 
-          {/* Emoji (only when sign received) */}
-          {effOk && sigId ? <EmojiRow signalerName={name} signalerId={sigId} preview={pv} /> : null}
+          {/* Emoji */}
+          {effOk && sigId ? (
+            <Animated.View style={{ opacity: afterFade }}>
+              <EmojiRow signalerName={name} signalerId={sigId} preview={pv} />
+            </Animated.View>
+          ) : null}
         </View>
 
         {/* Bottom link */}
@@ -285,6 +306,7 @@ const AVATAR = 64;
 
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  containerAfter: { backgroundColor: '#F5F9F4' },
   scroll: { flexGrow: 1, paddingHorizontal: 20, justifyContent: 'space-between' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8 },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -297,7 +319,7 @@ const st = StyleSheet.create({
   /* status */
   title: { fontSize: 22, fontWeight: '700', color: Colors.text, textAlign: 'center' },
   sub: { fontSize: 15, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
-  dotsWrap: { marginTop: 20 },
+  dotsWrap: { marginTop: 24 },
 
   /* emoji */
   emojiSection: { alignItems: 'center', marginTop: 28 },
