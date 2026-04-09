@@ -85,14 +85,13 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>Wasza relacja</Text>
         <Text style={styles.title}>
-          {label.trim().length > 0 ? `Połącz to teraz z ${label.trim()}` : 'Połącz to teraz z bliską osobą'}
+          {label.trim().length > 0 ? `Połącz z ${label.trim()}` : 'Połącz z bliską osobą'}
         </Text>
-        <Text style={styles.subtitle}>Za chwilę pokażesz drugiej osobie kod. Jeśli chcesz, możesz jeszcze doprecyzować, jak ma się tutaj pojawiać.</Text>
+        <Text style={styles.subtitle}>Za chwilę zobaczysz kod — pokaż go drugiej osobie.</Text>
 
         <View style={styles.formCard}>
-          <Text style={styles.label}>Jak ma się tu wyświetlać ta osoba?</Text>
+          <Text style={styles.label}>Jak ją tu nazwać?</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
@@ -104,7 +103,7 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
             />
           </View>
 
-          <Text style={styles.helperText}>To wróci potem na ekranie dnia i w spokojnym kontakcie na co dzień.</Text>
+          <Text style={styles.helperText}>Tak będzie potem widoczna w aplikacji.</Text>
         </View>
 
         {loading ? (
@@ -119,7 +118,7 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
               pressed && isValid && { opacity: 0.85, transform: [{ scale: 0.98 }] },
             ]}
           >
-            <Text style={[styles.primaryBtnText, !isValid && { color: '#A39E98' }]}>Pokaż kod połączenia</Text>
+            <Text style={[styles.primaryBtnText, !isValid && { color: '#A39E98' }]}>Dalej</Text>
           </Pressable>
         )}
       </View>

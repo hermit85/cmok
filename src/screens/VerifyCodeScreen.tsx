@@ -148,9 +148,8 @@ export function VerifyCodeScreen({ onBack, phone, relationLabel = 'bliskiej osob
               <Text style={styles.backText}>← Wróć</Text>
             </Pressable>
 
-            <Text style={styles.eyebrow}>Prawie gotowe</Text>
-            <Text style={styles.title}>Wpisz kod</Text>
-            <Text style={styles.subtitle}>Kod wysłaliśmy na {displayPhone}</Text>
+            <Text style={styles.title}>Wpisz kod z SMS</Text>
+            <Text style={styles.subtitle}>Wysłaliśmy go na {displayPhone}</Text>
 
             <View style={styles.codeCard}>
               <Pressable onPress={() => inputRef.current?.focus()}>

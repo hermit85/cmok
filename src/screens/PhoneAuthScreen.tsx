@@ -5,7 +5,7 @@ import { supabase } from '../services/supabase';
 import type { AppRole } from '../types';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
-import { relationDisplay, relationFrom } from '../utils/relationCopy';
+// relationCopy no longer needed here
 
 interface PhoneAuthScreenProps {
   onBack: () => void;
@@ -60,15 +60,8 @@ export function PhoneAuthScreen({ onBack, onCodeSent, selectedRole, relationLabe
               <Text style={styles.backText}>← Wróć</Text>
             </Pressable>
 
-            <Text style={styles.eyebrow}>Wejście do konta</Text>
-            <Text style={styles.title}>Podaj swój numer</Text>
-            <Text style={styles.subtitle}>
-              {selectedRole === 'recipient'
-                ? `Na tym telefonie będziesz widzieć znak ${relationFrom(relationLabel)}.`
-                : selectedRole === 'signaler'
-                  ? `To będzie telefon ${relationDisplay(relationLabel)}. Tutaj raz dziennie pojawi się prosty gest „u mnie dobrze".`
-                  : 'Numer potrzebny jest do wejścia do Cmok.'}
-            </Text>
+            <Text style={styles.title}>Podaj numer telefonu</Text>
+            <Text style={styles.subtitle}>Użyjemy go tylko do wejścia do Cmok.</Text>
 
             <View style={styles.inputCard}>
               <View style={styles.inputWrapper}>

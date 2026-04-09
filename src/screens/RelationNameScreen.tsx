@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { AppRole } from '../types';
@@ -23,12 +23,7 @@ export function RelationNameScreen({
 }: RelationNameScreenProps) {
   const [value, setValue] = useState(initialValue);
 
-  const helper = useMemo(() => {
-    if (selectedRole === 'recipient') {
-      return 'To imię wróci później na ekranie dnia.';
-    }
-    return 'To imię wróci później po drugiej stronie relacji.';
-  }, [selectedRole]);
+  const helper = 'Tak będzie widoczna w aplikacji.';
 
   const canContinue = value.trim().length > 0;
 
@@ -41,12 +36,11 @@ export function RelationNameScreen({
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={styles.eyebrow}>Nazwa</Text>
-        <Text style={styles.title}>Jak ma się wyświetlać ta osoba?</Text>
-        <Text style={styles.subtitle}>Możesz zostawić {relationType} albo wpisać własną nazwę.</Text>
+        <Text style={styles.title}>Jak ją tu nazwać?</Text>
+        <Text style={styles.subtitle}>Możesz zostawić „{relationType}" albo wpisać inaczej.</Text>
 
         <View style={styles.inputCard}>
-          <Text style={styles.inputLabel}>Nazwa wyświetlana</Text>
+          <Text style={styles.inputLabel}>Imię lub przezwisko</Text>
           <TextInput
             style={styles.input}
             value={value}
