@@ -101,6 +101,8 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
               onChangeText={setLabel}
               placeholder="np. Mama"
               placeholderTextColor={Colors.textSoft}
+              autoCorrect={false}
+              spellCheck={false}
               autoFocus
             />
           </View>

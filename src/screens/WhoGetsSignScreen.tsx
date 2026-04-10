@@ -48,6 +48,8 @@ export function WhoGetsSignScreen({ onContinue, onBack }: WhoGetsSignScreenProps
           placeholder="Wpisz imię"
           placeholderTextColor={Colors.textSoft}
           autoCapitalize="words"
+          autoCorrect={false}
+          spellCheck={false}
           autoFocus
           returnKeyType="done"
           onSubmitEditing={() => canContinue && onContinue(name.trim())}
