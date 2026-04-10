@@ -4,13 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMotif } from '../components/BrandMotif';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
-import { FeatureFlags } from '../constants/featureFlags';
 
 interface WelcomeScreenProps {
-  onStart: () => void;
+  onHasCode: () => void;
+  onWantsToInvite: () => void;
 }
 
-export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
+export function WelcomeScreen({ onHasCode, onWantsToInvite }: WelcomeScreenProps) {
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoTranslateY = useRef(new Animated.Value(-10)).current;
   const buttonsOpacity = useRef(new Animated.Value(0)).current;
@@ -41,19 +41,23 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             Jeden spokojny znak{'\n'}dziennie od bliskiej osoby
           </Text>
           <Text style={styles.supporting}>
-            {FeatureFlags.ALLOW_ORGANIC_SIGNUP
-              ? 'Mniej dzwonienia z niepokoju. Więcej zwykłej bliskości.'
-              : 'Cmok działa w parach. Poproś bliską osobę o zaproszenie lub wpisz kod, który dostałeś/aś.'}
+            Cmok działa w parach — wybierz swoją rolę
           </Text>
         </Animated.View>
       </View>
 
       <Animated.View style={[styles.bottom, { opacity: buttonsOpacity }]}>
         <Pressable
-          onPress={onStart}
+          onPress={onHasCode}
           style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
         >
-          <Text style={styles.primaryBtnText}>{FeatureFlags.ALLOW_ORGANIC_SIGNUP ? 'Zacznij' : 'Mam kod zaproszenia'}</Text>
+          <Text style={styles.primaryBtnText}>Mam kod zaproszenia</Text>
+        </Pressable>
+        <Pressable
+          onPress={onWantsToInvite}
+          style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.6 }]}
+        >
+          <Text style={styles.secondaryBtnText}>Chcę zaprosić bliską osobę</Text>
         </Pressable>
       </Animated.View>
     </SafeAreaView>
@@ -123,5 +127,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
     letterSpacing: 0.1,
+  },
+  secondaryBtn: {
+    minHeight: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  secondaryBtnText: {
+    fontSize: Typography.body,
+    fontWeight: '500',
+    color: Colors.accent,
   },
 });
