@@ -52,7 +52,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const { todaySignals } = useSignals();
   const {
     isActive: urgentActive, currentAlert, urgentCase,
-    loading: urgentLoading, sendUrgentSignal, retrySend, cancel: cancelUrgent,
+    loading: urgentLoading, preflight: urgentPreflight, sendUrgentSignal, retrySend, cancel: cancelUrgent,
   } = useUrgentSignal();
   const { days: realWeekDays, refresh: refreshWeek } = useWeekRhythm(userId);
 
@@ -197,10 +197,38 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
     if (pv) { setPreviewMode('support'); return; }
-    if (!authReady || !isAuthenticated) { Alert.alert('Zaloguj się', 'Żeby dać znać bliskim, połącz telefon z kontem.'); return; }
+    if (!authReady || !isAuthenticated) {
+      Alert.alert('Zaloguj się', 'Żeby dać znać bliskim, połącz telefon z kontem.');
+      return;
+    }
     if (isOffline) { setLocalUrgentOffline(true); return; }
-    try { await sendUrgentSignal(); setLocalUrgentOffline(false); }
-    catch { Alert.alert('Nie udało się', 'Nie udało się wysłać sygnału.'); }
+
+    // Preflight: check if urgent can actually be sent
+    const check = await urgentPreflight();
+    if (!check.ok) {
+      const messages: Record<string, string> = {
+        no_auth: 'Połącz telefon z kontem.',
+        no_relationship: 'Najpierw połącz się z bliską osobą.',
+        no_active_relationship: 'Nie masz jeszcze aktywnego połączenia z bliską osobą. Zaproś kogoś do kręgu.',
+        wrong_role: 'Ta funkcja jest dostępna na telefonie osoby w centrum kręgu.',
+      };
+      Alert.alert('Nie można wysłać', messages[check.reason] || 'Spróbuj ponownie.');
+      return;
+    }
+
+    try {
+      await sendUrgentSignal();
+      setLocalUrgentOffline(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg === 'NO_RELATIONSHIP') {
+        Alert.alert('Brak połączenia', 'Nie masz aktywnego połączenia. Zaproś bliską osobę do kręgu.');
+      } else if (msg === 'NO_AUTH') {
+        Alert.alert('Zaloguj się', 'Połącz telefon z kontem.');
+      } else {
+        Alert.alert('Nie udało się', 'Coś poszło nie tak. Spróbuj ponownie za chwilę.');
+      }
+    }
   };
 
   /* ─── urgent full state ─── */

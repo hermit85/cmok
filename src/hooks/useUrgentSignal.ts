@@ -88,6 +88,10 @@ async function getLocation(): Promise<{ latitude: number; longitude: number } | 
 
 /* ─── public interface ─── */
 
+export type UrgentPreflightResult =
+  | { ok: true }
+  | { ok: false; reason: 'no_auth' | 'no_relationship' | 'no_active_relationship' | 'wrong_role' };
+
 export interface UrgentSignalState {
   /** Whether an urgent signal is currently active */
   isActive: boolean;
@@ -101,6 +105,8 @@ export interface UrgentSignalState {
   refreshing: boolean;
   /** Number of people in the circle who received the signal */
   circleCount: number;
+  /** Check if urgent signal can be sent — returns reason if not */
+  preflight: () => Promise<UrgentPreflightResult>;
   /** Send urgent signal (with optional location) */
   sendUrgentSignal: () => Promise<void>;
   /** Retry sending to circle */
@@ -235,12 +241,39 @@ export function useUrgentSignal(): UrgentSignalState {
     return json;
   }, []);
 
+  /** Pre-check: can urgent signal be sent? */
+  const preflight = useCallback(async (): Promise<UrgentPreflightResult> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return { ok: false, reason: 'no_auth' };
+
+    const { data: profile } = await supabase
+      .from('users').select('role').eq('id', session.user.id).maybeSingle();
+    if (!profile) return { ok: false, reason: 'no_auth' };
+
+    const role = normalizeAppRole(profile.role);
+    if (role !== 'signaler') return { ok: false, reason: 'wrong_role' };
+
+    const { data: pair } = await supabase
+      .from('care_pairs').select('id, status')
+      .eq('senior_id', session.user.id).eq('status', 'active').limit(1).maybeSingle();
+
+    if (!pair) return { ok: false, reason: 'no_active_relationship' };
+
+    return { ok: true };
+  }, []);
+
   const sendUrgentSignal = useCallback(async () => {
     setLoading(true);
     try {
       const coords = await getLocation();
       await callEdgeFunction({ action: 'trigger', latitude: coords?.latitude ?? null, longitude: coords?.longitude ?? null });
       await loadState();
+    } catch (err) {
+      // Re-throw with typed message for UI to handle
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      if (msg.includes('not found')) throw new Error('NO_RELATIONSHIP');
+      if (msg.includes('Unauthorized')) throw new Error('NO_AUTH');
+      throw err;
     } finally { setLoading(false); }
   }, [callEdgeFunction, loadState]);
 
@@ -283,7 +316,7 @@ export function useUrgentSignal(): UrgentSignalState {
   return {
     isActive, currentAlert, urgentCase, loading, refreshing,
     circleCount: urgentCase?.participants.length || 0,
-    sendUrgentSignal, retrySend, claim, resolve, cancel,
+    preflight, sendUrgentSignal, retrySend, claim, resolve, cancel,
     refresh: loadState,
   };
 }
