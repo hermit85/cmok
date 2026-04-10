@@ -9,7 +9,15 @@ const APP_STORE_URL = 'https://cmok.app';
  * For now: console.log with structured data.
  */
 export function logInviteEvent(
-  event: 'invite_shared' | 'invite_code_copied' | 'join_link_opened' | 'join_attempted' | 'join_completed',
+  event:
+    | 'invite_shared'
+    | 'invite_code_copied'
+    | 'join_link_opened'
+    | 'join_attempted'
+    | 'join_completed'
+    | 'invite_resume_started'
+    | 'invite_resume_completed'
+    | 'invite_resume_failed',
   data?: Record<string, string>,
 ) {
   const timestamp = new Date().toISOString();

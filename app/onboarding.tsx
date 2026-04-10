@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { Redirect } from 'expo-router';
+import { getPendingInvite, clearPendingInvite } from '../src/utils/pendingInvite';
+import { logInviteEvent } from '../src/utils/invite';
 import { WelcomeScreen } from '../src/screens/WelcomeScreen';
 import { IntentScreen } from '../src/screens/IntentScreen';
 import { PhoneAuthScreen } from '../src/screens/PhoneAuthScreen';
@@ -42,6 +44,14 @@ export default function OnboardingFlow() {
   const [relationType, setRelationType] = useState('Bliska osoba');
   const [relationLabel, setRelationLabel] = useState('Bliska osoba');
   const [destinationRoute, setDestinationRoute] = useState<DestinationRoute>(null);
+  const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
+
+  // Check for pending invite on mount
+  useEffect(() => {
+    getPendingInvite().then((invite) => {
+      if (invite) setPendingInviteCode(invite.code);
+    });
+  }, []);
 
   /* ─── helpers ─── */
 
@@ -91,8 +101,12 @@ export default function OnboardingFlow() {
   const handleVerified = async (result: VerifyResult) => {
     const { profile, relationshipStatus } = result;
 
+    // Check: is there a pending invite code waiting to be used?
+    const pendingInvite = await getPendingInvite();
+
     // Existing user with active relationship → go home
     if (profile && relationshipStatus === 'active') {
+      if (pendingInvite) await clearPendingInvite();
       setSelectedRole(profile.role);
       setDestinationRoute(profile.role === 'signaler' ? '/signaler-home' : '/recipient-home');
       setStep('done');
@@ -106,15 +120,26 @@ export default function OnboardingFlow() {
         setDestinationRoute('/waiting');
         setStep('done');
       } else {
+        // Has pending invite? Prefill the code
+        if (pendingInvite) {
+          logInviteEvent('invite_resume_started', { code: pendingInvite.code });
+          setPendingInviteCode(pendingInvite.code);
+        }
         setStep('join');
       }
       return;
     }
 
-    // Existing user, no relationship → route by role
+    // Existing user, no relationship → route by role (or use pending invite)
     if (profile && relationshipStatus === 'none') {
       setSelectedRole(profile.role);
-      setStep(profile.role === 'recipient' ? 'setup' : 'join');
+      if (pendingInvite && profile.role !== 'recipient') {
+        logInviteEvent('invite_resume_started', { code: pendingInvite.code });
+        setPendingInviteCode(pendingInvite.code);
+        setStep('join');
+      } else {
+        setStep(profile.role === 'recipient' ? 'setup' : 'join');
+      }
       return;
     }
 
@@ -122,7 +147,14 @@ export default function OnboardingFlow() {
     if (selectedRole) {
       try {
         await createProfileForRole(selectedRole);
-        setStep(selectedRole === 'recipient' ? 'setup' : 'join');
+        // After creating profile, check pending invite
+        if (pendingInvite && selectedRole !== 'recipient') {
+          logInviteEvent('invite_resume_started', { code: pendingInvite.code });
+          setPendingInviteCode(pendingInvite.code);
+          setStep('join');
+        } else {
+          setStep(selectedRole === 'recipient' ? 'setup' : 'join');
+        }
       } catch (err) {
         console.error('[onboarding] create profile error:', err);
         Alert.alert('Błąd', 'Nie udało się utworzyć profilu. Spróbuj ponownie.');
@@ -239,8 +271,15 @@ export default function OnboardingFlow() {
       return (
         <JoinScreen
           onBack={goBack}
-          onDone={handleJoined}
+          onDone={() => {
+            if (pendingInviteCode) {
+              clearPendingInvite();
+              logInviteEvent('invite_resume_completed', { code: pendingInviteCode });
+            }
+            handleJoined();
+          }}
           relationLabel={relationLabel}
+          initialCode={pendingInviteCode || ''}
         />
       );
 

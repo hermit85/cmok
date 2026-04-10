@@ -9,6 +9,7 @@ import { Typography } from '../constants/typography';
 import { Radius } from '../constants/tokens';
 import { BigButton } from '../components/BigButton';
 import { supabase } from '../services/supabase';
+import { logInviteEvent } from '../utils/invite';
 
 interface JoinScreenProps {
   onBack: () => void;
@@ -61,6 +62,7 @@ export function JoinScreen({
     const finalCode = (joinCode || code).replace(/\D/g, '');
     if (finalCode.length !== 6) return;
 
+    logInviteEvent('join_attempted', { code: finalCode });
     setLoading(true);
     setError('');
     try {
@@ -69,16 +71,16 @@ export function JoinScreen({
       });
 
       if (rpcError) {
-        setError('Ten kod nie działa albo wygasł. Poproś o nowy.');
+        logInviteEvent('invite_resume_failed', { code: finalCode, reason: 'rpc_error' });
+        setError('Ten kod wygasł lub jest nieprawidłowy.\nPoproś o nowy kod.');
         setAutoJoining(false);
         return;
       }
 
       onDone();
     } catch (err: any) {
-      if (!error) {
-        Alert.alert('Błąd', err.message || 'Nie udało się połączyć.');
-      }
+      logInviteEvent('invite_resume_failed', { code: finalCode, reason: 'exception' });
+      setError('Nie udało się dołączyć. Spróbuj ponownie.');
       setAutoJoining(false);
     } finally {
       setLoading(false);
