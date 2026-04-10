@@ -36,7 +36,15 @@ export function logInviteEvent(
     | 'recipient_sign_seen_today'
     | 'streak_strip_seen'
     | 'second_day_sign_sent'
-    | 'third_day_sign_sent',
+    | 'third_day_sign_sent'
+    | 'sender_nudge_seen'
+    | 'sender_recovery_state_seen'
+    | 'sender_return_after_gap'
+    | 'recipient_waiting_seen_today'
+    | 'recipient_gap_waiting_seen'
+    | 'reminder_entry_seen'
+    | 'sign_sent_after_gap'
+    | 'sign_sent_same_day_after_nudge',
   data?: Record<string, string>,
 ) {
   const timestamp = new Date().toISOString();

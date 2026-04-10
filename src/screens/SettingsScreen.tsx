@@ -71,6 +71,15 @@ export function SettingsScreen() {
           {profile?.phone ? <Text style={styles.cardDetail}>{profile.phone}</Text> : null}
         </View>
 
+        {/* ─── Reminder surface ─── */}
+        {profile?.role === 'signaler' ? (
+          <View style={styles.card}>
+            <Text style={styles.cardLabel}>Przypomnienie</Text>
+            <Text style={styles.cardValue}>Codzienny znak</Text>
+            <Text style={styles.cardDetail}>Powiadomienie przypominające o znaku — wkrótce.</Text>
+          </View>
+        ) : null}
+
         <Pressable
           onPress={handleLogout}
           style={({ pressed }) => [styles.logoutButton, pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] }]}

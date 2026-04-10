@@ -254,11 +254,26 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.filter((d) => d === 'ok').length <= 1 && effOk;
 
+  // Gap detection for receiver
+  const hasReceiverGap = !pv && !effOk && effWeek.length >= 2 && (() => {
+    const past = effWeek.filter((d) => d !== 'future');
+    if (past.length < 2) return false;
+    // Count consecutive missing from the end
+    let missingRun = 0;
+    for (let i = past.length - 1; i >= 0; i--) {
+      if (past[i] === 'missing') missingRun++;
+      else break;
+    }
+    return missingRun >= 2 && past.some((d) => d === 'ok');
+  })();
+
   // Tracking
   useEffect(() => { logInviteEvent('recipient_home_viewed'); }, []);
   useEffect(() => {
-    logInviteEvent(effOk ? 'recipient_sign_seen_today' : 'recipient_waiting_state_seen');
-  }, [effOk]);
+    if (effOk) logInviteEvent('recipient_sign_seen_today');
+    else if (hasReceiverGap) logInviteEvent('recipient_gap_waiting_seen');
+    else logInviteEvent('recipient_waiting_seen_today');
+  }, [effOk, hasReceiverGap]);
   useEffect(() => {
     if (effWeek.length > 0) logInviteEvent('streak_strip_seen');
   }, [effWeek.length]);
@@ -272,12 +287,18 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     ? isFirstEver
       ? `Pierwszy znak od ${nameFrom}`
       : `Znak od ${nameFrom}`
-    : effLast
-      ? 'Jeszcze bez znaku'
-      : 'Czekamy na pierwszy znak';
+    : hasReceiverGap
+      ? 'Kilka dni bez znaku'
+      : effLast
+        ? 'Jeszcze bez znaku'
+        : 'Czekamy na pierwszy znak';
   const sub = effOk
     ? `Na dziś jest kontakt${effTime ? ` · ${effTime}` : ''}`
-    : effLast ? `Ostatnio: ${effLast}` : 'To dopiero początek';
+    : hasReceiverGap
+      ? 'To bywa. Może odezwij się bezpośrednio?'
+      : effLast
+        ? `Ostatnio: ${effLast}`
+        : 'To dopiero początek';
 
   return (
     <SafeAreaView style={[st.container, effOk && st.containerAfter]}>

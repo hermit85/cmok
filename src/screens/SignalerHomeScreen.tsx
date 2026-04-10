@@ -116,11 +116,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   /* ─── transition: animate afterFade when showChecked changes ─── */
 
-  // Track views
-  useEffect(() => {
-    logInviteEvent(showChecked ? 'daily_sign_completed_seen' : 'daily_sign_pending_seen');
-  }, [showChecked]);
-
   useEffect(() => { logInviteEvent('sender_home_viewed'); }, []);
 
   useEffect(() => {
@@ -173,10 +168,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       logInviteEvent('first_sign_started');
       await performCheckin();
       logInviteEvent('first_sign_sent');
-      // Day-N tracking
+      // Day-N and gap tracking
       const prevOk = realWeekDays.filter((d) => d === 'ok').length;
       if (prevOk === 1) logInviteEvent('second_day_sign_sent');
       if (prevOk === 2) logInviteEvent('third_day_sign_sent');
+      if (hasGap) logInviteEvent('sign_sent_after_gap');
       setJustChecked(true); haptics.success(); playSuccess();
       refreshWeek();
     } catch (e) {
@@ -254,20 +250,40 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.every((d) => d !== 'ok');
   const okDays = realWeekDays.filter((d) => d === 'ok').length + (showChecked && !pv ? 1 : 0);
-  const isDay2 = okDays === 2 && showChecked;
-  const isDay3 = okDays === 3 && showChecked;
 
+  // Gap detection: yesterday was missing AND there was at least 1 ok day before
+  const hasGap = !pv && !showChecked && !isFirstEver && realWeekDays.length >= 2 && (() => {
+    // Find yesterday (second-to-last non-future day)
+    const pastDays = realWeekDays.filter((d) => d !== 'future');
+    if (pastDays.length < 2) return false;
+    const yesterday = pastDays[pastDays.length - 1]; // most recent completed day
+    const hadContact = pastDays.some((d) => d === 'ok');
+    return yesterday === 'missing' && hadContact;
+  })();
+
+  // Track state views (after gap is computed)
+  useEffect(() => {
+    if (showChecked) logInviteEvent('daily_sign_completed_seen');
+    else if (hasGap) logInviteEvent('sender_recovery_state_seen');
+    else logInviteEvent('daily_sign_pending_seen');
+  }, [showChecked, hasGap]);
+
+  // 3 copy states: first / recovery / normal
   const afterCopy = isFirstEver && showChecked
     ? hasName ? `Pierwszy znak poszedł do ${rf.genitive}` : 'Pierwszy znak poszedł'
-    : showChecked
-      ? hasName ? `Na dziś jesteście w kontakcie` : 'Na dziś gotowe'
-      : '';
+    : showChecked && hasGap
+      ? 'Wróciło'
+      : showChecked
+        ? 'Na dziś jesteście w kontakcie'
+        : '';
 
   const copyLine = showChecked
     ? afterCopy
     : isFirstEver
       ? hasName ? `Wyślij pierwszy znak ${rf.dative}` : 'Wyślij pierwszy znak'
-      : hasName ? `Daj dziś znak ${rf.dative}` : 'Daj dziś spokojny znak';
+      : hasGap
+        ? hasName ? `Wróćmy do kontaktu z ${rf.instrumental}` : 'Wróćmy dziś do kontaktu'
+        : hasName ? `Daj dziś znak ${rf.dative}` : 'Daj dziś spokojny znak';
 
   const timeLine = showChecked && displayTime ? `o ${displayTime}` : null;
   const offlineLine = pendingSaved ? 'Wyślemy, gdy wróci internet' : null;
