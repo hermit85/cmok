@@ -13,7 +13,6 @@ import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
 import { Shadows } from '../constants/tokens';
 import { haptics } from '../utils/haptics';
-import { openPhoneCall } from '../utils/linking';
 import { useCheckin } from '../hooks/useCheckin';
 import { useCircle } from '../hooks/useCircle';
 import { useSignals } from '../hooks/useSignals';
@@ -264,7 +263,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           </Text>
           <Text style={s.urgentBody}>
             {localUrgentOffline
-              ? 'Bez internetu nie możemy wysłać wiadomości. Zadzwoń bezpośrednio.'
+              ? 'Bez internetu nie możemy wysłać wiadomości. Spróbuj ponownie, gdy wrócisz online.'
               : claimer ? `${claimer} już się tym zajmuje.` : 'Czekamy, aż ktoś z kręgu odpowie.'}
           </Text>
           {effectiveAlert ? (
@@ -277,9 +276,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           <Pressable onPress={() => retrySend().catch(() => {})} disabled={urgentLoading || localUrgentOffline}
             style={({ pressed }) => [s.urgentBtn, (urgentLoading || localUrgentOffline) && s.urgentBtnOff, pressed && { opacity: 0.9 }]}>
             <Text style={s.urgentBtnText}>Wyślij ponownie</Text>
-          </Pressable>
-          <Pressable onPress={() => openPhoneCall('112', 'Nie można połączyć.')} style={({ pressed }) => [s.urgentSecBtn, pressed && { opacity: 0.75 }]}>
-            <Text style={s.urgentSecBtnText}>Zadzwoń bezpośrednio</Text>
           </Pressable>
           <Pressable onPress={() => { if (currentAlert) cancelUrgent(currentAlert.id).catch(() => {}); else setLocalUrgentOffline(false); }}
             style={({ pressed }) => [s.cancelLink, pressed && { opacity: 0.65 }]}>
