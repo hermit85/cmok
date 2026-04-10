@@ -134,6 +134,10 @@ export default function OnboardingFlow() {
 
     // Has profile → continue to next step
     if (profile) {
+      // If user chose a different role than their current profile, update it
+      if (profile.role !== role) {
+        await supabase.from('users').update({ role }).eq('id', profile.id);
+      }
       if (pendingInvite) {
         setPendingInviteCode(pendingInvite.code);
         logInviteEvent('invite_resume_started', { code: pendingInvite.code });

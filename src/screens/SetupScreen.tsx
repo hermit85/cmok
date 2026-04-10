@@ -93,13 +93,13 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
         <Text style={styles.subtitle}>Za chwilę zobaczysz kod — pokaż go drugiej osobie.</Text>
 
         <View style={styles.formCard}>
-          <Text style={styles.label}>Jak ją tu nazwać?</Text>
+          <Text style={styles.label}>Kogo zapraszasz?</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
               value={label}
               onChangeText={setLabel}
-              placeholder="np. Mama"
+              placeholder="np. Syn, Córka, Tata"
               placeholderTextColor={Colors.textSoft}
               autoCorrect={false}
               spellCheck={false}
@@ -107,7 +107,7 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
             />
           </View>
 
-          <Text style={styles.helperText}>Tak będzie potem widoczna w aplikacji.</Text>
+          <Text style={styles.helperText}>Tak będzie widoczna ta osoba w aplikacji.</Text>
         </View>
 
         {loading ? (
