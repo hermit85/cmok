@@ -74,7 +74,7 @@ export function CircleScreen() {
 
           {contacts.length === 0 ? (
             <View style={st.emptyRow}>
-              <Text style={st.emptyText}>Nikogo tu jeszcze nie ma</Text>
+              <Text style={st.emptyText}>Dodaj bliskie osoby, żeby wiedzieli, gdy coś się dzieje.</Text>
             </View>
           ) : (
             contacts.map((c) => (

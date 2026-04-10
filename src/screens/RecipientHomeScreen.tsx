@@ -25,7 +25,7 @@ import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils
 /* ─── helpers ─── */
 
 type DayStatus = 'ok' | 'missing' | 'future';
-const EMOJIS = ['💛', '☀️', '🤗', '😘'];
+const EMOJIS = ['\u{1F49B}', '\u{2600}\u{FE0F}', '\u{1F917}', '\u{1F618}'];
 function fmtTime(iso: string): string { return formatClock(iso) || '--:--'; }
 function fmtRelative(ld: string | null, ca: string | null): string | null {
   if (!ld || !ca) return null;
@@ -325,13 +325,16 @@ const st = StyleSheet.create({
   emojiSection: { alignItems: 'center', marginTop: 28 },
   emojiHint: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary, marginBottom: 12 },
   emojiRow: { flexDirection: 'row', gap: 12 },
-  emojiBtn: { width: 52, height: 52, borderRadius: Radius.sm, backgroundColor: Colors.cardStrong, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
-  emojiBtnText: { fontSize: 22 },
+  emojiBtn: { width: 56, height: 56, borderRadius: Radius.sm, backgroundColor: Colors.cardStrong, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
+  emojiBtnText: { fontSize: 26, lineHeight: 32 },
   sentToast: { marginTop: 10, fontSize: 14, fontWeight: '600', color: Colors.safe },
 
   /* bottom */
-  bottomLink: { alignItems: 'center', paddingVertical: 20, marginBottom: 16 },
-  bottomLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  bottomLink: {
+    alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, marginBottom: 16,
+    backgroundColor: Colors.surface, borderRadius: 14, alignSelf: 'center',
+  },
+  bottomLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
 
   /* empty */
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },

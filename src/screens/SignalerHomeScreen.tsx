@@ -353,8 +353,11 @@ const s = StyleSheet.create({
   dotsWrap: { marginTop: 24 },
 
   /* urgent link */
-  urgentLink: { alignItems: 'center', paddingVertical: 20, marginBottom: 16 },
-  urgentLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  urgentLink: {
+    alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, marginBottom: 16,
+    backgroundColor: Colors.surface, borderRadius: 14, alignSelf: 'center',
+  },
+  urgentLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
 
   /* urgent full state */
   urgentScroll: { paddingHorizontal: 20, paddingTop: 26, paddingBottom: 28 },

@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useState, useRef } from 'react';
+import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { BigButton } from '../components/BigButton';
+import { haptics } from '../utils/haptics';
 
 type UserIntent = 'i-am-center' | 'join-circle';
 
@@ -16,6 +17,17 @@ export type { UserIntent };
 
 export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
   const [selected, setSelected] = useState<UserIntent | null>(null);
+  const scale1 = useRef(new Animated.Value(1)).current;
+  const scale2 = useRef(new Animated.Value(1)).current;
+
+  const selectWith = (intent: UserIntent, scale: Animated.Value) => {
+    haptics.light();
+    setSelected(intent);
+    Animated.sequence([
+      Animated.spring(scale, { toValue: 0.96, useNativeDriver: true, speed: 50 }),
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 5 }),
+    ]).start();
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -29,12 +41,12 @@ export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
         <Text style={styles.title}>Co chcesz zrobić?</Text>
 
         <View style={styles.options}>
+          <Animated.View style={{ transform: [{ scale: scale1 }] }}>
           <Pressable
-            onPress={() => setSelected('i-am-center')}
-            style={({ pressed }) => [
+            onPress={() => selectWith('i-am-center', scale1)}
+            style={[
               styles.optionCard,
               selected === 'i-am-center' && styles.optionCardSelected,
-              pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
             ]}
           >
             <Text style={[styles.optionTitle, selected === 'i-am-center' && styles.optionTitleSelected]}>
@@ -44,13 +56,14 @@ export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
               Raz dziennie stukniesz „Daj znak" — bliscy będą wiedzieć, że wszystko OK.
             </Text>
           </Pressable>
+          </Animated.View>
 
+          <Animated.View style={{ transform: [{ scale: scale2 }] }}>
           <Pressable
-            onPress={() => setSelected('join-circle')}
-            style={({ pressed }) => [
+            onPress={() => selectWith('join-circle', scale2)}
+            style={[
               styles.optionCard,
               selected === 'join-circle' && styles.optionCardSelected,
-              pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
             ]}
           >
             <Text style={[styles.optionTitle, selected === 'join-circle' && styles.optionTitleSelected]}>
@@ -60,6 +73,7 @@ export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
               Masz kod zaproszenia i chcesz dołączyć do kręgu bliskiej osoby.
             </Text>
           </Pressable>
+          </Animated.View>
         </View>
       </View>
 
