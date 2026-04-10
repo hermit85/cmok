@@ -26,7 +26,7 @@ import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils
 /* ─── helpers ─── */
 
 type DayStatus = 'ok' | 'missing' | 'future';
-const EMOJIS = ['\u{1F49B}', '\u{2600}\u{FE0F}', '\u{1F917}', '\u{1F618}'];
+// Single response emoji — warm, simple, one-tap
 function fmtTime(iso: string): string { return formatClock(iso) || '--:--'; }
 function fmtRelative(ld: string | null, ca: string | null): string | null {
   if (!ld || !ca) return null;
@@ -52,41 +52,46 @@ function Avatar({ name, ok }: { name: string; ok: boolean | null }) {
   );
 }
 
-/* ─── Emoji row ─── */
+/* ─── Response tap ─── */
 
-function EmojiRow({ signalerName, signalerId, preview }: { signalerName: string; signalerId: string; preview: boolean }) {
+function ResponseTap({ signalerName, signalerId, preview }: { signalerName: string; signalerId: string; preview: boolean }) {
   const { sendSignal } = useSignals();
-  const [sentEmoji, setSentEmoji] = useState<string | null>(null);
-  const sentOpacity = useRef(new Animated.Value(0)).current;
-  const scales = useRef(EMOJIS.map(() => new Animated.Value(1))).current;
+  const [sent, setSent] = useState(false);
+  const scale = useRef(new Animated.Value(1)).current;
 
-  const send = async (emoji: string, i: number) => {
-    haptics.light();
+  useEffect(() => { logInviteEvent('recipient_response_cta_seen'); }, []);
+
+  const handleTap = async () => {
+    if (sent) return;
+    haptics.medium();
+    logInviteEvent('recipient_response_started');
     Animated.sequence([
-      Animated.spring(scales[i], { toValue: 1.22, useNativeDriver: true, speed: 50, bounciness: 10 }),
-      Animated.spring(scales[i], { toValue: 1, useNativeDriver: true, speed: 45, bounciness: 5 }),
+      Animated.spring(scale, { toValue: 1.15, useNativeDriver: true, speed: 50, bounciness: 10 }),
+      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }),
     ]).start();
     try {
-      if (!preview) await sendSignal(signalerId, emoji);
-      setSentEmoji(emoji);
-      sentOpacity.setValue(1);
-      Animated.timing(sentOpacity, { toValue: 0, duration: 1800, delay: 500, useNativeDriver: true }).start(() => setSentEmoji(null));
+      if (!preview) await sendSignal(signalerId, '\u{1F49B}');
+      setSent(true);
+      logInviteEvent('recipient_response_sent');
     } catch { /* silent */ }
   };
 
   return (
-    <View style={st.emojiSection}>
-      <Text style={st.emojiHint}>Wyślij {relationTo(signalerName)} coś małego</Text>
-      <View style={st.emojiRow}>
-        {EMOJIS.map((e, i) => (
-          <Animated.View key={e} style={{ transform: [{ scale: scales[i] }] }}>
-            <Pressable onPress={() => send(e, i)} style={({ pressed }) => [st.emojiBtn, pressed && { opacity: 0.78 }]}>
-              <Text style={st.emojiBtnText}>{e}</Text>
+    <View style={st.responseSection}>
+      {sent ? (
+        <View style={st.responseSentWrap}>
+          <Text style={st.responseSentText}>Poszło {relationFor(signalerName)} {'\u{1F49B}'}</Text>
+        </View>
+      ) : (
+        <>
+          <Animated.View style={{ transform: [{ scale }] }}>
+            <Pressable onPress={handleTap} style={({ pressed }) => [st.responseBtn, pressed && { opacity: 0.85 }]}>
+              <Text style={st.responseBtnEmoji}>{'\u{1F49B}'}</Text>
             </Pressable>
           </Animated.View>
-        ))}
-      </View>
-      {sentEmoji ? <Animated.Text style={[st.sentToast, { opacity: sentOpacity }]}>Poszło {relationFor(signalerName)} {sentEmoji}</Animated.Text> : null}
+          <Text style={st.responseHint}>Stuknij, żeby dać znać</Text>
+        </>
+      )}
     </View>
   );
 }
@@ -324,10 +329,10 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           {/* Week dots */}
           {effWeek.length > 0 ? <View style={st.dotsWrap}><WeekDots days={effWeek} showLabel /></View> : null}
 
-          {/* Emoji */}
+          {/* Response */}
           {effOk && sigId ? (
             <Animated.View style={{ opacity: afterFade }}>
-              <EmojiRow signalerName={name} signalerId={sigId} preview={pv} />
+              <ResponseTap signalerName={name} signalerId={sigId} preview={pv} />
             </Animated.View>
           ) : null}
         </View>
@@ -365,13 +370,16 @@ const st = StyleSheet.create({
   sub: { fontSize: 15, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
   dotsWrap: { marginTop: 24 },
 
-  /* emoji */
-  emojiSection: { alignItems: 'center', marginTop: 28 },
-  emojiHint: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary, marginBottom: 12 },
-  emojiRow: { flexDirection: 'row', gap: 12 },
-  emojiBtn: { width: 56, height: 56, borderRadius: Radius.sm, backgroundColor: Colors.cardStrong, borderWidth: 1, borderColor: Colors.border, justifyContent: 'center', alignItems: 'center' },
-  emojiBtnText: { fontSize: 26, lineHeight: 32 },
-  sentToast: { marginTop: 10, fontSize: 14, fontWeight: '600', color: Colors.safe },
+  /* response */
+  responseSection: { alignItems: 'center', marginTop: 28 },
+  responseBtn: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: Colors.safeLight, justifyContent: 'center', alignItems: 'center',
+  },
+  responseBtnEmoji: { fontSize: 32 },
+  responseHint: { fontSize: 13, color: Colors.textMuted, marginTop: 10 },
+  responseSentWrap: { paddingVertical: 8 },
+  responseSentText: { fontSize: 16, fontWeight: '600', color: Colors.safe },
 
   /* bottom */
   bottomLink: {

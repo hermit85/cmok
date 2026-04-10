@@ -44,7 +44,12 @@ export function logInviteEvent(
     | 'recipient_gap_waiting_seen'
     | 'reminder_entry_seen'
     | 'sign_sent_after_gap'
-    | 'sign_sent_same_day_after_nudge',
+    | 'sign_sent_same_day_after_nudge'
+    | 'recipient_response_cta_seen'
+    | 'recipient_response_started'
+    | 'recipient_response_sent'
+    | 'recipient_response_success_seen'
+    | 'sender_response_seen',
   data?: Record<string, string>,
 ) {
   const timestamp = new Date().toISOString();

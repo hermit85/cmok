@@ -251,30 +251,41 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.every((d) => d !== 'ok');
   const okDays = realWeekDays.filter((d) => d === 'ok').length + (showChecked && !pv ? 1 : 0);
 
-  // Gap detection: yesterday was missing AND there was at least 1 ok day before
+  // Signals / response data (computed first, used in copy and tracking)
+  const signals = pv && showChecked
+    ? [{ id: 'p1', from_user_id: 'r', to_user_id: 'ps', type: 'reaction' as const, emoji: '\u{1F49B}', message: null, created_at: new Date().toISOString(), seen_at: null }]
+    : todaySignals;
+  const hasResponse = signals.length > 0;
+  const responseName = hasResponse ? relationDisplay(effectiveCircleNames.get(signals[0].from_user_id)) : null;
+  const responseEmoji = hasResponse ? (signals[0].emoji || '\u{1F49B}') : null;
+
+  // Gap detection
   const hasGap = !pv && !showChecked && !isFirstEver && realWeekDays.length >= 2 && (() => {
-    // Find yesterday (second-to-last non-future day)
     const pastDays = realWeekDays.filter((d) => d !== 'future');
     if (pastDays.length < 2) return false;
-    const yesterday = pastDays[pastDays.length - 1]; // most recent completed day
+    const yesterday = pastDays[pastDays.length - 1];
     const hadContact = pastDays.some((d) => d === 'ok');
     return yesterday === 'missing' && hadContact;
   })();
 
-  // Track state views (after gap is computed)
+  // Track state views
   useEffect(() => {
     if (showChecked) logInviteEvent('daily_sign_completed_seen');
     else if (hasGap) logInviteEvent('sender_recovery_state_seen');
     else logInviteEvent('daily_sign_pending_seen');
   }, [showChecked, hasGap]);
 
-  // 3 copy states: first / recovery / normal
+  useEffect(() => {
+    if (hasResponse && showChecked) logInviteEvent('sender_response_seen');
+  }, [hasResponse, showChecked]);
+
+  // Copy states
   const afterCopy = isFirstEver && showChecked
     ? hasName ? `Pierwszy znak poszedł do ${rf.genitive}` : 'Pierwszy znak poszedł'
     : showChecked && hasGap
       ? 'Wróciło'
       : showChecked
-        ? 'Na dziś jesteście w kontakcie'
+        ? hasResponse ? 'Na dziś jesteście w kontakcie' : hasName ? `${name} zobaczy` : 'Znak poszedł'
         : '';
 
   const copyLine = showChecked
@@ -290,13 +301,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const buttonLabel = !pv && !authReady ? '...' : showChecked ? 'Gotowe' : authBlocked ? 'Zaloguj' : isFirstEver ? 'Wyślij' : 'Daj znak';
   const buttonDone = showChecked;
   const buttonDisabled = !canCheckin && !showChecked;
-
-  const signals = pv && showChecked
-    ? [{ id: 'p1', from_user_id: 'r', to_user_id: 'ps', type: 'reaction' as const, emoji: '💛', message: null, created_at: new Date().toISOString(), seen_at: null }]
-    : todaySignals;
-  const responseInline = signals.length > 0
-    ? signals.map((sig) => `${sig.emoji || '💛'} od ${relationDisplay(effectiveCircleNames.get(sig.from_user_id))}`).join('  ')
-    : null;
 
   const weekDots = pv
     ? showChecked ? ['ok','ok','ok','ok','ok','ok','ok'] as const : ['ok','ok','missing','ok','ok','missing','future'] as const
@@ -340,7 +344,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
               <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{offlineLine || copyLine}</Text>
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
-              {responseInline ? <Text style={s.responseInline}>{responseInline}</Text> : null}
+              {hasResponse ? (
+                <View style={s.responseReceipt}>
+                  <Text style={s.responseReceiptText}>{responseEmoji} {responseName} odpowiada</Text>
+                </View>
+              ) : null}
             </Animated.View>
           ) : (
             <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
@@ -391,7 +399,11 @@ const s = StyleSheet.create({
   /* copy */
   copyLine: { fontSize: 17, lineHeight: 24, fontWeight: '600', color: Colors.textSecondary, textAlign: 'center', marginTop: 16, maxWidth: 280 },
   timeLine: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
-  responseInline: { fontSize: 15, color: Colors.safe, textAlign: 'center', marginTop: 10 },
+  responseReceipt: {
+    marginTop: 14, backgroundColor: Colors.safeLight, paddingHorizontal: 18, paddingVertical: 10,
+    borderRadius: 999, alignSelf: 'center',
+  },
+  responseReceiptText: { fontSize: 15, fontWeight: '600', color: Colors.safeStrong },
   dotsWrap: { marginTop: 24 },
 
   /* urgent link */
