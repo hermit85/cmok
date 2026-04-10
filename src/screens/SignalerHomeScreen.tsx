@@ -108,6 +108,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   /* ─── derived ─── */
 
   const showChecked = pv ? pvChecked : checkedInToday || pendingSaved || justChecked;
+
+  // Diagnostic: log source of done state in dev
+  if (__DEV__ && showChecked && !pv) {
+    const source = checkedInToday ? 'db_confirmed' : pendingSaved ? 'offline_pending' : justChecked ? 'user_tap' : 'unknown';
+    console.log('[SignalerHome] showChecked=true source:', source);
+  }
   const displayTime = pv
     ? pvChecked ? '08:14' : null
     : pendingSaved ? pendingCheckinTime : formatTime(lastCheckin?.checked_at ?? null);

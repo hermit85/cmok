@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import { formatLocalDateKey } from '../utils/date';
 
@@ -9,18 +9,23 @@ export function useCheckin() {
   const [authReady, setAuthReady] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  const syncCurrentUser = useCallback(async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  // Debounce: prevent multiple rapid refreshes from auth state changes
+  const lastRefreshTime = useRef(0);
+  const REFRESH_DEBOUNCE_MS = 3000;
 
+  const syncCurrentUser = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
     setCurrentUserId(session?.user?.id ?? null);
     setAuthReady(true);
-
     return session?.user?.id ?? null;
   }, []);
 
   const refreshCheckin = useCallback(async () => {
+    // Debounce: don't re-fetch if we just fetched
+    const now = Date.now();
+    if (now - lastRefreshTime.current < REFRESH_DEBOUNCE_MS) return;
+    lastRefreshTime.current = now;
+
     try {
       const userId = currentUserId ?? (await syncCurrentUser());
       if (!userId) {
@@ -33,13 +38,13 @@ export function useCheckin() {
 
       const { data, error } = await supabase
         .from('daily_checkins')
-        .select('*')
+        .select('checked_at, source, local_date')
         .eq('senior_id', userId)
         .eq('local_date', today)
         .limit(1)
         .maybeSingle();
 
-      if (data && !error) {
+      if (data && !error && data.local_date === today) {
         setCheckedInToday(true);
         setLastCheckin({ checked_at: data.checked_at, source: data.source });
       } else {
@@ -66,19 +71,15 @@ export function useCheckin() {
       const { error } = await supabase
         .from('daily_checkins')
         .upsert(
-          {
-            senior_id: userId,
-            local_date: today,
-            source: 'app',
-          },
-          { onConflict: 'senior_id,local_date' }
+          { senior_id: userId, local_date: today, source: 'app' },
+          { onConflict: 'senior_id,local_date' },
         );
 
       if (error) throw error;
 
-      // TODO: PUSH — notify the recipient that today's signal was sent
       setCheckedInToday(true);
       setLastCheckin({ checked_at: new Date().toISOString(), source: 'app' });
+      lastRefreshTime.current = Date.now(); // Prevent immediate re-fetch
     } catch (err) {
       console.error('performCheckin error:', err);
       throw err;
@@ -87,24 +88,20 @@ export function useCheckin() {
     }
   }, [currentUserId, syncCurrentUser]);
 
+  // Initial load
   useEffect(() => {
     syncCurrentUser().then((userId) => {
-      if (userId) {
-        refreshCheckin();
-      } else {
-        setCheckedInToday(false);
-        setLastCheckin(null);
-      }
+      if (userId) refreshCheckin();
+      else { setCheckedInToday(false); setLastCheckin(null); }
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const nextUserId = session?.user?.id ?? null;
       setCurrentUserId(nextUserId);
       setAuthReady(true);
 
       if (nextUserId) {
+        // Debounced — won't re-fetch if we just did
         refreshCheckin();
       } else {
         setCheckedInToday(false);
