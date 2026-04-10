@@ -116,6 +116,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   /* ─── transition: animate afterFade when showChecked changes ─── */
 
+  // Track views
+  useEffect(() => {
+    logInviteEvent(showChecked ? 'daily_sign_completed_seen' : 'daily_sign_pending_seen');
+  }, [showChecked]);
+
+  useEffect(() => { logInviteEvent('sender_home_viewed'); }, []);
+
   useEffect(() => {
     if (showChecked) {
       afterFade.setValue(0);
@@ -166,6 +173,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       logInviteEvent('first_sign_started');
       await performCheckin();
       logInviteEvent('first_sign_sent');
+      // Day-N tracking
+      const prevOk = realWeekDays.filter((d) => d === 'ok').length;
+      if (prevOk === 1) logInviteEvent('second_day_sign_sent');
+      if (prevOk === 2) logInviteEvent('third_day_sign_sent');
       setJustChecked(true); haptics.success(); playSuccess();
       refreshWeek();
     } catch (e) {
@@ -242,9 +253,15 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const name = rf.nominative;
 
   const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.every((d) => d !== 'ok');
+  const okDays = realWeekDays.filter((d) => d === 'ok').length + (showChecked && !pv ? 1 : 0);
+  const isDay2 = okDays === 2 && showChecked;
+  const isDay3 = okDays === 3 && showChecked;
+
   const afterCopy = isFirstEver && showChecked
     ? hasName ? `Pierwszy znak poszedł do ${rf.genitive}` : 'Pierwszy znak poszedł'
-    : hasName ? `${name} już wie` : 'Gotowe';
+    : showChecked
+      ? hasName ? `Na dziś jesteście w kontakcie` : 'Na dziś gotowe'
+      : '';
 
   const copyLine = showChecked
     ? afterCopy
@@ -314,7 +331,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           )}
 
           {/* ─── WEEK DOTS ─── */}
-          {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} /></View> : null}
+          {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} showLabel={showChecked} /></View> : null}
         </View>
 
         {/* ─── URGENT LINK ─── */}

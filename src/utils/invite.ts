@@ -27,7 +27,16 @@ export function logInviteEvent(
     | 'first_sign_started'
     | 'first_sign_sent'
     | 'first_sign_success_seen'
-    | 'first_sign_received_viewed',
+    | 'first_sign_received_viewed'
+    | 'sender_home_viewed'
+    | 'recipient_home_viewed'
+    | 'daily_sign_pending_seen'
+    | 'daily_sign_completed_seen'
+    | 'recipient_waiting_state_seen'
+    | 'recipient_sign_seen_today'
+    | 'streak_strip_seen'
+    | 'second_day_sign_sent'
+    | 'third_day_sign_sent',
   data?: Record<string, string>,
 ) {
   const timestamp = new Date().toISOString();

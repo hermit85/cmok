@@ -254,21 +254,30 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.filter((d) => d === 'ok').length <= 1 && effOk;
 
-  // Track first sign viewed (fires once)
+  // Tracking
+  useEffect(() => { logInviteEvent('recipient_home_viewed'); }, []);
+  useEffect(() => {
+    logInviteEvent(effOk ? 'recipient_sign_seen_today' : 'recipient_waiting_state_seen');
+  }, [effOk]);
+  useEffect(() => {
+    if (effWeek.length > 0) logInviteEvent('streak_strip_seen');
+  }, [effWeek.length]);
   useEffect(() => {
     if (isFirstEver && effOk) logInviteEvent('first_sign_received_viewed');
   }, [isFirstEver, effOk]);
 
+  const nameFrom = relationFrom(sigName).replace('od ', '');
+
   const title = effOk
     ? isFirstEver
-      ? `Pierwszy znak od ${relationFrom(sigName).replace('od ', '')}`
-      : `Znak od ${relationFrom(sigName).replace('od ', '')}`
+      ? `Pierwszy znak od ${nameFrom}`
+      : `Znak od ${nameFrom}`
     : effLast
       ? 'Jeszcze bez znaku'
       : 'Czekamy na pierwszy znak';
   const sub = effOk
-    ? effTime ? `o ${effTime}` : null
-    : effLast ? `Ostatnio: ${effLast}` : null;
+    ? `Na dziś jest kontakt${effTime ? ` · ${effTime}` : ''}`
+    : effLast ? `Ostatnio: ${effLast}` : 'To dopiero początek';
 
   return (
     <SafeAreaView style={[st.container, effOk && st.containerAfter]}>
@@ -292,7 +301,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           )}
 
           {/* Week dots */}
-          {effWeek.length > 0 ? <View style={st.dotsWrap}><WeekDots days={effWeek} /></View> : null}
+          {effWeek.length > 0 ? <View style={st.dotsWrap}><WeekDots days={effWeek} showLabel /></View> : null}
 
           {/* Emoji */}
           {effOk && sigId ? (
