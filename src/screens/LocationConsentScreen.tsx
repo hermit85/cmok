@@ -22,9 +22,9 @@ export function LocationConsentScreen({ onContinue, onBack }: LocationConsentScr
           <Text style={s.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={s.title}>Lokalizacja przy pilnym sygnale</Text>
+        <Text style={s.title}>Lokalizacja</Text>
         <Text style={s.subtitle}>
-          Jeśli kiedyś wyślesz pilny sygnał, Cmok może dołączyć Twoją lokalizację — żeby bliscy wiedzieli, gdzie jesteś.
+          Jeśli kiedyś będziesz chcieć dać znać, że coś się dzieje, Cmok może dołączyć Twoją lokalizację — żeby bliscy wiedzieli, gdzie jesteś.
         </Text>
 
         <View style={s.options}>

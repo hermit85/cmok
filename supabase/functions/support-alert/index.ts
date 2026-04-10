@@ -307,7 +307,7 @@ async function sendSupportPushes(params: {
         to: token,
         sound: 'default',
         title: 'Cmok',
-        body: `${params.signalerName} wysyła pilny sygnał.`,
+        body: `${params.signalerName} daje znać, że coś się dzieje.`,
         data: {
           type: 'sos',
           alert_id: params.alertId,

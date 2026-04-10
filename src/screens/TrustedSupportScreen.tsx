@@ -47,11 +47,11 @@ export function TrustedSupportScreen() {
           </Pressable>
 
           <Text style={styles.title}>Krąg bliskich</Text>
-          <Text style={styles.subtitle}>Jeśli ktoś doda Cię do kręgu, zobaczysz tu pilne sygnały.</Text>
+          <Text style={styles.subtitle}>Jeśli ktoś doda Cię do kręgu, zobaczysz tu wiadomości od bliskich.</Text>
 
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>Teraz jest spokojnie</Text>
-            <Text style={styles.emptyText}>Gdy ktoś z kręgu wyśle pilny sygnał, zobaczysz go tutaj.</Text>
+            <Text style={styles.emptyText}>Jeśli ktoś z kręgu da znać, że coś się dzieje, zobaczysz to tutaj.</Text>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -67,8 +67,8 @@ export function TrustedSupportScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.urgentLabel}>Pilne</Text>
-        <Text style={styles.urgentTitle}>{urgentCase.signalerName} potrzebuje pomocy</Text>
+        <Text style={styles.urgentLabel}>Coś się dzieje</Text>
+        <Text style={styles.urgentTitle}>{urgentCase.signalerName} daje znać</Text>
         <Text style={styles.urgentBody}>
           {isClaimed
             ? isClaimedByMe

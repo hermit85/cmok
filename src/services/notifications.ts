@@ -102,7 +102,7 @@ async function ensureAndroidChannels(): Promise<void> {
   });
 
   await Notifications.setNotificationChannelAsync('sos', {
-    name: 'Pilny sygnał',
+    name: 'Ważne wiadomości',
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 500, 200, 500, 200, 500],
     sound: 'default',

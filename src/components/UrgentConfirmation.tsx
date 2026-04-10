@@ -42,10 +42,10 @@ export function UrgentConfirmation({ visible, onConfirm, onCancel }: UrgentConfi
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <Text style={styles.title} maxFontSizeMultiplier={1.3}>
-          Wysyłamy pilny sygnał
+          Dajemy znać bliskim
         </Text>
         <Text style={styles.subtitle} maxFontSizeMultiplier={1.4}>
-          Krąg bliskich dostanie powiadomienie
+          Krąg dostanie wiadomość
         </Text>
 
         <View style={styles.countdownCircle}>

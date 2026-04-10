@@ -217,8 +217,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       <SafeAreaView style={st.container}>
         <ScreenHeader subtitle={relationFrom(effUrgent.signalerName)} />
         <ScrollView contentContainerStyle={st.urgentScroll} showsVerticalScrollIndicator={false}>
-          <Text style={st.urgentLabel}>Pilne</Text>
-          <Text style={st.urgentTitle} maxFontSizeMultiplier={1.3}>{relationDisplay(effUrgent.signalerName)} potrzebuje pomocy</Text>
+          <Text style={st.urgentLabel}>Coś się dzieje</Text>
+          <Text style={st.urgentTitle} maxFontSizeMultiplier={1.3}>{relationDisplay(effUrgent.signalerName)} daje znać</Text>
           <Text style={st.urgentBody}>
             {claimed ? byMe ? 'Zajmujesz się tym.' : `${effUrgent.claimerName} już się tym zajmuje.` : 'Nikt jeszcze nie odpowiedział.'}
           </Text>

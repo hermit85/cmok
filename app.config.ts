@@ -20,7 +20,7 @@ const config: ExpoConfig = {
     supportsTablet: false,
     bundleIdentifier: 'com.hermit85.cmok',
     infoPlist: {
-      NSLocationWhenInUseUsageDescription: 'Cmok potrzebuje lokalizacji do wysłania alertu SOS z Twoją pozycją.',
+      NSLocationWhenInUseUsageDescription: 'Cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
     },
   },
   android: {
@@ -49,7 +49,7 @@ const config: ExpoConfig = {
     [
       'expo-location',
       {
-        locationWhenInUsePermission: 'Cmok potrzebuje lokalizacji do wysłania alertu SOS z Twoją pozycją.',
+        locationWhenInUsePermission: 'Cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
       },
     ],
     'expo-font',

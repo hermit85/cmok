@@ -173,7 +173,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
     if (pv) { setPreviewMode('support'); return; }
-    if (!authReady || !isAuthenticated) { Alert.alert('Zaloguj się', 'Żeby wysłać pilny sygnał, połącz telefon z kontem.'); return; }
+    if (!authReady || !isAuthenticated) { Alert.alert('Zaloguj się', 'Żeby dać znać bliskim, połącz telefon z kontem.'); return; }
     if (isOffline) { setLocalUrgentOffline(true); return; }
     try { await sendUrgentSignal(); setLocalUrgentOffline(false); }
     catch { Alert.alert('Nie udało się', 'Nie udało się wysłać sygnału.'); }
@@ -199,13 +199,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     return (
       <SafeAreaView style={s.container}>
         <ScrollView contentContainerStyle={s.urgentScroll} showsVerticalScrollIndicator={false}>
-          <Text style={s.urgentLabel}>Pilne</Text>
+          <Text style={s.urgentLabel}>W toku</Text>
           <Text style={s.urgentTitle} maxFontSizeMultiplier={1.3}>
             {localUrgentOffline ? 'Brak internetu' : 'Krąg bliskich dostał sygnał'}
           </Text>
           <Text style={s.urgentBody}>
             {localUrgentOffline
-              ? 'Bez internetu nie możemy wysłać sygnału. Zadzwoń bezpośrednio.'
+              ? 'Bez internetu nie możemy wysłać wiadomości. Zadzwoń bezpośrednio.'
               : claimer ? `${claimer} już się tym zajmuje.` : 'Czekamy, aż ktoś z kręgu odpowie.'}
           </Text>
           {effectiveAlert ? (
@@ -220,7 +220,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             <Text style={s.urgentBtnText}>Wyślij ponownie</Text>
           </Pressable>
           <Pressable onPress={() => openPhoneCall('112', 'Nie można połączyć.')} style={({ pressed }) => [s.urgentSecBtn, pressed && { opacity: 0.75 }]}>
-            <Text style={s.urgentSecBtnText}>Zadzwoń na 112</Text>
+            <Text style={s.urgentSecBtnText}>Zadzwoń bezpośrednio</Text>
           </Pressable>
           <Pressable onPress={() => { if (currentAlert) cancelUrgent(currentAlert.id).catch(() => {}); else setLocalUrgentOffline(false); }}
             style={({ pressed }) => [s.cancelLink, pressed && { opacity: 0.65 }]}>
@@ -311,12 +311,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         {/* ─── URGENT LINK ─── */}
         <Pressable
           onPress={() => {
-            if (!canUrgent) { Alert.alert('Zaloguj się', 'Żeby wysłać pilny sygnał, połącz telefon z kontem.'); return; }
+            if (!canUrgent) { Alert.alert('Zaloguj się', 'Żeby dać znać bliskim, połącz telefon z kontem.'); return; }
             setShowUrgentModal(true);
           }}
           style={({ pressed }) => [s.urgentLink, pressed && { opacity: 0.6 }]}
         >
-          <Text style={s.urgentLinkText}>Potrzebuję pomocy</Text>
+          <Text style={s.urgentLinkText}>Daj znać, że coś się dzieje</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

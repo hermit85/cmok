@@ -53,7 +53,7 @@ export function TrustedContactsScreen() {
 
         <Text style={styles.title}>Osoby w kręgu</Text>
         <Text style={styles.subtitle}>
-          Dodatkowe bliskie osoby dostaną tylko pilny sygnał — nie codzienny znak.
+          Te osoby dostaną wiadomość, jeśli coś się będzie działo — ale nie codzienny znak.
         </Text>
 
         {!canManage ? (
