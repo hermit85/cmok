@@ -22,7 +22,12 @@ export function logInviteEvent(
     | 'join_completed'
     | 'invite_resume_started'
     | 'invite_resume_completed'
-    | 'invite_resume_failed',
+    | 'invite_resume_failed'
+    | 'first_sign_cta_seen'
+    | 'first_sign_started'
+    | 'first_sign_sent'
+    | 'first_sign_success_seen'
+    | 'first_sign_received_viewed',
   data?: Record<string, string>,
 ) {
   const timestamp = new Date().toISOString();

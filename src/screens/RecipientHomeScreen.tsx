@@ -20,6 +20,7 @@ import { supabase } from '../services/supabase';
 import type { DailyCheckin, SupportParticipant as SParticipant } from '../types';
 import type { RecipientHomePreview } from '../dev/homePreview';
 import { formatClock, formatLocalDateKey } from '../utils/date';
+import { logInviteEvent } from '../utils/invite';
 import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils/relationCopy';
 
 /* ─── helpers ─── */
@@ -251,7 +252,20 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     : realWeekDays;
   const name = relationDisplay(sigName);
 
-  const title = effOk ? `Znak od ${relationFrom(sigName).replace('od ', '')}` : 'Jeszcze bez znaku';
+  const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.filter((d) => d === 'ok').length <= 1 && effOk;
+
+  // Track first sign viewed (fires once)
+  useEffect(() => {
+    if (isFirstEver && effOk) logInviteEvent('first_sign_received_viewed');
+  }, [isFirstEver, effOk]);
+
+  const title = effOk
+    ? isFirstEver
+      ? `Pierwszy znak od ${relationFrom(sigName).replace('od ', '')}`
+      : `Znak od ${relationFrom(sigName).replace('od ', '')}`
+    : effLast
+      ? 'Jeszcze bez znaku'
+      : 'Czekamy na pierwszy znak';
   const sub = effOk
     ? effTime ? `o ${effTime}` : null
     : effLast ? `Ostatnio: ${effLast}` : null;

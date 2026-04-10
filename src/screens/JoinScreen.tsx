@@ -118,19 +118,21 @@ export function JoinScreen({
 
   /* ─── SUCCESS STATE ─── */
   if (joined) {
-    const displayName = inviterName || 'bliską osobą';
+    logInviteEvent('first_sign_cta_seen');
     return (
-      <SafeAreaView style={[s.container, s.centered]}>
+      <SafeAreaView style={[s.container, s.centered, { backgroundColor: '#F5F9F4' }]}>
         <Animated.View style={{ opacity: successOpacity, transform: [{ scale: successScale }], alignItems: 'center' }}>
           <View style={s.successCheck}>
             <Text style={s.successCheckText}>✓</Text>
           </View>
           <Text style={s.successTitle}>Jesteście połączeni</Text>
           <Text style={s.successSub}>
-            {inviterName ? `Teraz widzisz codzienny znak od ${displayName}.` : 'Codzienny znak jest już ustawiony.'}
+            {inviterName
+              ? `${inviterName} zobaczy Twój codzienny znak.`
+              : 'Codzienny kontakt jest ustawiony.'}
           </Text>
           <BigButton
-            title="Przejdź do Cmok"
+            title="Wyślij pierwszy znak"
             onPress={onDone}
             color={Colors.safe}
             style={s.successBtn}

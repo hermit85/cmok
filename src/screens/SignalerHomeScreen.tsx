@@ -20,6 +20,7 @@ import { useSignals } from '../hooks/useSignals';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { useWeekRhythm } from '../hooks/useWeekRhythm';
 import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync';
+import { logInviteEvent } from '../utils/invite';
 import type { Signal, SupportParticipant } from '../types';
 import type { SignalerHomePreview } from '../dev/homePreview';
 import { getRelationForms, relationDisplay } from '../utils/relationCopy';
@@ -119,6 +120,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     if (showChecked) {
       afterFade.setValue(0);
       Animated.timing(afterFade, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+      if (isFirstEver) logInviteEvent('first_sign_success_seen');
     } else {
       afterFade.setValue(0);
     }
@@ -161,7 +163,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       return;
     }
     try {
+      logInviteEvent('first_sign_started');
       await performCheckin();
+      logInviteEvent('first_sign_sent');
       setJustChecked(true); haptics.success(); playSuccess();
       refreshWeek();
     } catch (e) {
@@ -237,15 +241,20 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const hasName = !rf.isFallback;
   const name = rf.nominative;
 
+  const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.every((d) => d !== 'ok');
+  const afterCopy = isFirstEver && showChecked
+    ? hasName ? `Pierwszy znak poszedł do ${rf.genitive}` : 'Pierwszy znak poszedł'
+    : hasName ? `${name} już wie` : 'Gotowe';
+
   const copyLine = showChecked
-    ? hasName
-      ? displayTime ? `${name} już wie` : `${name} już wie`
-      : 'Gotowe'
-    : hasName ? `Daj dziś znak ${rf.dative}` : 'Daj dziś spokojny znak';
+    ? afterCopy
+    : isFirstEver
+      ? hasName ? `Wyślij pierwszy znak ${rf.dative}` : 'Wyślij pierwszy znak'
+      : hasName ? `Daj dziś znak ${rf.dative}` : 'Daj dziś spokojny znak';
 
   const timeLine = showChecked && displayTime ? `o ${displayTime}` : null;
   const offlineLine = pendingSaved ? 'Wyślemy, gdy wróci internet' : null;
-  const buttonLabel = !pv && !authReady ? '...' : showChecked ? 'Gotowe' : authBlocked ? 'Zaloguj' : 'Daj znak';
+  const buttonLabel = !pv && !authReady ? '...' : showChecked ? 'Gotowe' : authBlocked ? 'Zaloguj' : isFirstEver ? 'Wyślij' : 'Daj znak';
   const buttonDone = showChecked;
   const buttonDisabled = !canCheckin && !showChecked;
 
