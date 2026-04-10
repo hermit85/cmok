@@ -65,6 +65,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const [celebrationVisible, setCelebrationVisible] = useState(false);
   const [previewMode, setPreviewMode] = useState<SignalerHomePreview | null>(preview);
 
+  const isSubmitting = useRef(false);
   const buttonScale = useRef(new Animated.Value(1)).current;
   const releaseRingScale = useRef(new Animated.Value(0.84)).current;
   const releaseRingOpacity = useRef(new Animated.Value(0)).current;
@@ -148,6 +149,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   /* ─── handlers ─── */
 
   const handleCheckin = useCallback(async () => {
+    // Explicit tap guard — prevent any auto-fire from mount/effect/restore
+    if (isSubmitting.current) return;
+
     if (pv) {
       if (previewMode === 'before') { setPreviewMode('after'); setJustChecked(true); haptics.success(); playSuccess(); }
       return;
@@ -155,6 +159,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     if (!authReady) return;
     if (!isAuthenticated) { Alert.alert('Zaloguj się', 'Ten telefon musi być połączony z kontem.'); return; }
     if (showChecked || checkinLoading) return;
+    isSubmitting.current = true;
     const now = new Date();
     const t = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     if (isOffline) {
@@ -162,13 +167,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         if (!userId) throw new Error('AUTH');
         await savePendingCheckin(userId); setPendingSaved(true); setPendingCheckinTime(t); setJustChecked(true); haptics.success(); playSuccess();
       } catch { Alert.alert('Nie udało się', 'Spróbuj za chwilę.'); }
+      finally { isSubmitting.current = false; }
       return;
     }
     try {
-      logInviteEvent('first_sign_started');
+      if (isFirstEver) logInviteEvent('first_sign_started');
       await performCheckin();
-      logInviteEvent('first_sign_sent');
-      // Day-N and gap tracking
+      if (isFirstEver) logInviteEvent('first_sign_sent');
       const prevOk = realWeekDays.filter((d) => d === 'ok').length;
       if (prevOk === 1) logInviteEvent('second_day_sign_sent');
       if (prevOk === 2) logInviteEvent('third_day_sign_sent');
@@ -178,6 +183,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     } catch (e) {
       if (e instanceof Error && e.name === 'AUTH_REQUIRED') { Alert.alert('Zaloguj się', 'Ten telefon musi być połączony z kontem.'); return; }
       Alert.alert('Nie udało się', 'Spróbuj za chwilę.');
+    } finally {
+      isSubmitting.current = false;
     }
   }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, playSuccess, refreshWeek]);
 
