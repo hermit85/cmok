@@ -12,7 +12,7 @@ import { JoinScreen } from '../src/screens/JoinScreen';
 import { LoadingScreen } from '../src/components/LoadingScreen';
 import { supabase } from '../src/services/supabase';
 import type { AppRole } from '../src/types';
-import { toLegacyRole } from '../src/utils/roles';
+
 
 /*
   Path A — signaler ("Mam kod zaproszenia"):
@@ -73,14 +73,27 @@ export default function OnboardingFlow() {
   const createProfileForRole = async (role: AppRole) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Brak sesji');
+
+    // Check if profile already exists (may have been created in a previous session)
+    const { data: existing } = await supabase
+      .from('users').select('id, role').eq('id', user.id).maybeSingle();
+
+    if (existing) {
+      // Profile exists — don't overwrite, just continue
+      return;
+    }
+
     const defaultName = role === 'signaler' ? 'Ja' : 'Bliska osoba';
-    const payload = { id: user.id, phone: user.phone || '', name: defaultName, role };
-    const { error } = await supabase.from('users').upsert(payload, { onConflict: 'id' });
-    if (!error) return;
-    const { error: legacyError } = await supabase.from('users').upsert(
-      { ...payload, role: toLegacyRole(role) }, { onConflict: 'id' },
-    );
-    if (legacyError) throw legacyError;
+    const phone = user.phone ? (user.phone.startsWith('+') ? user.phone : `+${user.phone}`) : '';
+    const { error } = await supabase.from('users').insert({
+      id: user.id, phone, name: defaultName, role,
+    });
+
+    if (error) {
+      // If insert fails due to duplicate, profile was created concurrently — that's OK
+      if (error.code === '23505') return;
+      throw error;
+    }
   };
 
   /* ─── Welcome handlers ─── */
@@ -146,9 +159,10 @@ export default function OnboardingFlow() {
       } else {
         setStep('who-gets-sign');
       }
-    } catch (err) {
-      console.error('[onboarding] createProfile error:', err);
-      Alert.alert('Błąd', 'Nie udało się utworzyć profilu. Spróbuj ponownie.');
+    } catch (err: any) {
+      const detail = err?.code ? `code=${err.code} msg=${err.message} details=${err.details} hint=${err.hint}` : String(err);
+      console.error('[onboarding] createProfile error:', detail, JSON.stringify(err));
+      Alert.alert('Błąd', `Nie udało się utworzyć profilu.\n\n${detail}`);
       setStep('phone');
     }
   };
