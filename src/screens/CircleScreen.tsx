@@ -70,11 +70,11 @@ export function CircleScreen() {
         {/* ─── Circle / trusted contacts ─── */}
         <View style={st.section}>
           <Text style={st.sectionLabel}>Krąg bliskich</Text>
-          <Text style={st.sectionHint}>Dostaną wiadomość, jeśli coś się będzie działo</Text>
+          <Text style={st.sectionHint}>Wiedzą, gdy coś się dzieje — i mogą szybko zareagować</Text>
 
           {contacts.length === 0 ? (
             <View style={st.emptyRow}>
-              <Text style={st.emptyText}>Dodaj bliskie osoby, żeby wiedzieli, gdy coś się dzieje.</Text>
+              <Text style={st.emptyText}>Zaproś bliskich, żeby mogli być obok, gdy będzie trzeba.</Text>
             </View>
           ) : (
             contacts.map((c) => (

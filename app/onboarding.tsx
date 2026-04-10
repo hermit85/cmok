@@ -120,7 +120,7 @@ export default function OnboardingFlow() {
 
   switch (step) {
     case 'welcome':
-      return <WelcomeScreen onStart={() => setStep('intent')} />;
+      return <WelcomeScreen onStart={() => { logInviteEvent('onboarding_started'); setStep('intent'); }} />;
     case 'intent':
       return <IntentScreen onSelect={handleIntent} onBack={goBack} />;
     case 'who-gets-sign':

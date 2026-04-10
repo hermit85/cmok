@@ -10,9 +10,14 @@ const APP_STORE_URL = 'https://cmok.app';
  */
 export function logInviteEvent(
   event:
+    | 'onboarding_started'
+    | 'invite_created'
     | 'invite_shared'
     | 'invite_code_copied'
     | 'join_link_opened'
+    | 'invite_join_opened'
+    | 'invite_code_submitted'
+    | 'invite_join_success'
     | 'join_attempted'
     | 'join_completed'
     | 'invite_resume_started'

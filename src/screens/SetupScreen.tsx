@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
+import { logInviteEvent } from '../utils/invite';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 
@@ -67,6 +68,7 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
         if (error) throw error;
       }
 
+      logInviteEvent('invite_created', { label: label.trim() });
       onDone();
     } catch (err) {
       console.error('[SETUP] error:', err);
