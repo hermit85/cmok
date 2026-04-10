@@ -68,6 +68,9 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
         if (error) throw error;
       }
 
+      // Ensure profile role matches recipient (may differ from previous sessions)
+      await supabase.from('users').update({ role: 'recipient' }).eq('id', user.id);
+
       logInviteEvent('invite_created', { label: label.trim() });
       onDone();
     } catch (err) {
