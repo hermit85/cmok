@@ -55,14 +55,22 @@ function Avatar({ name, ok }: { name: string; ok: boolean | null }) {
 /* ─── Response tap ─── */
 
 function ResponseTap({ signalerName, signalerId, preview }: { signalerName: string; signalerId: string; preview: boolean }) {
-  const { sendSignal } = useSignals();
-  const [sent, setSent] = useState(false);
+  const { sendSignal, hasSentReactionToday } = useSignals();
+  const alreadySent = !preview && hasSentReactionToday(signalerId);
+  const [justSent, setJustSent] = useState(false);
+  const sent = alreadySent || justSent;
   const scale = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => { logInviteEvent('recipient_response_cta_seen'); }, []);
+  useEffect(() => {
+    if (alreadySent) logInviteEvent('recipient_response_state_restored');
+    else logInviteEvent('recipient_response_cta_seen');
+  }, [alreadySent]);
 
   const handleTap = async () => {
-    if (sent) return;
+    if (sent) {
+      logInviteEvent('recipient_response_duplicate_blocked');
+      return;
+    }
     haptics.medium();
     logInviteEvent('recipient_response_started');
     Animated.sequence([
@@ -70,8 +78,11 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
       Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }),
     ]).start();
     try {
-      if (!preview) await sendSignal(signalerId, '\u{1F49B}');
-      setSent(true);
+      if (!preview) {
+        const ok = await sendSignal(signalerId, '\u{1F49B}');
+        if (!ok) { logInviteEvent('recipient_response_duplicate_blocked'); return; }
+      }
+      setJustSent(true);
       logInviteEvent('recipient_response_sent');
     } catch { /* silent */ }
   };

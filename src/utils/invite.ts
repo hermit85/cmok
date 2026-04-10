@@ -49,7 +49,10 @@ export function logInviteEvent(
     | 'recipient_response_started'
     | 'recipient_response_sent'
     | 'recipient_response_success_seen'
-    | 'sender_response_seen',
+    | 'sender_response_seen'
+    | 'recipient_response_state_restored'
+    | 'recipient_response_duplicate_blocked'
+    | 'sender_response_receipt_restored',
   data?: Record<string, string>,
 ) {
   const timestamp = new Date().toISOString();

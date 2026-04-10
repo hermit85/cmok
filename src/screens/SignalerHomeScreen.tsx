@@ -276,7 +276,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   }, [showChecked, hasGap]);
 
   useEffect(() => {
-    if (hasResponse && showChecked) logInviteEvent('sender_response_seen');
+    if (hasResponse && showChecked) {
+      logInviteEvent('sender_response_seen');
+      logInviteEvent('sender_response_receipt_restored');
+    }
   }, [hasResponse, showChecked]);
 
   // Copy states
@@ -346,7 +349,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>{responseEmoji} {responseName} odpowiada</Text>
+                  <Text style={s.responseReceiptText}>{responseEmoji} od {responseName}</Text>
                 </View>
               ) : null}
             </Animated.View>
