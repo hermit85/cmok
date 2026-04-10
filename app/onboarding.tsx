@@ -35,6 +35,25 @@ export default function OnboardingFlow() {
     getPendingInvite().then((inv) => { if (inv) setPendingInviteCode(inv.code); });
   }, []);
 
+  // Auto-resume: if user already has auth + profile, skip to the right step
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return; // No auth → stay on welcome
+
+      const { data: profile } = await supabase
+        .from('users').select('id, role, name').eq('id', session.user.id).maybeSingle();
+      if (!profile) return; // No profile → stay on welcome
+
+      const role = profile.role === 'signaler' || profile.role === 'recipient' ? profile.role as AppRole : null;
+      if (!role) return;
+
+      setSelectedRole(role);
+      // Route based on role: signaler → join, recipient → setup
+      setStep(role === 'signaler' ? 'join' : 'setup');
+    })();
+  }, []);
+
   const createProfileForRole = async (role: AppRole) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Brak sesji');
