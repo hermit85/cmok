@@ -231,7 +231,7 @@ export function useUrgentSignal(): UrgentSignalState {
   const callEdgeFunction = useCallback(async (payload: Record<string, unknown>) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Brak sesji');
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/support-alert`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/urgent-signal`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify(payload),
