@@ -102,7 +102,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     return () => unsub();
   }, [pendingSaved, refreshCheckin, refreshWeek]);
 
-  useEffect(() => { syncPendingCheckin().then((ok) => { if (ok) { refreshCheckin(); refreshWeek(); } }); }, [refreshCheckin, refreshWeek]);
+  // Sync offline pending ONCE on mount (not on every callback identity change)
+  const hasSyncedPending = useRef(false);
+  useEffect(() => {
+    if (hasSyncedPending.current) return;
+    hasSyncedPending.current = true;
+    syncPendingCheckin().then((ok) => { if (ok) { refreshCheckin(); refreshWeek(); } });
+  }, [refreshCheckin, refreshWeek]);
   useEffect(() => () => { if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current); }, []);
 
   /* ─── derived ─── */
