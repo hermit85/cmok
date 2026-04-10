@@ -5,12 +5,14 @@ import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { BigButton } from '../components/BigButton';
 
-type UserIntent = 'setup-phone' | 'join-circle';
+type UserIntent = 'i-am-center' | 'join-circle';
 
 interface IntentScreenProps {
   onSelect: (intent: UserIntent) => void;
   onBack: () => void;
 }
+
+export type { UserIntent };
 
 export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
   const [selected, setSelected] = useState<UserIntent | null>(null);
@@ -28,18 +30,18 @@ export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
 
         <View style={styles.options}>
           <Pressable
-            onPress={() => setSelected('setup-phone')}
+            onPress={() => setSelected('i-am-center')}
             style={({ pressed }) => [
               styles.optionCard,
-              selected === 'setup-phone' && styles.optionCardSelected,
+              selected === 'i-am-center' && styles.optionCardSelected,
               pressed && { opacity: 0.88, transform: [{ scale: 0.99 }] },
             ]}
           >
-            <Text style={[styles.optionTitle, selected === 'setup-phone' && styles.optionTitleSelected]}>
-              Ustawiam telefon bliskiej osoby
+            <Text style={[styles.optionTitle, selected === 'i-am-center' && styles.optionTitleSelected]}>
+              Chcę dawać codzienny znak
             </Text>
             <Text style={styles.optionBody}>
-              Na tym telefonie będzie przycisk „Daj znak".
+              Raz dziennie stukniesz „Daj znak" — bliscy będą wiedzieć, że wszystko OK.
             </Text>
           </Pressable>
 
@@ -52,10 +54,10 @@ export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
             ]}
           >
             <Text style={[styles.optionTitle, selected === 'join-circle' && styles.optionTitleSelected]}>
-              Dołączam do kręgu bliskiej osoby
+              Ktoś mnie zaprosił
             </Text>
             <Text style={styles.optionBody}>
-              Będziesz dostawać codzienny znak i pilny sygnał.
+              Masz kod zaproszenia i chcesz dołączyć do kręgu bliskiej osoby.
             </Text>
           </Pressable>
         </View>
@@ -75,76 +77,18 @@ export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: 24,
-  },
-  top: {
-    flex: 1,
-    paddingTop: 16,
-  },
-  miniLogo: {
-    fontSize: 16,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.accent,
-    marginBottom: 22,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 44,
-    justifyContent: 'center',
-    marginLeft: -8,
-    paddingHorizontal: 8,
-    marginBottom: 18,
-  },
-  backText: {
-    fontSize: Typography.body,
-    fontFamily: Typography.fontFamilyMedium,
-    color: Colors.accent,
-  },
-  title: {
-    fontSize: Typography.title,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.text,
-    marginBottom: 22,
-  },
-  options: {
-    gap: 14,
-  },
-  optionCard: {
-    backgroundColor: Colors.cardStrong,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    minHeight: 100,
-    justifyContent: 'center',
-  },
-  optionCardSelected: {
-    backgroundColor: Colors.accentWash,
-    borderColor: Colors.accent,
-  },
-  optionTitle: {
-    fontSize: Typography.bodyLarge,
-    fontFamily: Typography.fontFamilyBold,
-    color: Colors.text,
-    marginBottom: 6,
-  },
-  optionTitleSelected: {
-    color: Colors.accentStrong,
-  },
-  optionBody: {
-    fontSize: Typography.bodySmall,
-    lineHeight: 21,
-    color: Colors.textSecondary,
-  },
-  footer: {
-    paddingTop: 10,
-    paddingBottom: 16,
-  },
-  cta: {
-    width: '100%',
-  },
+  container: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: 24 },
+  top: { flex: 1, paddingTop: 16 },
+  miniLogo: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: Colors.accent, marginBottom: 22 },
+  backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginLeft: -8, paddingHorizontal: 8, marginBottom: 18 },
+  backText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
+  title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 22 },
+  options: { gap: 14 },
+  optionCard: { backgroundColor: Colors.cardStrong, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 18, paddingVertical: 18, minHeight: 100, justifyContent: 'center' },
+  optionCardSelected: { backgroundColor: Colors.accentWash, borderColor: Colors.accent },
+  optionTitle: { fontSize: Typography.bodyLarge, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 6 },
+  optionTitleSelected: { color: Colors.accentStrong },
+  optionBody: { fontSize: Typography.bodySmall, lineHeight: 21, color: Colors.textSecondary },
+  footer: { paddingTop: 10, paddingBottom: 16 },
+  cta: { width: '100%' },
 });
