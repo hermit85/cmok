@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
-import { MonthGrid } from '../components/MonthGrid';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
 import { Radius } from '../constants/tokens';
@@ -18,8 +17,6 @@ import { useWeekRhythm } from '../hooks/useWeekRhythm';
 import { haptics } from '../utils/haptics';
 import { openPhoneCall } from '../utils/linking';
 import { supabase } from '../services/supabase';
-import { useRelationship } from '../hooks/useRelationship';
-import { getTogetherLabel } from '../utils/togetherLabel';
 import type { DailyCheckin, SupportParticipant as SParticipant } from '../types';
 import type { RecipientHomePreview } from '../dev/homePreview';
 import { formatClock } from '../utils/date';
@@ -123,7 +120,6 @@ const PV_PARTICIPANTS: SParticipant[] = [
 export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHomePreview | null }) {
   const router = useRouter();
   const { signalers, loading: circleLoading } = useCircle();
-  const { relationship } = useRelationship();
   const { urgentCase, currentAlert, claim, resolve, loading: urgentLoading } = useUrgentSignal();
 
   const signaler = signalers[0] || null;
@@ -133,11 +129,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const sigId = pv ? 'ps' : signaler?.userId || null;
   const callPhone = pv ? '+48600100200' : signaler?.phone || '';
 
-  const { days: realWeekDays, monthDays, refresh: refreshWeek } = useWeekRhythm(sigId);
-  const { sendNudge, hasSentNudgeToday } = useSignals();
-  const [showMonth, setShowMonth] = useState(false);
-  const [nudgeSending, setNudgeSending] = useState(false);
-  const [nudgeJustSent, setNudgeJustSent] = useState(false);
+  const { days: realWeekDays, refresh: refreshWeek } = useWeekRhythm(sigId);
 
   const [isOk, setIsOk] = useState(false);
   const [todayTime, setTodayTime] = useState<string | null>(null);
@@ -276,7 +268,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     : previewMode === 'after' || previewMode === 'response' ? (['ok','ok','ok','ok','ok','ok','ok'] as DayStatus[])
     : realWeekDays;
   const name = relationDisplay(sigName);
-  const togetherLabel = pv ? 'Razem od 12 dni' : getTogetherLabel(relationship?.joinedAt ?? null);
 
   const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.filter((d) => d === 'ok').length <= 1 && effOk;
 
@@ -292,21 +283,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     }
     return missingRun >= 2 && past.some((d) => d === 'ok');
   })();
-
-  // Nudge: show after 14:00 if signaler hasn't checked in and no nudge sent yet
-  const currentHour = new Date().getHours();
-  const canNudge = !pv && !effOk && sigId && currentHour >= 14
-    && !hasSentNudgeToday(sigId) && !nudgeJustSent;
-
-  const handleNudge = async () => {
-    if (!sigId || nudgeSending) return;
-    setNudgeSending(true);
-    try {
-      await sendNudge(sigId);
-      setNudgeJustSent(true);
-    } catch { /* ignore */ }
-    setNudgeSending(false);
-  };
 
   // Tracking
   useEffect(() => { logInviteEvent('recipient_home_viewed'); }, []);
@@ -359,25 +335,11 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             <View style={{ alignItems: 'center' }}>
               <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>
               {sub ? <Text style={st.sub}>{sub}</Text> : null}
-              {canNudge ? (
-                <Pressable onPress={handleNudge} disabled={nudgeSending}
-                  style={({ pressed }) => [st.nudgeBtn, pressed && { opacity: 0.7 }]}>
-                  <Text style={st.nudgeBtnText}>{nudgeSending ? '...' : 'Przypomnij delikatnie'}</Text>
-                </Pressable>
-              ) : null}
-              {nudgeJustSent ? <Text style={st.nudgeSent}>Wysłano</Text> : null}
             </View>
           )}
 
-          {/* Week dots + month grid + together counter */}
+          {/* Week dots */}
           {effWeek.length > 0 ? <View style={st.dotsWrap}><WeekDots days={effWeek} showLabel /></View> : null}
-          {effWeek.length > 0 ? (
-            <Pressable onPress={() => setShowMonth((v) => !v)} style={({ pressed }) => [st.monthToggle, pressed && { opacity: 0.6 }]}>
-              <Text style={st.monthToggleText}>{showMonth ? 'Schowaj' : 'Ostatni miesiąc'}</Text>
-            </Pressable>
-          ) : null}
-          {showMonth ? <MonthGrid days={monthDays} /> : null}
-          {togetherLabel ? <Text style={st.togetherLabel}>{togetherLabel}</Text> : null}
 
           {/* Response */}
           {effOk && sigId ? (
@@ -418,13 +380,7 @@ const st = StyleSheet.create({
   /* status */
   title: { fontSize: 22, fontWeight: '700', color: Colors.text, textAlign: 'center' },
   sub: { fontSize: 15, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
-  nudgeBtn: { marginTop: 16, paddingVertical: 10, paddingHorizontal: 20, borderRadius: 12, backgroundColor: Colors.accentWash },
-  nudgeBtnText: { fontSize: 14, fontWeight: '500', color: Colors.accentStrong },
-  nudgeSent: { marginTop: 16, fontSize: 14, fontWeight: '500', color: Colors.safeStrong },
   dotsWrap: { marginTop: 24 },
-  monthToggle: { marginTop: 10, minHeight: 32, justifyContent: 'center', alignItems: 'center' } as const,
-  monthToggleText: { fontSize: 12, fontWeight: '500' as const, color: Colors.textMuted },
-  togetherLabel: { fontSize: 12, fontWeight: '500', color: Colors.textMuted, textAlign: 'center', marginTop: 10 },
 
   /* response */
   responseSection: { alignItems: 'center', marginTop: 28 },

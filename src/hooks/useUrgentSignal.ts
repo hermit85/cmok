@@ -2,7 +2,7 @@
  * useUrgentSignal — manages the urgent signal flow (pilny sygnał).
  *
  * Wraps the database "alert_cases" model with product-level naming.
- * Internal queries still use DB column names (senior_id, type, etc.)
+ * Internal queries still use DB column names (senior_id, sos, etc.)
  * but the public API speaks product language.
  */
 
@@ -115,7 +115,7 @@ export interface UrgentSignalState {
   claim: (alertId: string) => Promise<void>;
   /** Resolve: "All clear" */
   resolve: (alertId: string) => Promise<void>;
-  /** Cancel: "To pomyłka" */
+  /** Cancel: "False alarm" */
   cancel: (alertId: string) => Promise<void>;
   /** Force refresh */
   refresh: () => Promise<void>;
@@ -231,7 +231,7 @@ export function useUrgentSignal(): UrgentSignalState {
   const callEdgeFunction = useCallback(async (payload: Record<string, unknown>) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('Brak sesji');
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/urgent-signal`, {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/support-alert`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       body: JSON.stringify(payload),

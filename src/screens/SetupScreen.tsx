@@ -68,9 +68,6 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
         if (error) throw error;
       }
 
-      // Ensure profile role matches recipient (may differ from previous sessions)
-      await supabase.from('users').update({ role: 'recipient' }).eq('id', user.id);
-
       logInviteEvent('invite_created', { label: label.trim() });
       onDone();
     } catch (err) {
@@ -96,13 +93,13 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
         <Text style={styles.subtitle}>Za chwilę zobaczysz kod — pokaż go drugiej osobie.</Text>
 
         <View style={styles.formCard}>
-          <Text style={styles.label}>Kogo zapraszasz?</Text>
+          <Text style={styles.label}>Jak ją tu nazwać?</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
               value={label}
               onChangeText={setLabel}
-              placeholder="np. Syn, Córka, Tata"
+              placeholder="np. Mama"
               placeholderTextColor={Colors.textSoft}
               autoCorrect={false}
               spellCheck={false}
@@ -110,7 +107,7 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
             />
           </View>
 
-          <Text style={styles.helperText}>Tak będzie widoczna ta osoba w aplikacji.</Text>
+          <Text style={styles.helperText}>Tak będzie potem widoczna w aplikacji.</Text>
         </View>
 
         {loading ? (

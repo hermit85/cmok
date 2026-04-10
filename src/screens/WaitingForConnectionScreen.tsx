@@ -14,13 +14,10 @@ export function WaitingForConnectionScreen() {
   const { loading, profile, relationship, status, refreshRelationship } = useRelationship();
 
   useEffect(() => {
-    if (loading) return;
-    if (status === 'active' && profile?.role === 'recipient') {
+    if (!loading && status === 'active' && profile?.role === 'recipient') {
       router.replace('/recipient-home');
     }
-    // Only redirect to onboarding if explicitly wrong role AND not pending
-    // (don't redirect for 'none' — data may not have loaded yet)
-    if (profile && profile.role !== 'recipient' && status !== 'pending') {
+    if (!loading && (profile?.role !== 'recipient' || status === 'none')) {
       router.replace('/onboarding');
     }
   }, [loading, profile?.role, router, status]);

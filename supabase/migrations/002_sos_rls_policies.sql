@@ -1,13 +1,14 @@
 -- ============================================================
--- Cmok — dodatkowe RLS policies dla sygnałów
+-- Cmok — SOS RLS policies (Sprint 3)
+-- Dodatkowe polityki potrzebne do flow SOS
 -- ============================================================
 
--- Signaler może UPDATE swoje alert_cases (anulowanie)
+-- Senior może UPDATE swoje alert_cases (cancel alarm)
 CREATE POLICY "alerts_senior_update" ON public.alert_cases
   FOR UPDATE USING (auth.uid() = senior_id)
   WITH CHECK (auth.uid() = senior_id);
 
--- Signaler może INSERT do alert_deliveries (tworzy delivery przy sygnale)
+-- Senior może INSERT do alert_deliveries (tworzy delivery przy SOS)
 CREATE POLICY "deliveries_senior_insert" ON public.alert_deliveries
   FOR INSERT WITH CHECK (
     EXISTS (

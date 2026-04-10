@@ -1,3 +1,4 @@
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/colors';
 
@@ -8,21 +9,50 @@ interface UrgentConfirmationProps {
 }
 
 export function UrgentConfirmation({ visible, onConfirm, onCancel }: UrgentConfirmationProps) {
+  const [count, setCount] = useState(3);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      setCount(3);
+      intervalRef.current = setInterval(() => {
+        setCount((prev) => {
+          if (prev <= 1) {
+            setTimeout(() => onConfirm(), 0);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      setCount(3);
+    }
+    return () => { if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; } };
+  }, [visible, onConfirm]);
+
+  const handleCancel = () => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    setCount(3);
+    onCancel();
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <Text style={styles.title} maxFontSizeMultiplier={1.3}>
-          Daj znać bliskim
+          Dajemy znać bliskim
         </Text>
         <Text style={styles.subtitle} maxFontSizeMultiplier={1.4}>
-          Twoja bliska osoba dostanie powiadomienie, że prosisz o kontakt
+          Krąg dostanie wiadomość
         </Text>
 
-        <Pressable onPress={onConfirm} style={({ pressed }) => [styles.confirmButton, pressed && { opacity: 0.8 }]}>
-          <Text style={styles.confirmText}>Tak, wyślij</Text>
-        </Pressable>
+        <View style={styles.countdownCircle}>
+          <Text style={styles.countdownNumber}>{count}</Text>
+        </View>
 
-        <Pressable onPress={onCancel} style={({ pressed }) => [styles.cancelButton, pressed && { opacity: 0.6 }]}>
+        <Pressable onPress={handleCancel} style={({ pressed }) => [styles.cancelButton, pressed && { opacity: 0.6 }]}>
           <Text style={styles.cancelText}>Anuluj</Text>
         </Pressable>
       </View>
@@ -43,32 +73,32 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
     color: 'rgba(255,255,255,0.6)',
     textAlign: 'center',
-    lineHeight: 22,
+    marginBottom: 40,
+  },
+  countdownCircle: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 48,
   },
-  confirmButton: {
-    backgroundColor: Colors.accent,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    minWidth: 200,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  confirmText: {
-    fontSize: 17,
-    fontWeight: '600',
+  countdownNumber: {
+    fontSize: 52,
+    fontWeight: '700',
     color: '#FFFFFF',
   },
   cancelButton: {
     minWidth: 72,
-    minHeight: 56,
+    minHeight: 72,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
