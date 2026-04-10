@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMotif } from '../components/BrandMotif';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
+import { FeatureFlags } from '../constants/featureFlags';
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -40,7 +41,9 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             Jeden spokojny znak{'\n'}dziennie od bliskiej osoby
           </Text>
           <Text style={styles.supporting}>
-            Mniej dzwonienia z niepokoju. Więcej zwykłej bliskości.
+            {FeatureFlags.ALLOW_ORGANIC_SIGNUP
+              ? 'Mniej dzwonienia z niepokoju. Więcej zwykłej bliskości.'
+              : 'Cmok działa w parach. Poproś bliską osobę o zaproszenie lub wpisz kod, który dostałeś/aś.'}
           </Text>
         </Animated.View>
       </View>
@@ -50,7 +53,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           onPress={onStart}
           style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
         >
-          <Text style={styles.primaryBtnText}>Zacznij</Text>
+          <Text style={styles.primaryBtnText}>{FeatureFlags.ALLOW_ORGANIC_SIGNUP ? 'Zacznij' : 'Mam kod zaproszenia'}</Text>
         </Pressable>
       </Animated.View>
     </SafeAreaView>

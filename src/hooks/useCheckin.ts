@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../services/supabase';
+import { supabase, SUPABASE_URL } from '../services/supabase';
 import { todayDateKey } from '../utils/today';
 
 export function useCheckin() {
@@ -76,6 +76,16 @@ export function useCheckin() {
         );
 
       if (error) throw error;
+
+      // Notify recipient — fire-and-forget, don't block UI
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) return;
+        fetch(`${SUPABASE_URL}/functions/v1/daily-sign-push`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: '{}',
+        }).catch(() => {});
+      });
 
       setCheckedInToday(true);
       setLastCheckin({ checked_at: new Date().toISOString(), source: 'app' });

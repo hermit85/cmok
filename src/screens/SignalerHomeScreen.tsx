@@ -7,13 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import NetInfo from '@react-native-community/netinfo';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
+import { MonthGrid } from '../components/MonthGrid';
 import { Particles } from '../components/Particles';
 import { UrgentConfirmation } from '../components/UrgentConfirmation';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
 import { Shadows } from '../constants/tokens';
 import { haptics } from '../utils/haptics';
-import { openPhoneCall } from '../utils/linking';
 import { useCheckin } from '../hooks/useCheckin';
 import { useCircle } from '../hooks/useCircle';
 import { useSignals } from '../hooks/useSignals';
@@ -24,6 +24,7 @@ import { logInviteEvent } from '../utils/invite';
 import type { Signal, SupportParticipant } from '../types';
 import type { SignalerHomePreview } from '../dev/homePreview';
 import { getRelationForms, relationDisplay } from '../utils/relationCopy';
+import { getStreakCopy } from '../utils/streakCopy';
 
 /* ─── helpers ─── */
 
@@ -54,9 +55,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     isActive: urgentActive, currentAlert, urgentCase,
     loading: urgentLoading, preflight: urgentPreflight, sendUrgentSignal, retrySend, cancel: cancelUrgent,
   } = useUrgentSignal();
-  const { days: realWeekDays, refresh: refreshWeek } = useWeekRhythm(userId);
+  const { days: realWeekDays, monthDays, streak, totalCheckins, refresh: refreshWeek } = useWeekRhythm(userId);
 
   const [showUrgentModal, setShowUrgentModal] = useState(false);
+  const [showMonth, setShowMonth] = useState(false);
   const [localUrgentOffline, setLocalUrgentOffline] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [pendingSaved, setPendingSaved] = useState(false);
@@ -264,7 +266,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           </Text>
           <Text style={s.urgentBody}>
             {localUrgentOffline
-              ? 'Bez internetu nie możemy wysłać wiadomości. Zadzwoń bezpośrednio.'
+              ? 'Bez internetu nie możemy wysłać wiadomości. Spróbuj ponownie, gdy wrócisz online.'
               : claimer ? `${claimer} już się tym zajmuje.` : 'Czekamy, aż ktoś z kręgu odpowie.'}
           </Text>
           {effectiveAlert ? (
@@ -277,9 +279,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           <Pressable onPress={() => retrySend().catch(() => {})} disabled={urgentLoading || localUrgentOffline}
             style={({ pressed }) => [s.urgentBtn, (urgentLoading || localUrgentOffline) && s.urgentBtnOff, pressed && { opacity: 0.9 }]}>
             <Text style={s.urgentBtnText}>Wyślij ponownie</Text>
-          </Pressable>
-          <Pressable onPress={() => openPhoneCall('112', 'Nie można połączyć.')} style={({ pressed }) => [s.urgentSecBtn, pressed && { opacity: 0.75 }]}>
-            <Text style={s.urgentSecBtnText}>Zadzwoń bezpośrednio</Text>
           </Pressable>
           <Pressable onPress={() => { if (currentAlert) cancelUrgent(currentAlert.id).catch(() => {}); else setLocalUrgentOffline(false); }}
             style={({ pressed }) => [s.cancelLink, pressed && { opacity: 0.65 }]}>
@@ -296,8 +295,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const hasName = !rf.isFallback;
   const name = rf.nominative;
 
-  const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.every((d) => d !== 'ok');
+  const isFirstEver = !pv && totalCheckins === 0 && realWeekDays.every((d) => d !== 'ok');
   const okDays = realWeekDays.filter((d) => d === 'ok').length + (showChecked && !pv ? 1 : 0);
+  // Effective streak: +1 optimistically when just checked in but refresh hasn't completed
+  const effectiveStreak = streak + (showChecked && !pv && streak === 0 ? 1 : 0);
+  // Gap return: had previous check-ins but streak restarted (missed at least one day)
+  const isGapReturn = !isFirstEver && effectiveStreak <= 1 && totalCheckins > 0;
 
   // Signals / response data (computed first, used in copy and tracking)
   const signals = pv && showChecked
@@ -306,6 +309,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const hasResponse = signals.length > 0;
   const responseName = hasResponse ? relationDisplay(effectiveCircleNames.get(signals[0].from_user_id)) : null;
   const responseEmoji = hasResponse ? (signals[0].emoji || '\u{1F49B}') : null;
+  const responseVerb = responseName?.endsWith('a') ? 'widziała' : 'widział';
 
   // Gap detection
   const hasGap = !pv && !showChecked && !isFirstEver && realWeekDays.length >= 2 && (() => {
@@ -341,13 +345,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     copyLine = 'Zapisano. Wyślemy, gdy wróci internet.';
     buttonLabel = 'Zapisano';
   } else if (confirmedDone) {
-    if (isFirstEver) {
-      copyLine = hasName ? `Pierwszy znak poszedł do ${rf.genitive}` : 'Pierwszy znak poszedł';
-    } else if (hasGap) {
-      copyLine = 'Wróciło';
-    } else {
-      copyLine = hasResponse ? 'Na dziś jesteście w kontakcie' : hasName ? `${name} zobaczy` : 'Znak poszedł';
-    }
+    copyLine = hasResponse
+      ? 'Na dziś jesteście w kontakcie'
+      : getStreakCopy(effectiveStreak, isFirstEver, isGapReturn, hasName ? name : null);
     buttonLabel = 'Gotowe';
   } else {
     // Pending today — main action
@@ -409,7 +409,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>{responseEmoji} od {responseName}</Text>
+                  <Text style={s.responseReceiptText}>{responseName} {responseVerb} Twój znak {responseEmoji}</Text>
                 </View>
               ) : null}
             </Animated.View>
@@ -419,6 +419,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
           {/* ─── WEEK DOTS ─── */}
           {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} showLabel={showChecked} /></View> : null}
+          {weekDots.length > 0 ? (
+            <Pressable onPress={() => setShowMonth((v) => !v)} style={({ pressed }) => [s.monthToggle, pressed && { opacity: 0.6 }]}>
+              <Text style={s.monthToggleText}>{showMonth ? 'Schowaj' : 'Ostatni miesiąc'}</Text>
+            </Pressable>
+          ) : null}
+          {showMonth ? <MonthGrid days={monthDays} /> : null}
         </View>
 
         {/* ─── URGENT LINK ─── */}
@@ -468,6 +474,8 @@ const s = StyleSheet.create({
   },
   responseReceiptText: { fontSize: 15, fontWeight: '600', color: Colors.safeStrong },
   dotsWrap: { marginTop: 24 },
+  monthToggle: { marginTop: 10, minHeight: 32, justifyContent: 'center', alignItems: 'center' },
+  monthToggleText: { fontSize: 12, fontWeight: '500', color: Colors.textMuted },
 
   /* urgent link */
   urgentLink: {
@@ -486,8 +494,6 @@ const s = StyleSheet.create({
   urgentBtn: { height: 56, borderRadius: 16, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
   urgentBtnOff: { backgroundColor: Colors.disabled },
   urgentBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
-  urgentSecBtn: { height: 52, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
-  urgentSecBtnText: { fontSize: 16, fontWeight: '700', color: Colors.textSecondary },
   cancelLink: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   cancelLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
 });

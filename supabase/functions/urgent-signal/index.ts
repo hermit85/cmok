@@ -307,15 +307,15 @@ async function sendSupportPushes(params: {
         to: token,
         sound: 'default',
         title: 'Cmok',
-        body: `${params.signalerName} daje znać, że coś się dzieje.`,
+        body: `${params.signalerName} prosi o kontakt`,
         data: {
           type: 'sos',
           alert_id: params.alertId,
           latitude: params.latitude,
           longitude: params.longitude,
         },
-        priority: 'high',
-        channelId: 'sos',
+        priority: 'normal',
+        channelId: 'urgent',
       };
     });
   });

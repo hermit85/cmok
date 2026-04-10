@@ -96,15 +96,15 @@ function isExpoPushToken(value: string | null | undefined): value is string {
 async function ensureAndroidChannels(): Promise<void> {
   await Notifications.setNotificationChannelAsync('default', {
     name: 'Domyślne',
-    importance: Notifications.AndroidImportance.MAX,
+    importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 250, 250, 250],
     sound: 'default',
   });
 
-  await Notifications.setNotificationChannelAsync('sos', {
-    name: 'Ważne wiadomości',
-    importance: Notifications.AndroidImportance.MAX,
-    vibrationPattern: [0, 500, 200, 500, 200, 500],
+  await Notifications.setNotificationChannelAsync('urgent', {
+    name: 'Pilne sygnały',
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
     sound: 'default',
   });
 }

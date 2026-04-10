@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { Redirect } from 'expo-router';
-import { getPendingInvite, clearPendingInvite } from '../src/utils/pendingInvite';
+import { getPendingInvite, savePendingInvite, clearPendingInvite } from '../src/utils/pendingInvite';
 import { logInviteEvent } from '../src/utils/invite';
 import { WelcomeScreen } from '../src/screens/WelcomeScreen';
-import { IntentScreen, type UserIntent } from '../src/screens/IntentScreen';
+import { EnterCodeScreen } from '../src/screens/EnterCodeScreen';
 import { WhoGetsSignScreen } from '../src/screens/WhoGetsSignScreen';
-import { PhoneAuthScreen } from '../src/screens/PhoneAuthScreen';
-import { VerifyCodeScreen, type VerifyResult } from '../src/screens/VerifyCodeScreen';
-import { SetupScreen } from '../src/screens/SetupScreen';
+import { PhoneAuthScreen, type VerifyResult } from '../src/screens/PhoneAuthScreen';
 import { JoinScreen } from '../src/screens/JoinScreen';
 import { LoadingScreen } from '../src/components/LoadingScreen';
 import { supabase } from '../src/services/supabase';
@@ -16,48 +14,63 @@ import type { AppRole } from '../src/types';
 import { toLegacyRole } from '../src/utils/roles';
 
 /*
-  Path A (signaler): welcome → intent → who-gets-sign → phone → verify → setup → done(/waiting)
-  Path B (recipient): welcome → intent → phone → verify → join → done(/signaler-home)
+  Two paths — both are signaler:
+
+  Deep link (invite code in URL):
+    → phone (+ SMS verify) → who-gets-sign → join (prefilled) → done
+
+  No deep link:
+    welcome → enter-code → phone (+ SMS verify) → who-gets-sign → join → done
 */
 
-type Step = 'welcome' | 'intent' | 'who-gets-sign' | 'phone' | 'verify' | 'setup' | 'join' | 'done';
+type Step = 'loading' | 'welcome' | 'enter-code' | 'phone' | 'who-gets-sign' | 'join' | 'done';
 type DestinationRoute = '/waiting' | '/signaler-home' | '/recipient-home' | null;
 
 export default function OnboardingFlow() {
-  const [step, setStep] = useState<Step>('welcome');
-  const [phone, setPhone] = useState('');
-  const [selectedRole, setSelectedRole] = useState<AppRole | null>(null);
+  const [step, setStep] = useState<Step>('loading');
   const [recipientName, setRecipientName] = useState('');
   const [destinationRoute, setDestinationRoute] = useState<DestinationRoute>(null);
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
 
-  useEffect(() => {
-    getPendingInvite().then((inv) => { if (inv) setPendingInviteCode(inv.code); });
-  }, []);
-
-  // Auto-resume: if user already has auth + profile, skip to the right step
+  // On mount: check for pending invite code and existing auth
   useEffect(() => {
     (async () => {
+      const pending = await getPendingInvite();
+
+      // Auto-resume: user already has auth + profile → skip to right step
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return; // No auth → stay on welcome
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('users').select('id, role, name').eq('id', session.user.id).maybeSingle();
 
-      const { data: profile } = await supabase
-        .from('users').select('id, role, name').eq('id', session.user.id).maybeSingle();
-      if (!profile) return; // No profile → stay on welcome
+        if (profile) {
+          // Already has profile — go to join or done
+          if (pending) {
+            setPendingInviteCode(pending.code);
+            setStep('join');
+          } else {
+            setStep('join');
+          }
+          return;
+        }
+      }
 
-      const role = profile.role === 'signaler' || profile.role === 'recipient' ? profile.role as AppRole : null;
-      if (!role) return;
-
-      setSelectedRole(role);
-      // Route based on role: signaler → join, recipient → setup
-      setStep(role === 'signaler' ? 'join' : 'setup');
+      // Not authed or no profile
+      if (pending) {
+        // Deep link code saved → skip straight to phone auth
+        setPendingInviteCode(pending.code);
+        logInviteEvent('invite_resume_started', { code: pending.code });
+        setStep('phone');
+      } else {
+        setStep('welcome');
+      }
     })();
   }, []);
 
   const createProfileForRole = async (role: AppRole) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Brak sesji');
-    const payload = { id: user.id, phone: user.phone || phone, name: role === 'signaler' ? 'Ja' : 'Bliska osoba', role };
+    const payload = { id: user.id, phone: user.phone || '', name: 'Ja', role };
     const { error } = await supabase.from('users').upsert(payload, { onConflict: 'id' });
     if (!error) return;
     const { error: legacyError } = await supabase.from('users').upsert(
@@ -66,18 +79,10 @@ export default function OnboardingFlow() {
     if (legacyError) throw legacyError;
   };
 
-  const handleIntent = (intent: UserIntent) => {
-    if (intent === 'i-am-center') {
-      setSelectedRole('signaler');
-      setStep('who-gets-sign');
-    } else {
-      setSelectedRole('recipient');
-      setStep('phone');
-    }
-  };
-
-  const handleWhoGetsSign = (name: string) => {
-    setRecipientName(name);
+  const handleCodeEntered = async (code: string) => {
+    await savePendingInvite(code, 'manual');
+    setPendingInviteCode(code);
+    logInviteEvent('invite_code_submitted', { code });
     setStep('phone');
   };
 
@@ -85,82 +90,76 @@ export default function OnboardingFlow() {
     const { profile, relationshipStatus } = result;
     const pendingInvite = await getPendingInvite();
 
+    // Already has active relationship → go home
     if (profile && relationshipStatus === 'active') {
       if (pendingInvite) await clearPendingInvite();
-      setSelectedRole(profile.role);
       setDestinationRoute(profile.role === 'signaler' ? '/signaler-home' : '/recipient-home');
       setStep('done');
       return;
     }
-    if (profile && relationshipStatus === 'pending') {
-      setSelectedRole(profile.role);
-      if (profile.role === 'recipient') { setDestinationRoute('/waiting'); setStep('done'); }
-      else {
-        if (pendingInvite) { logInviteEvent('invite_resume_started', { code: pendingInvite.code }); setPendingInviteCode(pendingInvite.code); }
-        setStep('join');
+
+    // Has profile → skip to who-gets-sign or join
+    if (profile) {
+      if (pendingInvite) {
+        setPendingInviteCode(pendingInvite.code);
+        logInviteEvent('invite_resume_started', { code: pendingInvite.code });
       }
+      setStep('who-gets-sign');
       return;
     }
-    if (profile && relationshipStatus === 'none') {
-      setSelectedRole(profile.role);
-      if (pendingInvite && profile.role !== 'recipient') {
-        logInviteEvent('invite_resume_started', { code: pendingInvite.code }); setPendingInviteCode(pendingInvite.code); setStep('join');
-      } else { setStep(profile.role === 'recipient' ? 'setup' : 'join'); }
-      return;
-    }
-    if (selectedRole) {
-      try {
-        await createProfileForRole(selectedRole);
-        if (pendingInvite && selectedRole !== 'recipient') {
-          logInviteEvent('invite_resume_started', { code: pendingInvite.code }); setPendingInviteCode(pendingInvite.code); setStep('join');
-        } else { setStep(selectedRole === 'recipient' ? 'setup' : 'join'); }
-      } catch (err) {
-        console.error('[onboarding] error:', err);
-        Alert.alert('Błąd', 'Nie udało się utworzyć profilu.');
-        setStep('intent');
+
+    // New user — create signaler profile, then continue
+    try {
+      await createProfileForRole('signaler');
+      if (pendingInvite) {
+        setPendingInviteCode(pendingInvite.code);
+        logInviteEvent('invite_resume_started', { code: pendingInvite.code });
       }
-      return;
+      setStep('who-gets-sign');
+    } catch (err) {
+      console.error('[onboarding] createProfile error:', err);
+      Alert.alert('Błąd', 'Nie udało się utworzyć profilu. Spróbuj ponownie.');
+      setStep('phone');
     }
-    setStep('intent');
   };
 
-  const handleConnectionCreated = () => { setDestinationRoute('/waiting'); setStep('done'); };
-  const handleJoined = () => { setDestinationRoute('/signaler-home'); setStep('done'); };
+  const handleWhoGetsSign = (name: string) => {
+    setRecipientName(name);
+    setStep('join');
+  };
+
+  const handleJoined = () => {
+    if (pendingInviteCode) {
+      clearPendingInvite();
+      logInviteEvent('invite_resume_completed', { code: pendingInviteCode });
+    }
+    setDestinationRoute('/signaler-home');
+    setStep('done');
+  };
 
   const goBack = () => {
     switch (step) {
-      case 'intent': setStep('welcome'); break;
-      case 'who-gets-sign': setStep('intent'); break;
-      case 'phone': setStep(selectedRole === 'signaler' ? 'who-gets-sign' : 'intent'); break;
-      case 'verify': setStep('phone'); break;
-      case 'setup': case 'join': setStep('phone'); break;
+      case 'enter-code': setStep('welcome'); break;
+      case 'phone': setStep(pendingInviteCode ? 'welcome' : 'enter-code'); break;
+      case 'who-gets-sign': setStep('phone'); break;
+      case 'join': setStep('who-gets-sign'); break;
     }
   };
 
   switch (step) {
+    case 'loading':
+      return <LoadingScreen />;
     case 'welcome':
-      return <WelcomeScreen onStart={() => { logInviteEvent('onboarding_started'); setStep('intent'); }} />;
-    case 'intent':
-      return <IntentScreen onSelect={handleIntent} onBack={goBack} />;
+      return <WelcomeScreen onStart={() => { logInviteEvent('onboarding_started'); setStep('enter-code'); }} />;
+    case 'enter-code':
+      return <EnterCodeScreen onSubmit={handleCodeEntered} onBack={goBack} />;
+    case 'phone':
+      return <PhoneAuthScreen onBack={goBack} onVerified={handleVerified} />;
     case 'who-gets-sign':
       return <WhoGetsSignScreen onContinue={handleWhoGetsSign} onBack={goBack} />;
-    case 'phone':
-      return (
-        <PhoneAuthScreen onBack={goBack} selectedRole={selectedRole}
-          relationLabel={recipientName || 'bliskiej osoby'}
-          onCodeSent={(p) => { setPhone(p); setStep('verify'); }} />
-      );
-    case 'verify':
-      return (
-        <VerifyCodeScreen phone={phone} relationLabel={recipientName || 'bliskiej osoby'}
-          onVerified={handleVerified} onBack={goBack} />
-      );
-    case 'setup':
-      return <SetupScreen onDone={handleConnectionCreated} onBack={goBack} initialLabel={recipientName || 'Bliska osoba'} />;
     case 'join':
       return (
-        <JoinScreen onBack={goBack}
-          onDone={() => { if (pendingInviteCode) { clearPendingInvite(); logInviteEvent('invite_resume_completed', { code: pendingInviteCode }); } handleJoined(); }}
+        <JoinScreen onBack={goBack} onDone={handleJoined}
           relationLabel={recipientName || 'bliską osobą'} initialCode={pendingInviteCode || ''} />
       );
     case 'done':
