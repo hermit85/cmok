@@ -19,7 +19,8 @@ import { openPhoneCall } from '../utils/linking';
 import { supabase } from '../services/supabase';
 import type { DailyCheckin, SupportParticipant as SParticipant } from '../types';
 import type { RecipientHomePreview } from '../dev/homePreview';
-import { formatClock, formatLocalDateKey } from '../utils/date';
+import { formatClock } from '../utils/date';
+import { todayDateKey } from '../utils/today';
 import { logInviteEvent } from '../utils/invite';
 import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils/relationCopy';
 
@@ -30,11 +31,11 @@ type DayStatus = 'ok' | 'missing' | 'future';
 function fmtTime(iso: string): string { return formatClock(iso) || '--:--'; }
 function fmtRelative(ld: string | null, ca: string | null): string | null {
   if (!ld || !ca) return null;
-  const today = formatLocalDateKey(new Date());
+  const today = todayDateKey(new Date());
   const y = new Date(); y.setDate(y.getDate() - 1);
   const t = fmtTime(ca);
   if (ld === today) return `dziś o ${t}`;
-  if (ld === formatLocalDateKey(y)) return `wczoraj o ${t}`;
+  if (ld === todayDateKey(y)) return `wczoraj o ${t}`;
   const [yr, mo, dy] = ld.split('-');
   return `${dy}.${mo}.${yr} o ${t}`;
 }
@@ -145,7 +146,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     if (!sigId) return;
     try {
       const today = new Date();
-      const todayStr = formatLocalDateKey(today);
+      const todayStr = todayDateKey(today);
       const { data } = await supabase.from('daily_checkins').select('local_date, checked_at')
         .eq('senior_id', sigId).gte('local_date', todayStr).lte('local_date', todayStr).limit(1).maybeSingle();
 
@@ -154,7 +155,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       // Last contact from recent history
       const ago = new Date(today); ago.setDate(today.getDate() - 6);
       const { data: recent } = await supabase.from('daily_checkins').select('local_date, checked_at')
-        .eq('senior_id', sigId).gte('local_date', formatLocalDateKey(ago)).lte('local_date', todayStr)
+        .eq('senior_id', sigId).gte('local_date', todayDateKey(ago)).lte('local_date', todayStr)
         .order('local_date', { ascending: false }).limit(1).maybeSingle();
       const latestRow = recent as DailyCheckin | null;
 

@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import type { Signal } from '../types';
-
-function getTodayStart(): string {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
-}
+import { todayMidnightISO } from '../utils/today';
 
 export function useSignals() {
   const [todaySignals, setTodaySignals] = useState<Signal[]>([]);
@@ -20,7 +15,7 @@ export function useSignals() {
       if (!user) return;
       setUserId(user.id);
 
-      const todayStart = getTodayStart();
+      const todayStart = todayMidnightISO();
 
       // Incoming signals (to me today)
       const { data: incoming } = await supabase
@@ -61,7 +56,7 @@ export function useSignals() {
         filter: `to_user_id=eq.${userId}`,
       }, (payload) => {
         const sig = payload.new as Signal;
-        if (sig.created_at >= getTodayStart()) {
+        if (sig.created_at >= todayMidnightISO()) {
           setTodaySignals(prev => [sig, ...prev]);
         }
       })
@@ -79,7 +74,7 @@ export function useSignals() {
         filter: `from_user_id=eq.${userId}`,
       }, (payload) => {
         const sig = payload.new as Signal;
-        if (sig.type === 'reaction' && sig.created_at >= getTodayStart()) {
+        if (sig.type === 'reaction' && sig.created_at >= todayMidnightISO()) {
           setTodaySentSignals(prev => [sig, ...prev]);
         }
       })
@@ -99,7 +94,7 @@ export function useSignals() {
       .eq('from_user_id', user.id)
       .eq('to_user_id', toUserId)
       .eq('type', 'reaction')
-      .gte('created_at', getTodayStart())
+      .gte('created_at', todayMidnightISO())
       .limit(1)
       .maybeSingle();
 

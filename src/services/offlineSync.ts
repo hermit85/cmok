@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { supabase } from './supabase';
-import { formatLocalDateKey } from '../utils/date';
+import { todayDateKey } from '../utils/today';
 
 const PENDING_CHECKIN_KEY = 'cmok_pending_checkin';
 
@@ -32,7 +32,7 @@ async function removeItem(key: string): Promise<void> {
 export async function savePendingCheckin(seniorId: string): Promise<void> {
   const checkin: PendingCheckin = {
     senior_id: seniorId,
-    local_date: formatLocalDateKey(),
+    local_date: todayDateKey(),
     source: 'app',
     saved_at: new Date().toISOString(),
   };
@@ -50,7 +50,7 @@ export async function syncPendingCheckin(): Promise<boolean> {
     if (!raw) return false;
 
     const checkin: PendingCheckin = JSON.parse(raw);
-    const today = formatLocalDateKey();
+    const today = todayDateKey();
 
     // SAFETY: reject stale pending items from previous days
     if (checkin.local_date !== today) {

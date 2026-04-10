@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabase';
-import { formatLocalDateKey } from '../utils/date';
+import { todayDateKey } from '../utils/today';
 
 export function useCheckin() {
   const [checkedInToday, setCheckedInToday] = useState(false);
@@ -34,7 +34,7 @@ export function useCheckin() {
         return;
       }
 
-      const today = formatLocalDateKey();
+      const today = todayDateKey();
 
       const { data, error } = await supabase
         .from('daily_checkins')
@@ -66,7 +66,7 @@ export function useCheckin() {
         throw error;
       }
 
-      const today = formatLocalDateKey();
+      const today = todayDateKey();
 
       const { error } = await supabase
         .from('daily_checkins')

@@ -111,18 +111,19 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   }, [refreshCheckin, refreshWeek]);
   useEffect(() => () => { if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current); }, []);
 
-  /* ─── derived ─── */
+  /* ─── derived: 4 clear states ─── */
 
-  const showChecked = pv ? pvChecked : checkedInToday || pendingSaved || justChecked;
+  // DB-confirmed truth: the ONLY source for "done today"
+  const confirmedDone = pv ? pvChecked : checkedInToday;
+  // Transitional states: user acted but DB hasn't confirmed yet
+  const isSending = !pv && justChecked && !checkedInToday && !pendingSaved;
+  const isPendingOffline = !pv && pendingSaved && !checkedInToday;
+  // For UI rendering: confirmed OR transitional
+  const showChecked = confirmedDone || isSending || isPendingOffline;
 
-  // Diagnostic: log source of done state in dev
-  if (__DEV__ && showChecked && !pv) {
-    const source = checkedInToday ? 'db_confirmed' : pendingSaved ? 'offline_pending' : justChecked ? 'user_tap' : 'unknown';
-    console.log('[SignalerHome] showChecked=true source:', source);
-  }
   const displayTime = pv
     ? pvChecked ? '08:14' : null
-    : pendingSaved ? pendingCheckinTime : formatTime(lastCheckin?.checked_at ?? null);
+    : isPendingOffline ? pendingCheckinTime : formatTime(lastCheckin?.checked_at ?? null);
   const authBlocked = !pv && authReady && !isAuthenticated;
   const canCheckin = pv ? !showChecked : authReady && isAuthenticated && !showChecked && !checkinLoading;
   const canUrgent = pv ? true : authReady && isAuthenticated;
@@ -329,27 +330,39 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     }
   }, [hasResponse, showChecked]);
 
-  // Copy states
-  const afterCopy = isFirstEver && showChecked
-    ? hasName ? `Pierwszy znak poszedł do ${rf.genitive}` : 'Pierwszy znak poszedł'
-    : showChecked && hasGap
-      ? 'Wróciło'
-      : showChecked
-        ? hasResponse ? 'Na dziś jesteście w kontakcie' : hasName ? `${name} zobaczy` : 'Znak poszedł'
-        : '';
+  // Copy — 4 clear states
+  let copyLine: string;
+  let buttonLabel: string;
 
-  const copyLine = showChecked
-    ? afterCopy
-    : isFirstEver
-      ? hasName ? `Wyślij pierwszy znak ${rf.dative}` : 'Wyślij pierwszy znak'
-      : hasGap
-        ? hasName ? `Wróćmy do kontaktu z ${rf.instrumental}` : 'Wróćmy dziś do kontaktu'
-        : hasName ? `Daj dziś znak ${rf.dative}` : 'Daj dziś spokojny znak';
+  if (isSending) {
+    copyLine = 'Wysyłamy...';
+    buttonLabel = '...';
+  } else if (isPendingOffline) {
+    copyLine = 'Zapisano. Wyślemy, gdy wróci internet.';
+    buttonLabel = 'Zapisano';
+  } else if (confirmedDone) {
+    if (isFirstEver) {
+      copyLine = hasName ? `Pierwszy znak poszedł do ${rf.genitive}` : 'Pierwszy znak poszedł';
+    } else if (hasGap) {
+      copyLine = 'Wróciło';
+    } else {
+      copyLine = hasResponse ? 'Na dziś jesteście w kontakcie' : hasName ? `${name} zobaczy` : 'Znak poszedł';
+    }
+    buttonLabel = 'Gotowe';
+  } else {
+    // Pending today — main action
+    if (isFirstEver) {
+      copyLine = hasName ? `Wyślij pierwszy znak ${rf.dative}` : 'Wyślij pierwszy znak';
+    } else if (hasGap) {
+      copyLine = hasName ? `Wróćmy do kontaktu z ${rf.instrumental}` : 'Wróćmy dziś do kontaktu';
+    } else {
+      copyLine = hasName ? `Daj dziś znak ${rf.dative}` : 'Daj dziś spokojny znak';
+    }
+    buttonLabel = !pv && !authReady ? '...' : authBlocked ? 'Zaloguj' : isFirstEver ? 'Wyślij' : 'Daj znak';
+  }
 
-  const timeLine = showChecked && displayTime ? `o ${displayTime}` : null;
-  const offlineLine = pendingSaved ? 'Wyślemy, gdy wróci internet' : null;
-  const buttonLabel = !pv && !authReady ? '...' : showChecked ? 'Gotowe' : authBlocked ? 'Zaloguj' : isFirstEver ? 'Wyślij' : 'Daj znak';
-  const buttonDone = showChecked;
+  const timeLine = confirmedDone && displayTime ? `o ${displayTime}` : null;
+  const buttonDone = confirmedDone || isPendingOffline;
   const buttonDisabled = !canCheckin && !showChecked;
 
   const weekDots = pv
@@ -392,7 +405,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           {/* ─── COPY ─── */}
           {showChecked ? (
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
-              <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{offlineLine || copyLine}</Text>
+              <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
