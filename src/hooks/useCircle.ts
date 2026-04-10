@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabase';
 import type { AppRole, CircleMember } from '../types';
 import { normalizeAppRole } from '../utils/roles';
+import { resolveLabel } from '../utils/resolveLabel';
 
 export function useCircle() {
   const [members, setMembers] = useState<CircleMember[]>([]);
@@ -78,9 +79,11 @@ export function useCircle() {
 
           if (!otherId) return null;
 
+          const resolvedName = resolveLabel(pair.signaler_label || pair.senior_name, otherUser?.name);
+
           return {
             userId: otherId,
-            name: otherUser?.name || pair.signaler_label || pair.senior_name || 'Bliska osoba',
+            name: resolvedName,
             phone: otherUser?.phone || '',
             role: normalizeAppRole(otherUser?.role) || (pair.senior_id === user.id ? 'recipient' : 'signaler'),
             relationshipId: pair.id,

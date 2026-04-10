@@ -12,6 +12,7 @@ import * as Location from 'expo-location';
 import { supabase, SUPABASE_URL } from '../services/supabase';
 import type { AlertCase, SupportCase, SupportParticipant, SupportViewerRole } from '../types';
 import { normalizeAppRole } from '../utils/roles';
+import { resolveLabel } from '../utils/resolveLabel';
 
 /* ─── helpers ─── */
 
@@ -30,25 +31,25 @@ async function loadViewerRelationships(userId: string) {
     .from('users').select('role').eq('id', userId).maybeSingle();
 
   const role = normalizeAppRole(profile?.role);
-  const relationships = new Map<string, { id: string; senior_id: string; caregiver_id: string }>();
+  const relationships = new Map<string, { id: string; senior_id: string; caregiver_id: string; signaler_label: string | null }>();
 
   if (role === 'signaler') {
     const { data: pairs } = await supabase
-      .from('care_pairs').select('id, senior_id, caregiver_id')
+      .from('care_pairs').select('id, senior_id, caregiver_id, signaler_label')
       .eq('senior_id', userId).eq('status', 'active');
     for (const pair of pairs || []) relationships.set(pair.senior_id, pair);
   }
 
   if (role === 'recipient') {
     const { data: pairs } = await supabase
-      .from('care_pairs').select('id, senior_id, caregiver_id')
+      .from('care_pairs').select('id, senior_id, caregiver_id, signaler_label')
       .eq('caregiver_id', userId).eq('status', 'active');
     for (const pair of pairs || []) relationships.set(pair.senior_id, pair);
   }
 
   const { data: trustedMemberships } = await supabase
     .from('trusted_contacts')
-    .select('care_pairs!inner(id, senior_id, caregiver_id, status)')
+    .select('care_pairs!inner(id, senior_id, caregiver_id, signaler_label, status)')
     .eq('user_id', userId).eq('status', 'active').eq('care_pairs.status', 'active');
 
   for (const membership of trustedMemberships || []) {
@@ -144,7 +145,7 @@ export function useUrgentSignal(): UrgentSignalState {
       const relRow = relationships.get(alert.senior_id) || null;
       if (!relRow) { setIsActive(true); setCurrentAlert(alert); setUrgentCase(null); return; }
 
-      const rel = { id: relRow.id, signalerUserId: relRow.senior_id, recipientUserId: relRow.caregiver_id };
+      const rel = { id: relRow.id, signalerUserId: relRow.senior_id, recipientUserId: relRow.caregiver_id, signalerLabel: relRow.signaler_label };
 
       const [{ data: trustedContacts }, { data: deliveries }] = await Promise.all([
         supabase.from('trusted_contacts').select('id, user_id, status')
@@ -195,7 +196,7 @@ export function useUrgentSignal(): UrgentSignalState {
       setCurrentAlert(alert);
       setUrgentCase({
         alert, relationshipId: rel.id, viewerUserId: userId,
-        signalerId: rel.signalerUserId, signalerName: userMap.get(rel.signalerUserId)?.name || 'Bliska osoba',
+        signalerId: rel.signalerUserId, signalerName: resolveLabel(rel.signalerLabel, userMap.get(rel.signalerUserId)?.name),
         primaryRecipientId: rel.recipientUserId,
         claimerId: alert.acknowledged_by,
         claimerName: alert.acknowledged_by ? userMap.get(alert.acknowledged_by)?.name || 'Bliska osoba' : null,
