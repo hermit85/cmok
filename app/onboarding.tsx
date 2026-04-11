@@ -6,8 +6,7 @@ import { logInviteEvent } from '../src/utils/invite';
 import { WelcomeScreen } from '../src/screens/WelcomeScreen';
 import { IntentScreen, type UserIntent } from '../src/screens/IntentScreen';
 import { WhoGetsSignScreen } from '../src/screens/WhoGetsSignScreen';
-import { PhoneAuthScreen } from '../src/screens/PhoneAuthScreen';
-import { VerifyCodeScreen, type VerifyResult } from '../src/screens/VerifyCodeScreen';
+import { PhoneVerifyScreen, type VerifyResult } from '../src/screens/PhoneVerifyScreen';
 import { SetupScreen } from '../src/screens/SetupScreen';
 import { JoinScreen } from '../src/screens/JoinScreen';
 import { LoadingScreen } from '../src/components/LoadingScreen';
@@ -16,16 +15,15 @@ import type { AppRole } from '../src/types';
 import { toLegacyRole } from '../src/utils/roles';
 
 /*
-  Path A (signaler): welcome → intent → who-gets-sign → phone → verify → setup → done(/waiting)
-  Path B (recipient): welcome → intent → phone → verify → join → done(/signaler-home)
+  Path A (signaler): welcome → intent → who-gets-sign → phone(+verify) → setup → done(/waiting)
+  Path B (recipient): welcome → intent → phone(+verify) → join → done(/signaler-home)
 */
 
-type Step = 'welcome' | 'intent' | 'who-gets-sign' | 'phone' | 'verify' | 'setup' | 'join' | 'done';
+type Step = 'welcome' | 'intent' | 'who-gets-sign' | 'phone' | 'setup' | 'join' | 'done';
 type DestinationRoute = '/waiting' | '/signaler-home' | '/recipient-home' | null;
 
 export default function OnboardingFlow() {
   const [step, setStep] = useState<Step>('welcome');
-  const [phone, setPhone] = useState('');
   const [selectedRole, setSelectedRole] = useState<AppRole | null>(null);
   const [recipientName, setRecipientName] = useState('');
   const [destinationRoute, setDestinationRoute] = useState<DestinationRoute>(null);
@@ -57,7 +55,7 @@ export default function OnboardingFlow() {
   const createProfileForRole = async (role: AppRole) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Brak sesji');
-    const payload = { id: user.id, phone: user.phone || phone, name: role === 'signaler' ? 'Ja' : 'Bliska osoba', role };
+    const payload = { id: user.id, phone: user.phone || '', name: role === 'signaler' ? 'Ja' : 'Bliska osoba', role };
     const { error } = await supabase.from('users').upsert(payload, { onConflict: 'id' });
     if (!error) return;
     const { error: legacyError } = await supabase.from('users').upsert(
@@ -132,7 +130,6 @@ export default function OnboardingFlow() {
       case 'intent': setStep('welcome'); break;
       case 'who-gets-sign': setStep('intent'); break;
       case 'phone': setStep(selectedRole === 'signaler' ? (pendingInviteCode ? 'welcome' : 'who-gets-sign') : 'intent'); break;
-      case 'verify': setStep('phone'); break;
       case 'setup': case 'join': setStep('phone'); break;
     }
   };
@@ -156,14 +153,9 @@ export default function OnboardingFlow() {
       return <WhoGetsSignScreen onContinue={handleWhoGetsSign} onBack={goBack} />;
     case 'phone':
       return (
-        <PhoneAuthScreen onBack={goBack} selectedRole={selectedRole}
+        <PhoneVerifyScreen onBack={goBack} selectedRole={selectedRole}
           relationLabel={recipientName || 'bliskiej osoby'}
-          onCodeSent={(p) => { setPhone(p); setStep('verify'); }} />
-      );
-    case 'verify':
-      return (
-        <VerifyCodeScreen phone={phone} relationLabel={recipientName || 'bliskiej osoby'}
-          onVerified={handleVerified} onBack={goBack} />
+          onVerified={handleVerified} />
       );
     case 'setup':
       return <SetupScreen onDone={handleConnectionCreated} onBack={goBack} initialLabel={recipientName || 'Bliska osoba'} />;
