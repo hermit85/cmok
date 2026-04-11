@@ -14,6 +14,9 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   const logoTranslateY = useRef(new Animated.Value(-10)).current;
   const buttonsOpacity = useRef(new Animated.Value(0)).current;
 
+  // Breathing animation for brand motif dots
+  const breathe = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(logoOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
@@ -23,6 +26,16 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
     Animated.timing(buttonsOpacity, {
       toValue: 1, duration: 500, delay: 300, useNativeDriver: true,
     }).start();
+
+    // Subtle breathing loop for the motif
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breathe, { toValue: 1.06, duration: 1000, useNativeDriver: true }),
+        Animated.timing(breathe, { toValue: 1, duration: 1000, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
   }, []);
 
   return (
@@ -35,12 +48,14 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           ]}
         >
           <Text style={styles.logo}>Cmok</Text>
-          <BrandMotif size={72} />
+          <Animated.View style={{ transform: [{ scale: breathe }] }}>
+            <BrandMotif size={48} />
+          </Animated.View>
           <Text style={styles.tagline}>
             Jeden spokojny znak{'\n'}dziennie od bliskiej osoby
           </Text>
           <Text style={styles.supporting}>
-            Mniej dzwonienia z niepokoju. Więcej zwykłej bliskości.
+            Mniej dzwonienia z niepokoju.{'\n'}Więcej zwykłej bliskości.
           </Text>
         </Animated.View>
       </View>
@@ -77,22 +92,21 @@ const styles = StyleSheet.create({
     maxWidth: 340,
   },
   logo: {
-    fontSize: Typography.display,
-    fontWeight: '800',
-    color: Colors.text,
-    marginBottom: 14,
+    fontSize: 40,
+    fontFamily: Typography.headingFamily,
+    color: Colors.accent,
+    marginBottom: 16,
   },
   tagline: {
-    fontSize: 28,
+    fontSize: 26,
+    fontFamily: Typography.headingFamily,
     color: Colors.text,
     textAlign: 'center',
-    lineHeight: 36,
-    marginTop: 16,
-    fontWeight: '700',
-    letterSpacing: -0.4,
+    lineHeight: 34,
+    marginTop: 20,
   },
   supporting: {
-    fontSize: Typography.body,
+    fontSize: 16,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 23,
@@ -105,20 +119,19 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     backgroundColor: Colors.accent,
-    minHeight: 58,
-    borderRadius: 20,
+    minHeight: 54,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.shadow,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
+    shadowColor: '#D4735E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.30,
+    shadowRadius: 12,
     elevation: 5,
   },
   primaryBtnText: {
-    fontSize: Typography.body,
-    fontWeight: '600',
+    fontSize: 17,
+    fontFamily: Typography.headingFamilySemiBold,
     color: '#FFFFFF',
-    letterSpacing: 0.1,
   },
 });
