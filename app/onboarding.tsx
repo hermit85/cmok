@@ -131,7 +131,7 @@ export default function OnboardingFlow() {
     switch (step) {
       case 'intent': setStep('welcome'); break;
       case 'who-gets-sign': setStep('intent'); break;
-      case 'phone': setStep(selectedRole === 'signaler' ? 'who-gets-sign' : 'intent'); break;
+      case 'phone': setStep(selectedRole === 'signaler' ? (pendingInviteCode ? 'welcome' : 'who-gets-sign') : 'intent'); break;
       case 'verify': setStep('phone'); break;
       case 'setup': case 'join': setStep('phone'); break;
     }
@@ -139,7 +139,17 @@ export default function OnboardingFlow() {
 
   switch (step) {
     case 'welcome':
-      return <WelcomeScreen onStart={() => { logInviteEvent('onboarding_started'); setStep('intent'); }} />;
+      return <WelcomeScreen onStart={() => {
+        logInviteEvent('onboarding_started');
+        if (pendingInviteCode) {
+          // Deep link invite → skip role selection, go straight to signaler auth
+          setSelectedRole('signaler');
+          logInviteEvent('invite_intent_skipped', { code: pendingInviteCode });
+          setStep('phone');
+        } else {
+          setStep('intent');
+        }
+      }} />;
     case 'intent':
       return <IntentScreen onSelect={handleIntent} onBack={goBack} />;
     case 'who-gets-sign':

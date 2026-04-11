@@ -52,7 +52,8 @@ export function logInviteEvent(
     | 'sender_response_seen'
     | 'recipient_response_state_restored'
     | 'recipient_response_duplicate_blocked'
-    | 'sender_response_receipt_restored',
+    | 'sender_response_receipt_restored'
+    | 'invite_intent_skipped',
   data?: Record<string, string>,
 ) {
   const timestamp = new Date().toISOString();
