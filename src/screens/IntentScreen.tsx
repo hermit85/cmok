@@ -11,11 +11,13 @@ type UserIntent = 'i-am-center' | 'join-circle';
 interface IntentScreenProps {
   onSelect: (intent: UserIntent) => void;
   onBack: () => void;
+  /** When true, shows simplified two-button layout for testing phase. */
+  simplified?: boolean;
 }
 
 export type { UserIntent };
 
-export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
+export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScreenProps) {
   const [selected, setSelected] = useState<UserIntent | null>(null);
   const scale1 = useRef(new Animated.Value(1)).current;
   const scale2 = useRef(new Animated.Value(1)).current;
@@ -28,6 +30,41 @@ export function IntentScreen({ onSelect, onBack }: IntentScreenProps) {
       Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 5 }),
     ]).start();
   };
+
+  if (simplified) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.top}>
+          <Text style={styles.miniLogo}>Cmok</Text>
+
+          <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
+            <Text style={styles.backText}>← Wróć</Text>
+          </Pressable>
+
+          <Text style={styles.title}>Jak zaczynasz?</Text>
+          <Text style={styles.simplifiedSubtitle}>
+            Cmok łączy dwie bliskie osoby w codzienny rytuał kontaktu.
+          </Text>
+
+          <View style={styles.options}>
+            <Pressable
+              onPress={() => { haptics.light(); onSelect('i-am-center'); }}
+              style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            >
+              <Text style={styles.primaryBtnText}>Mam kod zaproszenia</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => { haptics.light(); onSelect('join-circle'); }}
+              style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={styles.secondaryBtnText}>Chcę zaprosić bliską osobę</Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -97,6 +134,11 @@ const styles = StyleSheet.create({
   backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginLeft: -8, paddingHorizontal: 8, marginBottom: 18 },
   backText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
   title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 22 },
+  simplifiedSubtitle: { fontSize: Typography.body, color: Colors.textSecondary, lineHeight: 23, marginBottom: 32, maxWidth: 300 },
+  primaryBtn: { backgroundColor: Colors.accent, minHeight: 58, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  primaryBtnText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
+  secondaryBtn: { minHeight: 52, justifyContent: 'center', alignItems: 'center', marginTop: 12 },
+  secondaryBtnText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyMedium, color: Colors.accent, textDecorationLine: 'underline' },
   options: { gap: 14 },
   optionCard: { backgroundColor: Colors.cardStrong, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 18, paddingVertical: 18, minHeight: 100, justifyContent: 'center' },
   optionCardSelected: { backgroundColor: Colors.accentWash, borderColor: Colors.accent },

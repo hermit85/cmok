@@ -15,9 +15,14 @@ import type { AppRole } from '../src/types';
 import { toLegacyRole } from '../src/utils/roles';
 
 /*
-  Path A (signaler): welcome → intent → who-gets-sign → phone(+verify) → setup → done(/waiting)
-  Path B (recipient): welcome → intent → phone(+verify) → join → done(/signaler-home)
+  Path A (signaler): welcome → intent → who-gets-sign → phone(+verify) → join → done(/signaler-home)
+  Path B (recipient): welcome → intent → phone(+verify) → setup → done(/waiting)
+
+  When ALLOW_ORGANIC_SIGNUP is false, the intent screen shows simplified
+  options and signaler path skips who-gets-sign (they already have a code).
 */
+
+const ALLOW_ORGANIC_SIGNUP = false;
 
 type Step = 'welcome' | 'intent' | 'who-gets-sign' | 'phone' | 'setup' | 'join' | 'done';
 type DestinationRoute = '/waiting' | '/signaler-home' | '/recipient-home' | null;
@@ -67,7 +72,7 @@ export default function OnboardingFlow() {
   const handleIntent = (intent: UserIntent) => {
     if (intent === 'i-am-center') {
       setSelectedRole('signaler');
-      setStep('who-gets-sign');
+      setStep(ALLOW_ORGANIC_SIGNUP ? 'who-gets-sign' : 'phone');
     } else {
       setSelectedRole('recipient');
       setStep('phone');
@@ -129,7 +134,12 @@ export default function OnboardingFlow() {
     switch (step) {
       case 'intent': setStep('welcome'); break;
       case 'who-gets-sign': setStep('intent'); break;
-      case 'phone': setStep(selectedRole === 'signaler' ? (pendingInviteCode ? 'welcome' : 'who-gets-sign') : 'intent'); break;
+      case 'phone': {
+        if (pendingInviteCode) setStep('welcome');
+        else if (selectedRole === 'signaler' && ALLOW_ORGANIC_SIGNUP) setStep('who-gets-sign');
+        else setStep('intent');
+        break;
+      }
       case 'setup': case 'join': setStep('phone'); break;
     }
   };
@@ -148,7 +158,7 @@ export default function OnboardingFlow() {
         }
       }} />;
     case 'intent':
-      return <IntentScreen onSelect={handleIntent} onBack={goBack} />;
+      return <IntentScreen onSelect={handleIntent} onBack={goBack} simplified={!ALLOW_ORGANIC_SIGNUP} />;
     case 'who-gets-sign':
       return <WhoGetsSignScreen onContinue={handleWhoGetsSign} onBack={goBack} />;
     case 'phone':
