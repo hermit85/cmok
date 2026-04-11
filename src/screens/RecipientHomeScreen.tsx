@@ -10,6 +10,7 @@ import { WeekDots } from '../components/WeekDots';
 import { MonthGrid } from '../components/MonthGrid';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
+import { Typography } from '../constants/typography';
 import { Radius } from '../constants/tokens';
 import { useCircle } from '../hooks/useCircle';
 import { useSignals } from '../hooks/useSignals';
@@ -49,15 +50,16 @@ function connectionLabel(days: number | null): string | null {
   return `Razem od ${days} dni`;
 }
 
-/* ─── Avatar ─── */
+/* ─── Status circle ─── */
 
-function Avatar({ name, ok }: { name: string; ok: boolean | null }) {
-  const letter = (name || '?').charAt(0).toUpperCase();
-  const dotColor = ok === true ? Colors.safe : ok === false ? Colors.accent : Colors.border;
+const STATUS_SIZE = 180;
+
+function StatusCircle({ ok }: { ok: boolean }) {
   return (
-    <View style={st.avatar}>
-      <Text style={st.avatarLetter}>{letter}</Text>
-      <View style={[st.dot, { backgroundColor: dotColor }]} />
+    <View style={[st.statusCircle, ok ? st.statusCircleOk : st.statusCirclePending]}>
+      <Text style={ok ? st.statusCheckmark : st.statusQuestion}>
+        {ok ? '✓' : '?'}
+      </Text>
     </View>
   );
 }
@@ -100,18 +102,15 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
   return (
     <View style={st.responseSection}>
       {sent ? (
-        <View style={st.responseSentWrap}>
-          <Text style={st.responseSentText}>Poszło {relationFor(signalerName)} {'\u{1F49B}'}</Text>
+        <View style={st.responseSentPill}>
+          <Text style={st.responseSentText}>Wysłano {'\u{1F49A}'}</Text>
         </View>
       ) : (
-        <>
-          <Animated.View style={{ transform: [{ scale }] }}>
-            <Pressable onPress={handleTap} style={({ pressed }) => [st.responseBtn, pressed && { opacity: 0.85 }]}>
-              <Text style={st.responseBtnEmoji}>{'\u{1F49B}'}</Text>
-            </Pressable>
-          </Animated.View>
-          <Text style={st.responseHint}>Stuknij, żeby dać znać</Text>
-        </>
+        <Animated.View style={{ transform: [{ scale }] }}>
+          <Pressable onPress={handleTap} style={({ pressed }) => [st.responsePill, pressed && { opacity: 0.85 }]}>
+            <Text style={st.responsePillText}>Wyślij serduszko {'\u{1F49A}'}</Text>
+          </Pressable>
+        </Animated.View>
       )}
     </View>
   );
@@ -349,13 +348,11 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   return (
     <SafeAreaView style={[st.container, effOk && st.containerAfter]}>
-      <ScreenHeader subtitle={relationFrom(sigName)} />
+      <ScreenHeader subtitle={`od ${nameFrom}`} />
       <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false} bounces={false}>
-        <View style={st.center}>
-          {/* Avatar */}
-          <Avatar name={name} ok={effOk ? true : null} />
-
-          {/* Status */}
+        {/* ─── SECTION 1: Status hero ─── */}
+        <View style={st.heroSection}>
+          <StatusCircle ok={effOk} />
           {effOk ? (
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
               <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>
@@ -363,11 +360,17 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             </Animated.View>
           ) : (
             <View style={{ alignItems: 'center' }}>
-              <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>
+              <Text style={st.titlePending} maxFontSizeMultiplier={1.3}>{title}</Text>
               {sub ? <Text style={st.sub}>{sub}</Text> : null}
             </View>
           )}
+        </View>
 
+        {/* ─── SECTION 2: Rhythm ─── */}
+        <View style={st.rhythmSection}>
+          {effWeek.length > 0 ? <WeekDots days={effWeek} showLabel /> : null}
+          {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
+          {sigId ? <MonthGrid signalerId={sigId} /> : null}
           {/* Nudge button — only when no sign today */}
           {!effOk && sigId && !pv ? (
             <Pressable
@@ -380,31 +383,22 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               </Text>
             </Pressable>
           ) : null}
+        </View>
 
-          {/* Week dots */}
-          {effWeek.length > 0 ? <View style={st.dotsWrap}><WeekDots days={effWeek} showLabel /></View> : null}
-
-          {/* Connection duration */}
-          {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
-
-          {/* Month grid */}
-          {sigId ? <MonthGrid signalerId={sigId} /> : null}
-
-          {/* Response */}
+        {/* ─── SECTION 3: Actions ─── */}
+        <View style={st.actionsSection}>
           {effOk && sigId ? (
-            <Animated.View style={{ opacity: afterFade }}>
+            <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
               <ResponseTap signalerName={name} signalerId={sigId} preview={pv} />
             </Animated.View>
           ) : null}
+          <Pressable
+            onPress={() => openPhoneCall(callPhone, 'Nie można połączyć.')}
+            style={({ pressed }) => [st.bottomLink, pressed && { opacity: 0.6 }]}
+          >
+            <Text style={st.bottomLinkText}>W razie czego</Text>
+          </Pressable>
         </View>
-
-        {/* Bottom link */}
-        <Pressable
-          onPress={() => openPhoneCall(callPhone, 'Nie można połączyć.')}
-          style={({ pressed }) => [st.bottomLink, pressed && { opacity: 0.6 }]}
-        >
-          <Text style={st.bottomLinkText}>W razie czego</Text>
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -412,64 +406,71 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
 /* ─── styles ─── */
 
-const AVATAR = 64;
-
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  containerAfter: { backgroundColor: '#F5F9F4' },
-  scroll: { flexGrow: 1, paddingHorizontal: 20, justifyContent: 'space-between' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8 },
+  containerAfter: { backgroundColor: Colors.safeWash },
+  scroll: { flexGrow: 1, paddingHorizontal: 24 },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  /* avatar */
-  avatar: { width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2, backgroundColor: Colors.safeLight, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  avatarLetter: { fontSize: 28, fontWeight: '700', color: Colors.safe },
-  dot: { position: 'absolute', bottom: -2, right: -2, width: 16, height: 16, borderRadius: 8, borderWidth: 2.5, borderColor: Colors.background },
+  /* sections */
+  heroSection: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 16 },
+  rhythmSection: { alignItems: 'center', paddingVertical: 24 },
+  actionsSection: { alignItems: 'center', paddingBottom: 16 },
 
-  /* status */
-  title: { fontSize: 22, fontWeight: '700', color: Colors.text, textAlign: 'center' },
-  sub: { fontSize: 15, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
+  /* status circle */
+  statusCircle: { width: STATUS_SIZE, height: STATUS_SIZE, borderRadius: STATUS_SIZE / 2, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  statusCircleOk: { backgroundColor: Colors.safeLight, borderWidth: 2, borderColor: Colors.safe },
+  statusCirclePending: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.border },
+  statusCheckmark: { fontSize: 48, color: Colors.safe },
+  statusQuestion: { fontSize: 36, color: Colors.textSecondary },
+
+  /* status text */
+  title: { fontSize: 20, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center' },
+  titlePending: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.textSecondary, textAlign: 'center' },
+  sub: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
+
+  /* nudge */
   nudgeBtn: { marginTop: 16, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: Colors.surface, borderRadius: 999 },
-  nudgeBtnText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  nudgeBtnText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
   nudgeBtnTextSent: { color: Colors.safe },
-  dotsWrap: { marginTop: 24 },
-  connectionLabel: { fontSize: 12, fontWeight: '500', color: Colors.textMuted, marginTop: 10, textAlign: 'center' },
 
-  /* response */
-  responseSection: { alignItems: 'center', marginTop: 28 },
-  responseBtn: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: Colors.safeLight, justifyContent: 'center', alignItems: 'center',
-  },
-  responseBtnEmoji: { fontSize: 32 },
-  responseHint: { fontSize: 13, color: Colors.textMuted, marginTop: 10 },
-  responseSentWrap: { paddingVertical: 8 },
-  responseSentText: { fontSize: 16, fontWeight: '600', color: Colors.safe },
+  /* rhythm */
+  connectionLabel: { fontSize: 12, color: Colors.textSecondary, marginTop: 8, textAlign: 'center' },
 
-  /* bottom */
-  bottomLink: {
-    alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, marginBottom: 16,
-    backgroundColor: Colors.surface, borderRadius: 14, alignSelf: 'center',
+  /* response — pill button */
+  responseSection: { alignItems: 'center', marginBottom: 16 },
+  responsePill: {
+    backgroundColor: Colors.accentLight, minHeight: 48, paddingHorizontal: 32,
+    borderRadius: 999, justifyContent: 'center', alignItems: 'center',
   },
-  bottomLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
+  responsePillText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
+  responseSentPill: {
+    backgroundColor: Colors.surface, minHeight: 44, paddingHorizontal: 24,
+    borderRadius: 999, justifyContent: 'center', alignItems: 'center',
+  },
+  responseSentText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
+
+  /* bottom — text-only link */
+  bottomLink: { alignItems: 'center', paddingVertical: 14, marginBottom: 32 },
+  bottomLinkText: { fontSize: 13, color: Colors.textSecondary },
 
   /* empty */
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 22, fontWeight: '700', color: Colors.text, textAlign: 'center', marginBottom: 8 },
+  emptyTitle: { fontSize: 22, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center', marginBottom: 8 },
   emptyText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, textAlign: 'center', marginBottom: 20 },
   emptyCta: { backgroundColor: Colors.accent, minHeight: 52, borderRadius: Radius.sm, paddingHorizontal: 32, justifyContent: 'center', alignItems: 'center' },
-  emptyCtaText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  emptyCtaText: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
 
   /* urgent */
-  urgentScroll: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 },
-  urgentLabel: { fontSize: 13, fontWeight: '700', color: Colors.alert, marginBottom: 10 },
-  urgentTitle: { fontSize: 26, lineHeight: 32, fontWeight: '700', color: Colors.text },
+  urgentScroll: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 28 },
+  urgentLabel: { fontSize: 13, fontFamily: Typography.fontFamilyBold, color: Colors.alert, marginBottom: 10 },
+  urgentTitle: { fontSize: 26, lineHeight: 32, fontFamily: Typography.headingFamily, color: Colors.text },
   urgentBody: { fontSize: 16, lineHeight: 24, color: Colors.textSecondary, marginTop: 8, marginBottom: 6 },
   urgentTime: { fontSize: 14, color: Colors.textMuted, marginBottom: 18 },
   claimBtn: { height: 56, borderRadius: Radius.sm, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  claimBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  claimBtnText: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
   resolveBtn: { height: 52, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
-  resolveBtnText: { fontSize: 15, fontWeight: '700', color: Colors.textSecondary },
+  resolveBtnText: { fontSize: 15, fontFamily: Typography.fontFamilyBold, color: Colors.textSecondary },
   textLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
-  textLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted, textDecorationLine: 'underline' },
+  textLinkText: { fontSize: 14, color: Colors.textMuted },
 });
