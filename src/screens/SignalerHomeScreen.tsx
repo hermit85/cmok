@@ -344,7 +344,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     ? [{ id: 'p1', from_user_id: 'r', to_user_id: 'ps', type: 'reaction' as const, emoji: '\u{1F49B}', message: null, created_at: new Date().toISOString(), seen_at: null }]
     : todaySignals;
   const hasResponse = signals.length > 0;
-  const responseName = hasResponse ? relationDisplay(effectiveCircleNames.get(signals[0].from_user_id)) : null;
+  const rawResponseName = hasResponse ? effectiveCircleNames.get(signals[0].from_user_id) : null;
+  const responseName = rawResponseName && rawResponseName !== 'Bliska osoba' ? relationDisplay(rawResponseName) : null;
   const responseEmoji = hasResponse ? (signals[0].emoji || '\u{1F49B}') : null;
 
   // Gap detection
@@ -435,7 +436,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   return (
     <SafeAreaView style={[s.container, showChecked && s.containerAfter]}>
       <UrgentConfirmation visible={showUrgentModal} onConfirm={handleUrgentConfirm} onCancel={() => setShowUrgentModal(false)} />
-      <ScreenHeader subtitle={name} />
+      <ScreenHeader subtitle={hasName ? name : undefined} />
 
       {isOffline ? <Text style={s.offlineBadge}>Brak internetu</Text> : null}
 
@@ -473,7 +474,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>Jest znak od {responseName} <Emoji>✓</Emoji></Text>
+                  <Text style={s.responseReceiptText}>{responseName ? `Jest znak od ${responseName}` : 'Jest znak'} <Emoji>✓</Emoji></Text>
                 </View>
               ) : null}
             </Animated.View>
