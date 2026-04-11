@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
+import { MonthGrid } from '../components/MonthGrid';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
 import { Radius } from '../constants/tokens';
@@ -361,6 +362,9 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
           {/* Connection duration */}
           {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
+
+          {/* Month grid */}
+          {sigId ? <MonthGrid signalerId={sigId} /> : null}
 
           {/* Response */}
           {effOk && sigId ? (
