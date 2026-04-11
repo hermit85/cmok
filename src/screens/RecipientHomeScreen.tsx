@@ -103,12 +103,12 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
     <View style={st.responseSection}>
       {sent ? (
         <View style={st.responseSentPill}>
-          <Text style={st.responseSentText}>Wysłano {'\u{1F49A}'}</Text>
+          <Text style={st.responseSentText}>Wysłano <Text style={st.emoji}>{'\u{1F49A}'}</Text></Text>
         </View>
       ) : (
         <Animated.View style={{ transform: [{ scale }] }}>
           <Pressable onPress={handleTap} style={({ pressed }) => [st.responsePill, pressed && { opacity: 0.85 }]}>
-            <Text style={st.responsePillText}>Wyślij serduszko {'\u{1F49A}'}</Text>
+            <Text style={st.responsePillText}>Wyślij serduszko <Text style={st.emoji}>{'\u{1F49A}'}</Text></Text>
           </Pressable>
         </Animated.View>
       )}
@@ -449,6 +449,7 @@ const st = StyleSheet.create({
     borderRadius: 999, justifyContent: 'center', alignItems: 'center',
   },
   responseSentText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
+  emoji: { fontFamily: undefined },
 
   /* bottom — text-only link */
   bottomLink: { alignItems: 'center', paddingVertical: 14, marginBottom: 32 },

@@ -385,7 +385,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   } else if (confirmedDone) {
     // Contextual confirmation copy based on streak/milestone
     if (isReallyFirstEver) {
-      copyLine = 'Pierwszy znak wysłany! 🎉';
+      copyLine = 'Pierwszy znak wysłany!';
     } else if (isComeback) {
       copyLine = 'Dobrze, że jesteś z powrotem';
     } else if (currentStreak === 2) {
@@ -393,7 +393,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     } else if (currentStreak >= 3 && currentStreak <= 6) {
       copyLine = `Dzień ${currentStreak} z rzędu`;
     } else if (currentStreak === 7) {
-      copyLine = 'Cały tydzień! 💚';
+      copyLine = 'Cały tydzień!';
     } else if (currentStreak === 14) {
       copyLine = 'Dwa tygodnie razem';
     } else if (currentStreak === 21) {
@@ -472,7 +472,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>{responseName} — jest znak <Text style={s.responseEmoji}>{'\u{1F49A}'}</Text></Text>
+                  <Text style={s.responseReceiptText}>Jest znak od {responseName} <Text style={s.responseEmoji}>{'\u{1F49A}'}</Text></Text>
                 </View>
               ) : null}
             </Animated.View>

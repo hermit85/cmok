@@ -12,11 +12,14 @@ import { useTrustedContacts } from '../hooks/useTrustedContacts';
 export function SettingsScreen() {
   const router = useRouter();
   const { profile, relationship, status } = useRelationship();
-  const { signalers, recipients } = useCircle();
+  const { signalers, recipients, loading: circleLoading } = useCircle();
   const { contacts } = useTrustedContacts(relationship?.id || null);
 
   const isRecipient = profile?.role === 'recipient';
-  const mainPerson = isRecipient ? signalers[0] : recipients[0];
+  const circlePerson = isRecipient ? signalers[0] : recipients[0];
+  // Fallback: use relationship label if circle data hasn't loaded yet
+  const mainPersonName = circlePerson?.name || relationship?.signalerLabel || null;
+  const mainPerson = circlePerson || (relationship && mainPersonName ? { name: mainPersonName } : null);
   const circleCount = contacts.length;
 
   const handleLogout = async () => {
@@ -57,6 +60,8 @@ export function SettingsScreen() {
               </View>
               <Text style={styles.chevron}>→</Text>
             </View>
+          ) : circleLoading ? (
+            <Text style={styles.cardDetail}>Ładowanie...</Text>
           ) : (
             <Text style={styles.cardDetail}>
               {status === 'pending' ? 'Czeka na połączenie' : 'Jeszcze nie połączono'}
