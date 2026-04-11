@@ -77,6 +77,9 @@ export function useCheckin() {
 
       if (error) throw error;
 
+      // Notify recipient (fire-and-forget, never blocks check-in)
+      supabase.functions.invoke('checkin-notify', { body: {} }).catch(() => {});
+
       setCheckedInToday(true);
       setLastCheckin({ checked_at: new Date().toISOString(), source: 'app' });
       lastRefreshTime.current = Date.now(); // Prevent immediate re-fetch
