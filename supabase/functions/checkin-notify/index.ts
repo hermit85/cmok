@@ -100,7 +100,7 @@ serve(async (req) => {
       to: token,
       sound: 'default',
       title: 'Cmok',
-      body: `${signalerName} dał(a) znak 💚`,
+      body: `${signalerName} — jest znak 💚`,
       data: { type: 'daily_checkin', senior_id: user.id },
       priority: 'normal' as const,
       channelId: 'default',

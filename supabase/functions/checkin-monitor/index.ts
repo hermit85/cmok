@@ -168,7 +168,7 @@ serve(async (_req) => {
             attempt_no: 1,
             payload: {
               title: 'Cmok — brak znaku',
-              body: `${senior.name} nie dała dziś znaku od rana.`,
+              body: `${senior.name} — dziś jeszcze bez znaku.`,
               type: 'missed_checkin',
             },
             status: 'sent',
@@ -182,7 +182,7 @@ serve(async (_req) => {
             attempt_no: 1,
             payload: {
               phone: pair.sms_fallback_phone,
-              body: `Cmok: ${senior.name} nie dała dziś znaku od rana. Sprawdź czy wszystko OK.`,
+              body: `Cmok: ${senior.name} — dziś jeszcze bez znaku. Sprawdź czy wszystko OK.`,
               type: 'missed_checkin',
             },
             status: 'sent',

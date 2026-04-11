@@ -404,7 +404,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       // Default pool — deterministic pick based on day-of-year
       const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
       const pool = [
-        hasName ? `${name} będzie wiedział(a)` : 'Znak wysłany',
+        hasName ? `Jest znak dla ${rf.genitive}` : 'Znak wysłany',
         'Znak wysłany',
         hasName ? `Gotowe — spokojny dzień dla ${rf.genitive}` : 'Gotowe — spokojny dzień',
       ];
@@ -472,7 +472,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>{responseName} widziała Twój znak 💚</Text>
+                  <Text style={s.responseReceiptText}>{responseName} — jest znak <Text style={s.responseEmoji}>{'\u{1F49A}'}</Text></Text>
                 </View>
               ) : null}
             </Animated.View>
@@ -536,6 +536,7 @@ const s = StyleSheet.create({
     borderRadius: 999, alignSelf: 'center',
   },
   responseReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
+  responseEmoji: { fontFamily: undefined, fontSize: 13 },
   dotsWrap: { marginTop: 32 },
 
   /* urgent link — text-only, no background */
