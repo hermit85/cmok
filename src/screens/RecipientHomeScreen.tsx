@@ -145,6 +145,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const [lastContact, setLastContact] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [connectionDays, setConnectionDays] = useState<number | null>(null);
+  const [nudgeSent, setNudgeSent] = useState(false);
+  const [nudgeSending, setNudgeSending] = useState(false);
 
   const afterFade = useRef(new Animated.Value(0)).current;
 
@@ -261,6 +263,15 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   /* ─── handlers ─── */
   const handleClaim = async () => { if (!currentAlert) return; try { await claim(currentAlert.id); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
   const handleResolve = async () => { if (!currentAlert) return; try { await resolve(currentAlert.id); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
+  const handleNudge = async () => {
+    if (nudgeSent || nudgeSending) return;
+    setNudgeSending(true);
+    try {
+      await supabase.functions.invoke('nudge-signal', { body: {} });
+      setNudgeSent(true);
+    } catch { /* silent */ }
+    finally { setNudgeSending(false); }
+  };
 
   /* ─── loading ─── */
   if (!pv && (circleLoading || dataLoading)) {
@@ -357,6 +368,19 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             </View>
           )}
 
+          {/* Nudge button — only when no sign today */}
+          {!effOk && sigId && !pv ? (
+            <Pressable
+              onPress={handleNudge}
+              disabled={nudgeSent || nudgeSending}
+              style={({ pressed }) => [st.nudgeBtn, pressed && !nudgeSent && { opacity: 0.7 }]}
+            >
+              <Text style={[st.nudgeBtnText, nudgeSent && st.nudgeBtnTextSent]}>
+                {nudgeSent ? 'Wysłano ✓' : nudgeSending ? '...' : 'Przypomnij delikatnie'}
+              </Text>
+            </Pressable>
+          ) : null}
+
           {/* Week dots */}
           {effWeek.length > 0 ? <View style={st.dotsWrap}><WeekDots days={effWeek} showLabel /></View> : null}
 
@@ -405,6 +429,9 @@ const st = StyleSheet.create({
   /* status */
   title: { fontSize: 22, fontWeight: '700', color: Colors.text, textAlign: 'center' },
   sub: { fontSize: 15, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
+  nudgeBtn: { marginTop: 16, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: Colors.surface, borderRadius: 999 },
+  nudgeBtnText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  nudgeBtnTextSent: { color: Colors.safe },
   dotsWrap: { marginTop: 24 },
   connectionLabel: { fontSize: 12, fontWeight: '500', color: Colors.textMuted, marginTop: 10, textAlign: 'center' },
 
