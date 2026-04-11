@@ -1,25 +1,26 @@
 export const Colors = {
   // Canvas
   background: '#FAF6F1',
-  backgroundSoft: '#F4EEE7',
+  backgroundSoft: '#F5EFE8',
   card: '#FFFCF8',
   cardStrong: '#FFFFFF',
-  surface: '#F1EBE3',
+  surface: '#F0EBE5',
+  surfacePressed: '#E8E2DB',
   surfaceWarm: '#F9EEE7',
 
   // Brand
-  accent: '#D87461',
-  accentStrong: '#C96351',
-  accentLight: '#F8E8E1',
+  accent: '#D4735E',
+  accentStrong: '#C25F4B',
+  accentLight: '#E88B7A',
   accentWash: '#FDF3EF',
-  safe: '#738F76',
-  safeStrong: '#5F7C62',
-  safeLight: '#ECF3EC',
-  safeWash: '#F5F9F4',
+  safe: '#7A9B8D',
+  safeStrong: '#628071',
+  safeLight: '#E8F0EC',
+  safeWash: '#F2F7F4',
 
   // Text
-  text: '#222633',
-  textSecondary: '#6E6862',
+  text: '#2D2926',
+  textSecondary: '#9B9490',
   textMuted: '#AAA299',
   textSoft: '#BEB5AC',
 
@@ -29,13 +30,13 @@ export const Colors = {
   alertDark: '#A54337',
 
   // UI
-  border: '#E6DDD4',
-  borderStrong: '#DDCFC1',
+  border: '#E0DAD3',
+  borderStrong: '#D5CCC2',
   disabled: '#D9D1C8',
   shadow: '#201813',
 
   // Status
-  statusOkBg: '#ECF3EC',
+  statusOkBg: '#E8F0EC',
   statusOkText: '#557159',
   statusMissingBg: '#F8EEE8',
   statusMissingText: '#B5644F',

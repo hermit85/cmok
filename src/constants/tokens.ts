@@ -8,6 +8,12 @@ export const Radius = {
 } as const;
 
 export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
   /** Horizontal padding for screen-level content */
   screen: 20,
   /** Internal padding for cards */
@@ -41,5 +47,12 @@ export const Shadows = {
     shadowOpacity: 0.14,
     shadowRadius: 18,
     elevation: 4,
+  },
+  primaryGlow: {
+    shadowColor: '#7A9B8D',
+    shadowOffset: { width: 0, height: 4 } as const,
+    shadowOpacity: 0.30,
+    shadowRadius: 20,
+    elevation: 6,
   },
 } as const;
