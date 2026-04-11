@@ -32,6 +32,7 @@ function getStreakLabel(days: DayStatus[]): string | null {
 
 export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
   const label = showLabel ? getStreakLabel(days) : null;
+  const fullWeek = days.length === 7 && days.every((d) => d === 'ok');
 
   return (
     <View style={styles.container}>
@@ -48,6 +49,7 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
         ))}
       </View>
       {label ? <Text style={styles.label}>{label}</Text> : null}
+      {fullWeek ? <Text style={styles.fullWeekLabel}>Pełny tydzień 💚</Text> : null}
     </View>
   );
 }
@@ -79,6 +81,12 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     fontWeight: '600',
+    color: Colors.textMuted,
+    marginTop: 6,
+  },
+  fullWeekLabel: {
+    fontSize: 12,
+    fontWeight: '500',
     color: Colors.textMuted,
     marginTop: 6,
   },
