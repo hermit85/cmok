@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '../constants/colors';
+import { Typography } from '../constants/typography';
 
 type DayStatus = 'ok' | 'missing' | 'future';
 
@@ -54,7 +55,7 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
   );
 }
 
-const DOT_SIZE = 8;
+const DOT_SIZE = 10;
 
 const styles = StyleSheet.create({
   container: {
@@ -63,26 +64,30 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
     paddingVertical: 4,
   },
   dot: {
     width: DOT_SIZE,
     height: DOT_SIZE,
     borderRadius: DOT_SIZE / 2,
-    backgroundColor: '#E6DDD4',
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
   },
   dotOk: {
     backgroundColor: Colors.safe,
+    borderColor: Colors.safe,
   },
   dotMissing: {
-    backgroundColor: '#DDD5CC',
+    backgroundColor: 'transparent',
+    borderColor: Colors.border,
   },
   label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textMuted,
-    marginTop: 6,
+    fontSize: 13,
+    fontFamily: Typography.headingFamilyMedium,
+    color: Colors.textSecondary,
+    marginTop: 8,
   },
   fullWeekLabel: {
     fontSize: 12,

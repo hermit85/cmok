@@ -11,6 +11,7 @@ import { Particles } from '../components/Particles';
 import { UrgentConfirmation } from '../components/UrgentConfirmation';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
+import { Typography } from '../constants/typography';
 import { Shadows } from '../constants/tokens';
 import { haptics } from '../utils/haptics';
 import { useCheckin } from '../hooks/useCheckin';
@@ -67,6 +68,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const [previewMode, setPreviewMode] = useState<SignalerHomePreview | null>(preview);
 
   const isSubmitting = useRef(false);
+  const breatheScale = useRef(new Animated.Value(1)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
   const releaseRingScale = useRef(new Animated.Value(0.84)).current;
   const releaseRingOpacity = useRef(new Animated.Value(0)).current;
@@ -128,6 +130,22 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const authBlocked = !pv && authReady && !isAuthenticated;
   const canCheckin = pv ? !showChecked : authReady && isAuthenticated && !showChecked && !checkinLoading;
   const canUrgent = pv ? true : authReady && isAuthenticated;
+
+  // Breathing pulse for the pending state button
+  useEffect(() => {
+    if (showChecked || !canCheckin) {
+      breatheScale.setValue(1);
+      return;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breatheScale, { toValue: 1.02, duration: 1500, useNativeDriver: true }),
+        Animated.timing(breatheScale, { toValue: 1, duration: 1500, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [showChecked, canCheckin, breatheScale]);
 
   /* ─── transition: animate afterFade when showChecked changes ─── */
 
@@ -409,7 +427,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             {checkinLoading && !showChecked ? (
               <View style={s.loadingCircle}><ActivityIndicator size="large" color={Colors.safe} /></View>
             ) : (
-              <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+              <Animated.View style={{ transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] }}>
                 <Pressable
                   onPress={handleCheckin} disabled={!canCheckin}
                   style={({ pressed }) => [
@@ -420,6 +438,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   <Text style={[s.btnText, buttonDone && s.btnTextDone, buttonDisabled && s.btnTextOff]} maxFontSizeMultiplier={1.2}>
                     {buttonLabel}
                   </Text>
+                  {buttonDone ? <Text style={s.btnCheck}>✓</Text> : null}
                 </Pressable>
               </Animated.View>
             )}
@@ -428,7 +447,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           {/* ─── COPY ─── */}
           {showChecked ? (
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
-              <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
+              <Text style={s.copyLineDone} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
@@ -437,7 +456,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               ) : null}
             </Animated.View>
           ) : (
-            <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
+              {hasName ? <Text style={s.copySubLine}>{name} czeka</Text> : null}
+            </View>
           )}
 
           {/* ─── WEEK DOTS ─── */}
@@ -465,52 +487,55 @@ const BTN = 200;
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  containerAfter: { backgroundColor: '#F7F4EE' },
-  scroll: { flexGrow: 1, paddingHorizontal: 20, justifyContent: 'space-between' },
+  containerAfter: { backgroundColor: Colors.safeWash },
+  scroll: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8 },
-  offlineBadge: { textAlign: 'center', fontSize: 12, fontWeight: '600', color: Colors.textSecondary, backgroundColor: Colors.surface, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', marginTop: 4 },
+  offlineBadge: { textAlign: 'center', fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, backgroundColor: Colors.surface, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', marginTop: 4 },
 
   /* button */
-  buttonArea: { justifyContent: 'center', alignItems: 'center', height: BTN + 40 },
+  buttonArea: { justifyContent: 'center', alignItems: 'center', height: BTN + 48 },
   releaseRing: { position: 'absolute', width: BTN + 24, height: BTN + 24, borderRadius: (BTN + 24) / 2, backgroundColor: Colors.safeLight },
   loadingCircle: { width: BTN, height: BTN, borderRadius: BTN / 2, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center' },
   btn: { width: BTN, height: BTN, borderRadius: BTN / 2, alignItems: 'center', justifyContent: 'center' },
-  btnActive: { backgroundColor: Colors.safe, ...Shadows.elevated, shadowColor: Colors.safe },
+  btnActive: { backgroundColor: Colors.safe, ...Shadows.primaryGlow },
   btnDone: { backgroundColor: Colors.safeLight, borderWidth: 2, borderColor: Colors.safe },
   btnOff: { backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border },
-  btnText: { fontSize: 30, lineHeight: 36, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' },
+  btnText: { fontSize: 24, fontFamily: Typography.headingFamily, color: '#FFFFFF', textAlign: 'center' },
   btnTextDone: { color: Colors.safeStrong, fontSize: 24 },
   btnTextOff: { color: Colors.textMuted, fontSize: 22 },
+  btnCheck: { fontSize: 14, color: Colors.safeStrong, marginTop: 2 },
 
   /* copy */
-  copyLine: { fontSize: 17, lineHeight: 24, fontWeight: '600', color: Colors.textSecondary, textAlign: 'center', marginTop: 16, maxWidth: 280 },
-  timeLine: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
+  copyLine: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, textAlign: 'center', marginTop: 20, maxWidth: 280 },
+  copySubLine: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
+  copyLineDone: { fontSize: 17, lineHeight: 24, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, textAlign: 'center', marginTop: 20, maxWidth: 280 },
+  timeLine: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
   responseReceipt: {
-    marginTop: 14, backgroundColor: Colors.safeLight, paddingHorizontal: 18, paddingVertical: 10,
+    marginTop: 14, backgroundColor: Colors.accentLight, paddingHorizontal: 18, paddingVertical: 8,
     borderRadius: 999, alignSelf: 'center',
   },
-  responseReceiptText: { fontSize: 15, fontWeight: '600', color: Colors.safeStrong },
-  dotsWrap: { marginTop: 24 },
+  responseReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
+  dotsWrap: { marginTop: 32 },
 
-  /* urgent link */
+  /* urgent link — text-only, no background */
   urgentLink: {
-    alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, marginBottom: 16,
-    backgroundColor: Colors.surface, borderRadius: 14, alignSelf: 'center',
+    alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, marginBottom: 32,
+    alignSelf: 'center',
   },
-  urgentLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
+  urgentLinkText: { fontSize: 13, color: Colors.textSecondary },
 
   /* urgent full state */
-  urgentScroll: { paddingHorizontal: 20, paddingTop: 26, paddingBottom: 28 },
-  urgentLabel: { fontSize: 13, fontWeight: '700', color: Colors.alert, marginBottom: 10 },
-  urgentTitle: { fontSize: 28, lineHeight: 34, fontWeight: '700', color: Colors.text },
+  urgentScroll: { paddingHorizontal: 24, paddingTop: 26, paddingBottom: 28 },
+  urgentLabel: { fontSize: 13, fontFamily: Typography.fontFamilyBold, color: Colors.alert, marginBottom: 10 },
+  urgentTitle: { fontSize: 28, lineHeight: 34, fontFamily: Typography.headingFamily, color: Colors.text },
   urgentBody: { fontSize: 16, lineHeight: 24, color: Colors.textSecondary, marginTop: 8, marginBottom: 18 },
   urgentDetail: { backgroundColor: Colors.card, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, padding: 18, marginBottom: 14 },
   urgentDetailText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 2 },
   urgentBtn: { height: 56, borderRadius: 16, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
   urgentBtnOff: { backgroundColor: Colors.disabled },
-  urgentBtnText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  urgentBtnText: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
   urgentSecBtn: { height: 52, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
-  urgentSecBtnText: { fontSize: 16, fontWeight: '700', color: Colors.textSecondary },
+  urgentSecBtnText: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: Colors.textSecondary },
   cancelLink: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
-  cancelLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  cancelLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted },
 });

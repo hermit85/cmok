@@ -2,6 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GearIcon } from './GearIcon';
 import { Colors } from '../constants/colors';
+import { Typography } from '../constants/typography';
 
 interface ScreenHeaderProps {
   subtitle?: string | null;
@@ -22,7 +23,7 @@ export function ScreenHeader({ subtitle }: ScreenHeaderProps) {
         style={({ pressed }) => [styles.gear, pressed && { opacity: 0.5 }]}
         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
       >
-        <GearIcon size={28} color={Colors.textMuted} />
+        <GearIcon size={24} color={Colors.textMuted} />
       </Pressable>
     </View>
   );
@@ -44,14 +45,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
+    fontSize: 20,
+    fontFamily: Typography.headingFamily,
     color: Colors.accent,
-    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 13,
-    color: Colors.textMuted,
+    fontSize: 14,
+    color: Colors.textSecondary,
     marginTop: 2,
   },
   gear: {
