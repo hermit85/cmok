@@ -40,6 +40,14 @@ function fmtRelative(ld: string | null, ca: string | null): string | null {
   return `${dy}.${mo}.${yr} o ${t}`;
 }
 
+function connectionLabel(days: number | null): string | null {
+  if (days == null || days < 1) return null;
+  if (days === 7) return 'Razem od tygodnia';
+  if (days === 14) return 'Razem od 2 tygodni';
+  if (days === 30) return 'Razem od miesiąca 💚';
+  return `Razem od ${days} dni`;
+}
+
 /* ─── Avatar ─── */
 
 function Avatar({ name, ok }: { name: string; ok: boolean | null }) {
@@ -135,6 +143,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const [todayTime, setTodayTime] = useState<string | null>(null);
   const [lastContact, setLastContact] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const [connectionDays, setConnectionDays] = useState<number | null>(null);
 
   const afterFade = useRef(new Animated.Value(0)).current;
 
@@ -158,6 +167,14 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         .eq('senior_id', sigId).gte('local_date', todayDateKey(ago)).lte('local_date', todayStr)
         .order('local_date', { ascending: false }).limit(1).maybeSingle();
       const latestRow = recent as DailyCheckin | null;
+
+      // Connection duration
+      const { data: pair } = await supabase.from('care_pairs').select('joined_at')
+        .eq('senior_id', sigId).eq('status', 'active').limit(1).maybeSingle();
+      if (pair?.joined_at) {
+        const diff = Math.floor((Date.now() - new Date(pair.joined_at).getTime()) / 86400000);
+        setConnectionDays(Math.max(diff, 1));
+      }
 
       setTodayTime(todayRow ? fmtTime(todayRow.checked_at) : null);
       setLastContact(fmtRelative(latestRow?.local_date ?? null, latestRow?.checked_at ?? null));
@@ -342,6 +359,9 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           {/* Week dots */}
           {effWeek.length > 0 ? <View style={st.dotsWrap}><WeekDots days={effWeek} showLabel /></View> : null}
 
+          {/* Connection duration */}
+          {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
+
           {/* Response */}
           {effOk && sigId ? (
             <Animated.View style={{ opacity: afterFade }}>
@@ -382,6 +402,7 @@ const st = StyleSheet.create({
   title: { fontSize: 22, fontWeight: '700', color: Colors.text, textAlign: 'center' },
   sub: { fontSize: 15, color: Colors.textMuted, textAlign: 'center', marginTop: 4 },
   dotsWrap: { marginTop: 24 },
+  connectionLabel: { fontSize: 12, fontWeight: '500', color: Colors.textMuted, marginTop: 10, textAlign: 'center' },
 
   /* response */
   responseSection: { alignItems: 'center', marginTop: 28 },
