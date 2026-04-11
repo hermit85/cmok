@@ -90,10 +90,10 @@ export function WaitingForConnectionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered: { justifyContent: 'center', alignItems: 'center' },
-  miniLogo: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: Colors.accent, paddingHorizontal: 28, paddingTop: 16 },
+  miniLogo: { fontSize: 16, fontFamily: Typography.headingFamily, color: Colors.accent, paddingHorizontal: 28, paddingTop: 16 },
   content: { flex: 1, paddingHorizontal: 28, justifyContent: 'center', alignItems: 'center' },
-  eyebrow: { fontSize: Typography.caption, fontFamily: Typography.fontFamilyBold, color: Colors.accentStrong, marginBottom: 10 },
-  title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, textAlign: 'center', marginBottom: 12, lineHeight: 34 },
+  eyebrow: { fontSize: Typography.caption, fontFamily: Typography.headingFamily, color: Colors.accentStrong, marginBottom: 10 },
+  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center', marginBottom: 12, lineHeight: 34 },
   subtitle: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
   codeFrame: {
     backgroundColor: Colors.cardStrong, borderRadius: Radius.md,

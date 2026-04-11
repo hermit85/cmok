@@ -50,7 +50,7 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
         ))}
       </View>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      {fullWeek ? <Text style={styles.fullWeekLabel}>Pełny tydzień 💚</Text> : null}
+      {fullWeek ? <Text style={styles.fullWeekLabel}>Pełny tydzień</Text> : null}
     </View>
   );
 }

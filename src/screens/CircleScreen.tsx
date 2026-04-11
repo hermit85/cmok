@@ -121,7 +121,7 @@ const st = StyleSheet.create({
   content: { paddingHorizontal: Spacing.screen, paddingTop: 16, paddingBottom: 32 },
   back: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginBottom: 20 },
   backText: { fontSize: 16, fontWeight: '500', color: Colors.accent },
-  title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 24 },
+  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 24 },
 
   /* sections */
   section: { marginBottom: 28 },

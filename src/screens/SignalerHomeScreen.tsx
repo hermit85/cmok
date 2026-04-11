@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import NetInfo from '@react-native-community/netinfo';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
+import { Emoji } from '../components/Emoji';
 import { Particles } from '../components/Particles';
 import { UrgentConfirmation } from '../components/UrgentConfirmation';
 import { SupportParticipants } from '../components/SupportParticipants';
@@ -472,7 +473,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>Jest znak od {responseName} <Text style={s.responseEmoji}>{'\u{1F49A}'}</Text></Text>
+                  <Text style={s.responseReceiptText}>Jest znak od {responseName} <Emoji>✓</Emoji></Text>
                 </View>
               ) : null}
             </Animated.View>
@@ -536,7 +537,6 @@ const s = StyleSheet.create({
     borderRadius: 999, alignSelf: 'center',
   },
   responseReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
-  responseEmoji: { fontFamily: undefined, fontSize: 13 },
   dotsWrap: { marginTop: 32 },
 
   /* urgent link — text-only, no background */

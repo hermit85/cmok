@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   miniLogo: {
     fontSize: 16,
-    fontFamily: Typography.fontFamilyBold,
+    fontFamily: Typography.headingFamily,
     color: Colors.accent,
     paddingHorizontal: 28,
     paddingTop: 16,
@@ -142,11 +142,11 @@ const styles = StyleSheet.create({
   formContent: { flex: 1, paddingHorizontal: 28, paddingTop: 38 },
   eyebrow: {
     fontSize: Typography.caption,
-    fontFamily: Typography.fontFamilyBold,
+    fontFamily: Typography.headingFamily,
     color: Colors.accentStrong,
     marginBottom: 10,
   },
-  title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 8 },
+  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 8 },
   subtitle: { fontSize: Typography.body, color: Colors.textSecondary, marginBottom: 24, lineHeight: 23, maxWidth: 320 },
   formCard: {
     backgroundColor: Colors.card,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   primaryBtn: { minHeight: 58, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 24 },
   btnActive: { backgroundColor: Colors.accent },
   btnDisabled: { backgroundColor: Colors.disabled },
-  primaryBtnText: { fontSize: 17, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF', letterSpacing: 0.1 },
+  primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF', letterSpacing: 0.1 },
   backButton: {
     alignSelf: 'flex-start' as const,
     paddingVertical: 8,

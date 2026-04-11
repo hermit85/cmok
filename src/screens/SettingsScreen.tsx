@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: Spacing.screen + 4, paddingTop: 16, paddingBottom: 32 },
   backButton: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 4, minHeight: 44, marginBottom: 20 },
   backText: { fontSize: 16, fontWeight: '500', color: Colors.accent },
-  title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 20 },
+  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 20 },
   card: {
     backgroundColor: Colors.cardStrong, borderWidth: 1, borderColor: Colors.border,
     borderRadius: Radius.md, padding: Spacing.card, marginBottom: 16,

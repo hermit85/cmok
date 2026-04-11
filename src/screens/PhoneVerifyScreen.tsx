@@ -291,13 +291,13 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  miniLogo: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: Colors.accent, paddingHorizontal: 28, paddingTop: 16 },
+  miniLogo: { fontSize: 16, fontFamily: Typography.headingFamily, color: Colors.accent, paddingHorizontal: 28, paddingTop: 16 },
   content: { flex: 1, paddingHorizontal: 28, paddingTop: 38 },
 
   backButton: { alignSelf: 'flex-start' as const, paddingVertical: 8, paddingHorizontal: 8, minHeight: 44, marginBottom: 18, marginLeft: -8 },
   backText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
 
-  title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 12 },
+  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 12 },
   subtitle: { fontSize: Typography.body, color: Colors.textSecondary, lineHeight: 23, marginBottom: 24, maxWidth: 320 },
 
   /* phone input */
@@ -315,12 +315,12 @@ const s = StyleSheet.create({
   sendBtn: { minHeight: 58, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 24 },
   sendBtnActive: { backgroundColor: Colors.accent },
   sendBtnDisabled: { backgroundColor: Colors.disabled, borderWidth: 1, borderColor: Colors.borderStrong },
-  sendBtnText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
+  sendBtnText: { fontSize: Typography.body, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },
 
   /* code input */
   codeCard: { width: '100%', backgroundColor: Colors.card, borderRadius: 24, borderWidth: 1, borderColor: Colors.border, padding: 16 },
   boxRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  box: { flex: 1, minHeight: 58, borderRadius: 16, backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  box: { width: 46, height: 46, borderRadius: 23, backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
   boxFocused: { borderColor: Colors.accent },
   boxDigit: { fontSize: 26, fontWeight: '700', color: Colors.text },
   hiddenInput: { position: 'absolute', opacity: 0, height: 0, width: 0 },

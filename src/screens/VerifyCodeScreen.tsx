@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   miniLogo: {
     fontSize: 16,
-    fontFamily: Typography.fontFamilyBold,
+    fontFamily: Typography.headingFamily,
     color: Colors.accent,
     paddingHorizontal: 28,
     paddingTop: 16,
@@ -204,12 +204,12 @@ const styles = StyleSheet.create({
   content: { flex: 1, paddingHorizontal: 28, paddingTop: 38, alignItems: 'center' },
   eyebrow: {
     fontSize: Typography.caption,
-    fontFamily: Typography.fontFamilyBold,
+    fontFamily: Typography.headingFamily,
     color: Colors.accentStrong,
     marginBottom: 10,
     alignSelf: 'flex-start',
   },
-  title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 8, alignSelf: 'flex-start' },
+  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 8, alignSelf: 'flex-start' },
   subtitle: { fontSize: Typography.body, color: Colors.textSecondary, marginBottom: 24, alignSelf: 'flex-start' },
   codeCard: {
     width: '100%',
@@ -229,9 +229,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   box: {
-    flex: 1,
-    minHeight: 58,
-    borderRadius: 16,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: 'transparent',

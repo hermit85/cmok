@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   miniLogo: {
     fontSize: 16,
-    fontFamily: Typography.fontFamilyBold,
+    fontFamily: Typography.headingFamily,
     color: Colors.accent,
     paddingHorizontal: 28,
     paddingTop: 16,
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: Typography.title,
-    fontFamily: Typography.fontFamilyBold,
+    fontFamily: Typography.headingFamily,
     color: Colors.text,
     marginBottom: 12,
   },
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   sendBtn: { minHeight: 58, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 24 },
   sendBtnActive: { backgroundColor: Colors.accent },
   sendBtnDisabled: { backgroundColor: Colors.disabled, borderWidth: 1, borderColor: Colors.borderStrong },
-  sendBtnText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
+  sendBtnText: { fontSize: Typography.body, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },
   backButton: {
     alignSelf: 'flex-start' as const,
     paddingVertical: 8,

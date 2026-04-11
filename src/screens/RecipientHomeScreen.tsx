@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
+import { Emoji } from '../components/Emoji';
 import { MonthGrid } from '../components/MonthGrid';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
@@ -46,13 +47,13 @@ function connectionLabel(days: number | null): string | null {
   if (days == null || days < 1) return null;
   if (days === 7) return 'Razem od tygodnia';
   if (days === 14) return 'Razem od 2 tygodni';
-  if (days === 30) return 'Razem od miesiąca 💚';
+  if (days === 30) return 'Razem od miesiąca';
   return `Razem od ${days} dni`;
 }
 
 /* ─── Status circle ─── */
 
-const STATUS_SIZE = 180;
+const STATUS_SIZE = 200;
 
 function StatusCircle({ ok }: { ok: boolean }) {
   return (
@@ -103,12 +104,12 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
     <View style={st.responseSection}>
       {sent ? (
         <View style={st.responseSentPill}>
-          <Text style={st.responseSentText}>Wysłano <Text style={st.emoji}>{'\u{1F49A}'}</Text></Text>
+          <Text style={st.responseSentText}>Serduszko wysłane <Emoji>✓</Emoji></Text>
         </View>
       ) : (
         <Animated.View style={{ transform: [{ scale }] }}>
           <Pressable onPress={handleTap} style={({ pressed }) => [st.responsePill, pressed && { opacity: 0.85 }]}>
-            <Text style={st.responsePillText}>Wyślij serduszko <Text style={st.emoji}>{'\u{1F49A}'}</Text></Text>
+            <Text style={st.responsePillText}>Wyślij serduszko <Emoji>💚</Emoji></Text>
           </Pressable>
         </Animated.View>
       )}
@@ -445,10 +446,10 @@ const st = StyleSheet.create({
   },
   responsePillText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
   responseSentPill: {
-    backgroundColor: Colors.surface, minHeight: 44, paddingHorizontal: 24,
+    backgroundColor: Colors.safeLight, minHeight: 44, paddingHorizontal: 24,
     borderRadius: 999, justifyContent: 'center', alignItems: 'center',
   },
-  responseSentText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
+  responseSentText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
   emoji: { fontFamily: undefined },
 
   /* bottom — text-only link */

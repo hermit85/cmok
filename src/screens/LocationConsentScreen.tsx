@@ -64,10 +64,10 @@ export function LocationConsentScreen({ onContinue, onBack }: LocationConsentScr
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: 24 },
   top: { flex: 1, paddingTop: 16 },
-  miniLogo: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: Colors.accent, marginBottom: 22 },
+  miniLogo: { fontSize: 16, fontFamily: Typography.headingFamily, color: Colors.accent, marginBottom: 22 },
   backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginLeft: -8, paddingHorizontal: 8, marginBottom: 18 },
   backText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
-  title: { fontSize: Typography.title, fontFamily: Typography.fontFamilyBold, color: Colors.text, marginBottom: 8, lineHeight: 34 },
+  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 8, lineHeight: 34 },
   subtitle: { fontSize: Typography.body, lineHeight: 23, color: Colors.textSecondary, marginBottom: 22 },
   options: { gap: 14 },
   optionCard: { backgroundColor: Colors.cardStrong, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 18, paddingVertical: 16 },
