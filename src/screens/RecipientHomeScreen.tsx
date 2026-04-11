@@ -191,6 +191,55 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     }
   }, [effOk, afterFade]);
 
+  /* ─── computed values (must be before early returns for hook stability) ─── */
+
+  const effTime = previewMode === 'after' || previewMode === 'response' ? '07:55' : todayTime;
+  const effLast = previewMode === 'before' ? 'wczoraj o 19:40' : lastContact;
+  const effWeek = previewMode === 'before' ? (['ok','missing','ok','ok','ok','missing','future'] as DayStatus[])
+    : previewMode === 'after' || previewMode === 'response' ? (['ok','ok','ok','ok','ok','ok','ok'] as DayStatus[])
+    : realWeekDays;
+  const name = relationDisplay(sigName);
+  const nameFrom = relationFrom(sigName).replace('od ', '');
+
+  const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.filter((d) => d === 'ok').length <= 1 && effOk;
+
+  // Gap detection for receiver
+  const hasReceiverGap = !pv && !effOk && effWeek.length >= 2 && (() => {
+    const past = effWeek.filter((d) => d !== 'future');
+    if (past.length < 2) return false;
+    let missingRun = 0;
+    for (let i = past.length - 1; i >= 0; i--) {
+      if (past[i] === 'missing') missingRun++;
+      else break;
+    }
+    return missingRun >= 2 && past.some((d) => d === 'ok');
+  })();
+
+  const pvUrgent = previewMode === 'support' ? {
+    alert: { id: 'pa', senior_id: 'ps', type: 'sos' as const, state: 'acknowledged' as const,
+      triggered_at: new Date().toISOString(), latitude: 49.62, longitude: 20.70,
+      acknowledged_by: 'r', acknowledged_at: new Date().toISOString(), resolved_at: null },
+    relationshipId: 'pr', viewerUserId: 'r', signalerId: 'ps', signalerName: 'Mama',
+    primaryRecipientId: 'r', claimerId: 'r', claimerName: 'Ania', viewerRole: 'primary' as const, participants: PV_PARTICIPANTS,
+  } : null;
+  const effUrgent = pv ? pvUrgent : urgentCase;
+  const effAlert = pv ? pvUrgent?.alert ?? null : currentAlert;
+
+  /* ─── tracking (must be before early returns — hooks can't be conditional) ─── */
+
+  useEffect(() => { logInviteEvent('recipient_home_viewed'); }, []);
+  useEffect(() => {
+    if (effOk) logInviteEvent('recipient_sign_seen_today');
+    else if (hasReceiverGap) logInviteEvent('recipient_gap_waiting_seen');
+    else logInviteEvent('recipient_waiting_seen_today');
+  }, [effOk, hasReceiverGap]);
+  useEffect(() => {
+    if (effWeek.length > 0) logInviteEvent('streak_strip_seen');
+  }, [effWeek.length]);
+  useEffect(() => {
+    if (isFirstEver && effOk) logInviteEvent('first_sign_received_viewed');
+  }, [isFirstEver, effOk]);
+
   /* ─── handlers ─── */
   const handleClaim = async () => { if (!currentAlert) return; try { await claim(currentAlert.id); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
   const handleResolve = async () => { if (!currentAlert) return; try { await resolve(currentAlert.id); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
@@ -217,16 +266,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   }
 
   /* ─── urgent state ─── */
-
-  const pvUrgent = previewMode === 'support' ? {
-    alert: { id: 'pa', senior_id: 'ps', type: 'sos' as const, state: 'acknowledged' as const,
-      triggered_at: new Date().toISOString(), latitude: 49.62, longitude: 20.70,
-      acknowledged_by: 'r', acknowledged_at: new Date().toISOString(), resolved_at: null },
-    relationshipId: 'pr', viewerUserId: 'r', signalerId: 'ps', signalerName: 'Mama',
-    primaryRecipientId: 'r', claimerId: 'r', claimerName: 'Ania', viewerRole: 'primary' as const, participants: PV_PARTICIPANTS,
-  } : null;
-  const effUrgent = pv ? pvUrgent : urgentCase;
-  const effAlert = pv ? pvUrgent?.alert ?? null : currentAlert;
 
   if (effUrgent?.viewerRole === 'primary' && effAlert) {
     const claimed = !!effUrgent.claimerId;
@@ -261,44 +300,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   }
 
   /* ─── daily view ─── */
-
-  const effTime = previewMode === 'after' || previewMode === 'response' ? '07:55' : todayTime;
-  const effLast = previewMode === 'before' ? 'wczoraj o 19:40' : lastContact;
-  const effWeek = previewMode === 'before' ? (['ok','missing','ok','ok','ok','missing','future'] as DayStatus[])
-    : previewMode === 'after' || previewMode === 'response' ? (['ok','ok','ok','ok','ok','ok','ok'] as DayStatus[])
-    : realWeekDays;
-  const name = relationDisplay(sigName);
-
-  const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.filter((d) => d === 'ok').length <= 1 && effOk;
-
-  // Gap detection for receiver
-  const hasReceiverGap = !pv && !effOk && effWeek.length >= 2 && (() => {
-    const past = effWeek.filter((d) => d !== 'future');
-    if (past.length < 2) return false;
-    // Count consecutive missing from the end
-    let missingRun = 0;
-    for (let i = past.length - 1; i >= 0; i--) {
-      if (past[i] === 'missing') missingRun++;
-      else break;
-    }
-    return missingRun >= 2 && past.some((d) => d === 'ok');
-  })();
-
-  // Tracking
-  useEffect(() => { logInviteEvent('recipient_home_viewed'); }, []);
-  useEffect(() => {
-    if (effOk) logInviteEvent('recipient_sign_seen_today');
-    else if (hasReceiverGap) logInviteEvent('recipient_gap_waiting_seen');
-    else logInviteEvent('recipient_waiting_seen_today');
-  }, [effOk, hasReceiverGap]);
-  useEffect(() => {
-    if (effWeek.length > 0) logInviteEvent('streak_strip_seen');
-  }, [effWeek.length]);
-  useEffect(() => {
-    if (isFirstEver && effOk) logInviteEvent('first_sign_received_viewed');
-  }, [isFirstEver, effOk]);
-
-  const nameFrom = relationFrom(sigName).replace('od ', '');
 
   const title = effOk
     ? isFirstEver
