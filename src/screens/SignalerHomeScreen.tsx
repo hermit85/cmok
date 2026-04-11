@@ -432,7 +432,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>{responseEmoji} od {responseName}</Text>
+                  <Text style={s.responseReceiptText}>{responseName} widziała Twój znak 💚</Text>
                 </View>
               ) : null}
             </Animated.View>
