@@ -151,32 +151,55 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   useEffect(() => { logInviteEvent('sender_home_viewed'); }, []);
 
+  // Copy slide-up offset for done state
+  const copySlide = useRef(new Animated.Value(8)).current;
+
   useEffect(() => {
     if (showChecked) {
       afterFade.setValue(0);
-      Animated.timing(afterFade, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+      copySlide.setValue(8);
+      // Delay copy appearance for 400ms after button transition
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(afterFade, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.timing(copySlide, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]).start();
+      }, 400);
       if (isFirstEver) logInviteEvent('first_sign_success_seen');
     } else {
       afterFade.setValue(0);
+      copySlide.setValue(8);
     }
-  }, [showChecked, afterFade]);
+  }, [showChecked, afterFade, copySlide]);
 
   /* ─── animations ─── */
 
+  // Streak including today's check-in (computed early for animation use)
+  const currentStreak = showChecked && !pv ? Math.max(dbStreak + 1, 1) : dbStreak;
+  const isMilestone = currentStreak === 7 || currentStreak === 14 || currentStreak === 21 || currentStreak === 30;
+
   const playSuccess = useCallback(() => {
-    setCelebrationVisible(true);
+    // Only show confetti on milestone days
+    if (isMilestone) setCelebrationVisible(true);
+
     releaseRingScale.setValue(0.84);
     releaseRingOpacity.setValue(0.28);
-    Animated.parallel([
-      Animated.spring(buttonScale, { toValue: 0.96, useNativeDriver: true, speed: 22, bounciness: 9 }),
-      Animated.timing(releaseRingScale, { toValue: 1.22, duration: 700, useNativeDriver: true }),
-      Animated.timing(releaseRingOpacity, { toValue: 0, duration: 700, useNativeDriver: true }),
-    ]).start(() => {
-      Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 7 }).start();
+
+    // 1. Scale down to 0.92 (100ms)
+    Animated.timing(buttonScale, { toValue: 0.92, duration: 100, useNativeDriver: true }).start(() => {
+      // 2. Release ring + scale back
+      Animated.parallel([
+        Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 5 }),
+        Animated.timing(releaseRingScale, { toValue: 1.22, duration: 700, useNativeDriver: true }),
+        Animated.timing(releaseRingOpacity, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ]).start();
     });
+
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
-    celebrationTimeoutRef.current = setTimeout(() => setCelebrationVisible(false), 1200);
-  }, [buttonScale, releaseRingOpacity, releaseRingScale]);
+    if (isMilestone) {
+      celebrationTimeoutRef.current = setTimeout(() => setCelebrationVisible(false), 1200);
+    }
+  }, [buttonScale, releaseRingOpacity, releaseRingScale, isMilestone]);
 
   /* ─── handlers ─── */
 
@@ -346,8 +369,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     }
   }, [hasResponse, showChecked]);
 
-  // Streak including today's check-in (DB streak may lag behind by one refresh)
-  const currentStreak = showChecked && !pv ? Math.max(dbStreak + 1, 1) : dbStreak;
   const isReallyFirstEver = isFirstEver && dbTotalCount === 0;
   const isComeback = showChecked && !isReallyFirstEver && currentStreak === 1 && dbTotalCount > 0;
 
@@ -446,7 +467,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
           {/* ─── COPY ─── */}
           {showChecked ? (
-            <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
+            <Animated.View style={{ opacity: afterFade, transform: [{ translateY: copySlide }], alignItems: 'center' }}>
               <Text style={s.copyLineDone} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
