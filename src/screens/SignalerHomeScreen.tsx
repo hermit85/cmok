@@ -18,6 +18,7 @@ import { useCircle } from '../hooks/useCircle';
 import { useSignals } from '../hooks/useSignals';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { useWeekRhythm } from '../hooks/useWeekRhythm';
+import { useCheckinStats } from '../hooks/useCheckinStats';
 import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync';
 import { logInviteEvent } from '../utils/invite';
 import type { Signal, SupportParticipant } from '../types';
@@ -54,6 +55,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     loading: urgentLoading, preflight: urgentPreflight, sendUrgentSignal, retrySend, cancel: cancelUrgent,
   } = useUrgentSignal();
   const { days: realWeekDays, refresh: refreshWeek } = useWeekRhythm(userId);
+  const { streak: dbStreak, totalCount: dbTotalCount, refresh: refreshStats } = useCheckinStats(userId);
 
   const [showUrgentModal, setShowUrgentModal] = useState(false);
   const [localUrgentOffline, setLocalUrgentOffline] = useState(false);
@@ -94,7 +96,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       setIsOffline(off);
       if (!off && pendingSaved) {
         syncPendingCheckin().then((ok) => {
-          if (ok) { setPendingSaved(false); setPendingCheckinTime(null); refreshCheckin(); refreshWeek(); }
+          if (ok) { setPendingSaved(false); setPendingCheckinTime(null); refreshCheckin(); refreshWeek(); refreshStats(); }
         });
       }
     });
@@ -106,7 +108,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   useEffect(() => {
     if (hasSyncedPending.current) return;
     hasSyncedPending.current = true;
-    syncPendingCheckin().then((ok) => { if (ok) { refreshCheckin(); refreshWeek(); } });
+    syncPendingCheckin().then((ok) => { if (ok) { refreshCheckin(); refreshWeek(); refreshStats(); } });
   }, [refreshCheckin, refreshWeek]);
   useEffect(() => () => { if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current); }, []);
 
@@ -191,14 +193,14 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       if (prevOk === 2) logInviteEvent('third_day_sign_sent');
       if (hasGap) logInviteEvent('sign_sent_after_gap');
       setJustChecked(true); haptics.success(); playSuccess();
-      refreshWeek();
+      refreshWeek(); refreshStats();
     } catch (e) {
       if (e instanceof Error && e.name === 'AUTH_REQUIRED') { Alert.alert('Zaloguj się', 'Ten telefon musi być połączony z kontem.'); return; }
       Alert.alert('Nie udało się', 'Spróbuj za chwilę.');
     } finally {
       isSubmitting.current = false;
     }
-  }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, playSuccess, refreshWeek]);
+  }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, playSuccess, refreshWeek, refreshStats]);
 
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
@@ -326,6 +328,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     }
   }, [hasResponse, showChecked]);
 
+  // Streak including today's check-in (DB streak may lag behind by one refresh)
+  const currentStreak = showChecked && !pv ? Math.max(dbStreak + 1, 1) : dbStreak;
+  const isReallyFirstEver = isFirstEver && dbTotalCount === 0;
+  const isComeback = showChecked && !isReallyFirstEver && currentStreak === 1 && dbTotalCount > 0;
+
   // Copy — 4 clear states
   let copyLine: string;
   let buttonLabel: string;
@@ -337,12 +344,32 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     copyLine = 'Zapisano. Wyślemy, gdy wróci internet.';
     buttonLabel = 'Zapisano';
   } else if (confirmedDone) {
-    if (isFirstEver) {
-      copyLine = hasName ? `Pierwszy znak poszedł do ${rf.genitive}` : 'Pierwszy znak poszedł';
-    } else if (hasGap) {
-      copyLine = 'Wróciło';
+    // Contextual confirmation copy based on streak/milestone
+    if (isReallyFirstEver) {
+      copyLine = 'Pierwszy znak wysłany! 🎉';
+    } else if (isComeback) {
+      copyLine = 'Dobrze, że jesteś z powrotem';
+    } else if (currentStreak === 2) {
+      copyLine = 'Drugi dzień z rzędu';
+    } else if (currentStreak >= 3 && currentStreak <= 6) {
+      copyLine = `Dzień ${currentStreak} z rzędu`;
+    } else if (currentStreak === 7) {
+      copyLine = 'Cały tydzień! 💚';
+    } else if (currentStreak === 14) {
+      copyLine = 'Dwa tygodnie razem';
+    } else if (currentStreak === 21) {
+      copyLine = 'Trzy tygodnie — to już nawyk';
+    } else if (currentStreak === 30) {
+      copyLine = hasName ? `Miesiąc! ${name} może na Ciebie liczyć` : 'Miesiąc!';
     } else {
-      copyLine = hasResponse ? 'Na dziś jesteście w kontakcie' : hasName ? `${name} zobaczy` : 'Znak poszedł';
+      // Default pool — deterministic pick based on day-of-year
+      const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+      const pool = [
+        hasName ? `${name} będzie wiedział(a)` : 'Znak wysłany',
+        'Znak wysłany',
+        hasName ? `Gotowe — spokojny dzień dla ${rf.genitive}` : 'Gotowe — spokojny dzień',
+      ];
+      copyLine = pool[dayOfYear % pool.length];
     }
     buttonLabel = 'Gotowe';
   } else {
