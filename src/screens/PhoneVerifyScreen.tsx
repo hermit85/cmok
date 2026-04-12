@@ -130,14 +130,13 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       setResendCooldown(60);
       transitionToCode();
     } catch (err: any) {
-      console.warn('[PHONE] OTP error:', JSON.stringify(err));
-      const errMsg = err?.message || '';
-      const msg = errMsg.includes('sms_send_failed')
-        ? 'Usługa SMS jest tymczasowo niedostępna. Spróbuj za chwilę.'
-        : errMsg.includes('rate_limit') || errMsg.includes('429')
-          ? 'Za dużo prób. Poczekaj chwilę i spróbuj ponownie.'
-          : 'Nie udało się wysłać kodu SMS. Sprawdź numer i spróbuj ponownie.';
-      Alert.alert('Coś poszło nie tak', msg);
+      const errDetail = err?.message || err?.msg || err?.code || JSON.stringify(err);
+      console.warn('[PHONE] OTP error:', errDetail);
+      if (__DEV__) {
+        Alert.alert('DEV: OTP Error', `Phone: ${formattedPhone}\n\nError: ${errDetail}\n\nStatus: ${err?.status || 'unknown'}`);
+      } else {
+        Alert.alert('Coś poszło nie tak', 'Nie udało się wysłać kodu SMS. Sprawdź numer i spróbuj ponownie.');
+      }
     } finally {
       setLoading(false);
     }
