@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 export const SUPABASE_URL = 'https://pckpxspcecbvjprxmdja.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_vTRaZ3u4_r0xZjyJwxGmEg_z7ylSAnP';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBja3B4c3BjZWNidmpwcnhtZGphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzg2MDEsImV4cCI6MjA4ODk1NDYwMX0.GCIZrcHAUmkyTLPMPJiRAxFmq2U0YtKb8MlSqtHApOw';
 
 const StorageAdapter = {
   getItem: (key: string) => {

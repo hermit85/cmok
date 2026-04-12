@@ -123,15 +123,20 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
     if (!isValid) return;
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ phone: formattedPhone });
+      const { data, error } = await supabase.auth.signInWithOtp({ phone: formattedPhone });
+      console.log('[PHONE] signInWithOtp result:', { phone: formattedPhone, data: JSON.stringify(data), error: error ? JSON.stringify(error) : null });
       if (error) throw error;
       setFullPhone(formattedPhone);
       setResendCooldown(60);
       transitionToCode();
     } catch (err: any) {
-      const msg = err?.message?.includes('sms_send_failed')
+      console.warn('[PHONE] OTP error:', JSON.stringify(err));
+      const errMsg = err?.message || '';
+      const msg = errMsg.includes('sms_send_failed')
         ? 'Usługa SMS jest tymczasowo niedostępna. Spróbuj za chwilę.'
-        : 'Nie udało się wysłać kodu SMS. Sprawdź numer i spróbuj ponownie.';
+        : errMsg.includes('rate_limit') || errMsg.includes('429')
+          ? 'Za dużo prób. Poczekaj chwilę i spróbuj ponownie.'
+          : 'Nie udało się wysłać kodu SMS. Sprawdź numer i spróbuj ponownie.';
       Alert.alert('Coś poszło nie tak', msg);
     } finally {
       setLoading(false);
