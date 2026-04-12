@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
 import { Emoji } from '../components/Emoji';
+import { Particles } from '../components/Particles';
 import { MonthGrid } from '../components/MonthGrid';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
@@ -17,6 +18,7 @@ import { useCircle } from '../hooks/useCircle';
 import { useSignals } from '../hooks/useSignals';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { useWeekRhythm } from '../hooks/useWeekRhythm';
+import { useCheckinStats } from '../hooks/useCheckinStats';
 import { haptics } from '../utils/haptics';
 import { openPhoneCall } from '../utils/linking';
 import { supabase } from '../services/supabase';
@@ -56,12 +58,40 @@ function connectionLabel(days: number | null): string | null {
 
 const STATUS_SIZE = 180;
 
-function StatusCircle({ ok }: { ok: boolean }) {
+function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: boolean }) {
+  const circleScale = useRef(new Animated.Value(ok ? 1 : 1)).current;
+  const checkOpacity = useRef(new Animated.Value(ok ? 1 : 0)).current;
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (ok && !hasAnimated.current) {
+      hasAnimated.current = true;
+      // Bounce the circle
+      Animated.sequence([
+        Animated.timing(circleScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
+        Animated.spring(circleScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }),
+      ]).start();
+      // Fade in the checkmark
+      Animated.timing(checkOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+    }
+  }, [ok]);
+
   return (
-    <View style={[st.statusCircle, ok ? st.statusCircleOk : st.statusCirclePending]}>
-      <Text style={ok ? st.statusCheckmark : st.statusQuestion}>
-        {ok ? <Text style={st.statusCheckmark}>✓</Text> : <Text style={st.statusQuestion}>···</Text>}
-      </Text>
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <Particles visible={showCelebration} count={10} colors={[Colors.safe, Colors.love, Colors.highlight, Colors.delight]} />
+      <Animated.View style={[
+        st.statusCircle,
+        ok ? st.statusCircleOk : st.statusCirclePending,
+        { transform: [{ scale: circleScale }] },
+      ]}>
+        {ok ? (
+          <Animated.View style={{ opacity: checkOpacity }}>
+            <Text style={st.statusCheckmark}>✓</Text>
+          </Animated.View>
+        ) : (
+          <Text style={st.statusQuestion}>···</Text>
+        )}
+      </Animated.View>
     </View>
   );
 }
@@ -140,8 +170,11 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const callPhone = pv ? '+48600100200' : signaler?.phone || '';
 
   const { days: realWeekDays, refresh: refreshWeek } = useWeekRhythm(sigId);
+  const { streak: sigStreak } = useCheckinStats(sigId);
 
   const [isOk, setIsOk] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const hasSeenSign = useRef(false);
   const [todayTime, setTodayTime] = useState<string | null>(null);
   const [lastContact, setLastContact] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -205,6 +238,13 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   useEffect(() => {
     if (effOk) {
+      // Celebrate on first view of today's sign
+      if (!hasSeenSign.current) {
+        hasSeenSign.current = true;
+        setShowCelebration(true);
+        haptics.success();
+        setTimeout(() => setShowCelebration(false), 1200);
+      }
       afterFade.setValue(0);
       Animated.timing(afterFade, { toValue: 1, duration: 500, useNativeDriver: true }).start();
     } else {
@@ -331,9 +371,10 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   /* ─── daily view ─── */
 
+  const streakLabel = effOk && sigStreak >= 2 ? `${sigStreak} dni z rzędu` : null;
   const title = effOk
     ? isFirstEver
-      ? `Pierwszy znak od ${nameFrom}`
+      ? `Pierwszy znak od ${nameFrom}!`
       : `Znak od ${nameFrom}`
     : hasReceiverGap
       ? 'Dawno nie było znaku'
@@ -354,11 +395,12 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false} bounces={false}>
         {/* ─── SECTION 1: Status hero ─── */}
         <View style={st.heroSection}>
-          <StatusCircle ok={effOk} />
+          <StatusCircle ok={effOk} showCelebration={showCelebration} />
           {effOk ? (
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
               <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>
               {sub ? <Text style={st.sub}>{sub}</Text> : null}
+              {streakLabel ? <Text style={st.streakBadge}>{streakLabel}</Text> : null}
             </Animated.View>
           ) : (
             <View style={{ alignItems: 'center' }}>
@@ -430,6 +472,7 @@ const st = StyleSheet.create({
   title: { fontSize: 20, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center' },
   titlePending: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.textSecondary, textAlign: 'center' },
   sub: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
+  streakBadge: { fontSize: 13, fontFamily: Typography.headingFamilySemiBold, color: Colors.safe, marginTop: 8 },
 
   /* nudge */
   nudgeBtn: { marginTop: 16, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: Colors.surface, borderRadius: 999 },
