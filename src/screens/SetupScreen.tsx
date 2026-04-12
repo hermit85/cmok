@@ -9,15 +9,14 @@ import { Typography } from '../constants/typography';
 interface SetupScreenProps {
   onDone: () => void;
   onBack: () => void;
-  initialLabel?: string;
 }
 
 function generateInviteCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenProps) {
-  const [label, setLabel] = useState(initialLabel);
+export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
+  const [label, setLabel] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isValid = label.trim().length > 0;
@@ -87,19 +86,16 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={styles.title}>
-          {label.trim().length > 0 ? `Połącz z ${label.trim()}` : 'Połącz z bliską osobą'}
-        </Text>
-        <Text style={styles.subtitle}>Za chwilę zobaczysz kod — pokaż go drugiej osobie.</Text>
+        <Text style={styles.title}>Jak nazwać osobę, która będzie dawać Ci znak?</Text>
+        <Text style={styles.subtitle}>Za chwilę zobaczysz kod — pokaż go tej osobie.</Text>
 
         <View style={styles.formCard}>
-          <Text style={styles.label}>Jak ją tu nazwać?</Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
               value={label}
               onChangeText={setLabel}
-              placeholder="np. Mama"
+              placeholder="np. Mama, Syn, Wnuczka"
               placeholderTextColor={Colors.textSoft}
               autoCorrect={false}
               spellCheck={false}
@@ -107,7 +103,7 @@ export function SetupScreen({ onDone, onBack, initialLabel = '' }: SetupScreenPr
             />
           </View>
 
-          <Text style={styles.helperText}>Tak będzie potem widoczna w aplikacji.</Text>
+          <Text style={styles.helperText}>Tak będzie widoczna ta osoba w aplikacji.</Text>
         </View>
 
         {loading ? (

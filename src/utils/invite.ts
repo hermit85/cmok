@@ -1,7 +1,6 @@
 import { Share, Platform } from 'react-native';
 
-// TODO: Replace with real App Store / Play Store URLs when published
-const APP_STORE_URL = 'https://cmok.app';
+const APP_STORE_URL = 'https://apps.apple.com/pl/app/cmok/id6760717645';
 
 /**
  * Minimal invite event logging.
@@ -73,14 +72,12 @@ export async function shareInvite(params: {
   const deepLink = `cmok://join/${code}`;
 
   const message = [
-    `Dołącz do kręgu ${name} w Cmok.`,
-    ``,
-    `Cmok to prywatna aplikacja dla kręgu bliskich — codzienny znak, że wszystko w porządku.`,
-    ``,
+    `Dołącz do mojego kręgu w Cmok!`,
     `Twój kod: ${code}`,
     ``,
-    `Jeśli masz Cmok, otwórz: ${deepLink}`,
-    `Jeśli nie — pobierz: ${APP_STORE_URL}`,
+    `Pobierz apkę: ${APP_STORE_URL}`,
+    ``,
+    `Masz już Cmok? Otwórz: ${deepLink}`,
   ].join('\n');
 
   try {

@@ -58,6 +58,9 @@ export function WaitingForConnectionScreen() {
       <Text style={styles.miniLogo}>Cmok</Text>
 
       <View style={styles.content}>
+        <Pressable onPress={() => router.replace('/onboarding')} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
+          <Text style={styles.backText}>← Wróć</Text>
+        </Pressable>
         <Text style={styles.eyebrow}>Prawie gotowe</Text>
         <Text style={styles.title}>Zaproś{'\n'}{relationship.signalerLabel || 'bliską osobę'}</Text>
         <Text style={styles.subtitle}>Wyślij kod lub pokaż go na tym ekranie.</Text>
@@ -110,4 +113,6 @@ const styles = StyleSheet.create({
   shareBtnText: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
   refreshLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 16 },
   refreshLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  backButton: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 8, minHeight: 44, marginBottom: 8, marginLeft: -8 },
+  backText: { fontSize: 16, fontWeight: '500', color: Colors.accent },
 });

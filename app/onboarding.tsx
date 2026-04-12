@@ -181,7 +181,7 @@ export default function OnboardingFlow() {
           onVerified={handleVerified} />
       );
     case 'setup':
-      return <SetupScreen onDone={handleConnectionCreated} onBack={goBack} initialLabel={recipientName || 'Bliska osoba'} />;
+      return <SetupScreen onDone={handleConnectionCreated} onBack={goBack} />;
     case 'join':
       return (
         <JoinScreen onBack={goBack}
