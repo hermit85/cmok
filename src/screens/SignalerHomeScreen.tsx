@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator,
-  Alert, Animated, ScrollView,
+  Alert, Animated, ScrollView, Share, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NetInfo from '@react-native-community/netinfo';
@@ -279,6 +279,17 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     } catch { /* silent — status is optional */ }
   }, [pv, userId]);
 
+  const handleMilestoneShare = useCallback(async () => {
+    const streakText = currentStreak === 7 ? 'tydzień' : currentStreak === 14 ? '2 tygodnie' : currentStreak === 21 ? '3 tygodnie' : currentStreak === 30 ? 'miesiąc' : `${currentStreak} dni`;
+    const displayName = primaryName || null;
+    const msg = displayName
+      ? `${displayName} i ja — ${streakText} codziennego kontaktu w Cmok! Znasz kogoś, kto mieszka sam? Cmok daje spokój obu stronom.\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645`
+      : `${streakText} codziennego kontaktu w Cmok!\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645`;
+    try {
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
+    } catch { /* cancelled */ }
+  }, [currentStreak, primaryName]);
+
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
     if (pv) { setPreviewMode('support'); return; }
@@ -542,6 +553,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
                 </Text>
               )}
+              {isMilestone ? (
+                <Pressable onPress={handleMilestoneShare} style={({ pressed }) => [s.shareBtn, pressed && { opacity: 0.7 }]}>
+                  <Text style={s.shareBtnText}>Podziel się</Text>
+                </Pressable>
+              ) : null}
             </Animated.View>
           ) : (
             <View style={{ alignItems: 'center' }}>
@@ -615,6 +631,8 @@ const s = StyleSheet.create({
   statusSymbol: { fontSize: 16, marginBottom: 2 },
   statusLabel: { fontSize: 9, color: Colors.textMuted },
   statusPicked: { fontSize: 14, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: 16 },
+  shareBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.surface },
+  shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },
 
   dotsWrap: { marginTop: 24 },
 
