@@ -33,7 +33,7 @@ const STATUS_MOODS = [
   { key: 'calm', symbol: '\u{2022}', label: 'Spokojnie', color: Colors.safe },
   { key: 'tired', symbol: '\u{223C}', label: 'Zm\u{0119}czona', color: Colors.delight },
   { key: 'walk', symbol: '\u{2192}', label: 'Na spacerze', color: Colors.accent },
-  { key: 'doctor', symbol: '+', label: 'U lekarza', color: Colors.alert },
+  { key: 'doctor', symbol: '\u{2020}', label: 'U lekarza', color: Colors.alert },
 ] as const;
 
 /* ─── helpers ─── */
@@ -561,19 +561,17 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             </Animated.View>
           ) : (
             <View style={{ alignItems: 'center' }}>
-              <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
-              {hasName ? <Text style={s.copySubLine}>{name} czeka</Text> : null}
+              <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{hasName ? `${name} czeka na Twój znak` : copyLine}</Text>
             </View>
           )}
 
           {/* ─── WEEK DOTS ─── */}
           {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} showLabel={showChecked} /></View> : null}
 
-          {/* ─── VIRAL: grow circle ─── */}
+          {/* ─── VIRAL: subtle invite link ─── */}
           {showChecked && currentStreak >= 3 ? (
-            <Pressable onPress={handleMilestoneShare} style={({ pressed }) => [s.viralCard, pressed && { opacity: 0.8 }]}>
-              <Text style={s.viralText}>Powiększ swój krąg bliskich</Text>
-              <Text style={s.viralSub}>Zaproś kolejną osobę do Cmok</Text>
+            <Pressable onPress={handleMilestoneShare} style={({ pressed }) => [s.viralLink, pressed && { opacity: 0.5 }]}>
+              <Text style={s.viralLinkText}>Zaproś kogoś do kręgu</Text>
             </Pressable>
           ) : null}
         </View>
@@ -623,11 +621,10 @@ const s = StyleSheet.create({
   copyLineDone: { fontSize: 17, lineHeight: 24, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, textAlign: 'center', marginTop: 20, maxWidth: 280 },
   timeLine: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
   responseReceipt: {
-    marginTop: 14, backgroundColor: Colors.love, paddingHorizontal: 20, paddingVertical: 10,
+    marginTop: 14, backgroundColor: Colors.safeLight, paddingHorizontal: 16, paddingVertical: 8,
     borderRadius: 20, alignSelf: 'center',
-    shadowColor: '#FF6B6B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12,
   },
-  responseReceiptText: { fontSize: 13, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },
+  responseReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
   /* status mood picker */
   statusSection: { marginTop: 20, alignItems: 'center' },
   statusPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 10 },
@@ -643,12 +640,8 @@ const s = StyleSheet.create({
   shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },
 
   dotsWrap: { marginTop: 24 },
-  viralCard: {
-    marginTop: 20, paddingVertical: 14, paddingHorizontal: 20,
-    borderRadius: 16, backgroundColor: Colors.surface, alignItems: 'center',
-  },
-  viralText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.accent },
-  viralSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  viralLink: { marginTop: 16, minHeight: 40, justifyContent: 'center', alignItems: 'center' },
+  viralLinkText: { fontSize: 13, color: Colors.textMuted },
 
   /* urgent link — text-only, no background */
   urgentLink: {

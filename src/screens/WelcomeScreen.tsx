@@ -15,7 +15,7 @@ interface WelcomeScreenProps {
 
 const SLIDES = [
   {
-    headline: 'Codzienny znak,\nże wszystko OK',
+    headline: 'Codzienny znak,\nże jest OK',
     body: 'Dla Ciebie i Twoich bliskich.\nBez dzwonienia, bez stresu.',
   },
   {
@@ -149,7 +149,7 @@ const s = StyleSheet.create({
   },
   primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   skipLink: { marginTop: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
-  skipText: { fontSize: 15, color: Colors.textSecondary },
+  skipText: { fontSize: 12, color: Colors.textMuted },
   devLink: { marginTop: 8, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   devLinkText: { fontSize: 13, color: Colors.textMuted },
 });

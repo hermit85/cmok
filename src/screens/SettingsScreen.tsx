@@ -136,8 +136,8 @@ const styles = StyleSheet.create({
   miniAvatarText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   circleInfo: { flex: 1 },
   chevron: { fontSize: 18, color: Colors.textMuted },
-  inviteCard: { borderWidth: 1.5, borderColor: Colors.safe, borderStyle: 'dashed', backgroundColor: Colors.safeLight },
-  inviteText: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.safe, marginBottom: 4 },
+  inviteCard: { },
+  inviteText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.accent, marginBottom: 4 },
   logoutButton: {
     backgroundColor: 'transparent', minHeight: 52, borderRadius: 16,
     borderWidth: 1.5, borderColor: Colors.border,

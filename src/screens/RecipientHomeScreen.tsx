@@ -75,19 +75,33 @@ const MORNING_THOUGHTS = [
 const STATUS_SIZE = 180;
 
 function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: boolean }) {
-  const circleScale = useRef(new Animated.Value(ok ? 1 : 1)).current;
+  const circleScale = useRef(new Animated.Value(1)).current;
   const checkOpacity = useRef(new Animated.Value(ok ? 1 : 0)).current;
+  const pulseScale = useRef(new Animated.Value(1)).current;
   const hasAnimated = useRef(false);
 
+  // Pending: gentle pulse on the border (hope, not emptiness)
+  useEffect(() => {
+    if (!ok) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseScale, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
+          Animated.timing(pulseScale, { toValue: 1, duration: 1200, useNativeDriver: true }),
+        ]),
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+  }, [ok]);
+
+  // Ok: bounce in
   useEffect(() => {
     if (ok && !hasAnimated.current) {
       hasAnimated.current = true;
-      // Bounce the circle
       Animated.sequence([
         Animated.timing(circleScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
         Animated.spring(circleScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }),
       ]).start();
-      // Fade in the checkmark
       Animated.timing(checkOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
     }
   }, [ok]);
@@ -98,15 +112,13 @@ function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: b
       <Animated.View style={[
         st.statusCircle,
         ok ? st.statusCircleOk : st.statusCirclePending,
-        { transform: [{ scale: circleScale }] },
+        { transform: [{ scale: ok ? circleScale : pulseScale }] },
       ]}>
         {ok ? (
           <Animated.View style={{ opacity: checkOpacity }}>
             <Text style={st.statusCheckmark}>✓</Text>
           </Animated.View>
-        ) : (
-          <Text style={st.statusQuestion}>···</Text>
-        )}
+        ) : null}
       </Animated.View>
     </View>
   );
@@ -521,10 +533,9 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               <ResponseTap signalerName={name} signalerId={sigId} preview={pv} />
             </Animated.View>
           ) : null}
-          {/* Viral: grow circle */}
-          <Pressable onPress={handleShareInvite} style={({ pressed }) => [st.viralCard, pressed && { opacity: 0.8 }]}>
-            <Text style={st.viralText}>Powiększ krąg bliskich</Text>
-            <Text style={st.viralSub}>Zaproś kolejną osobę do Cmok</Text>
+          {/* Viral: grow circle — subtle link */}
+          <Pressable onPress={handleShareInvite} style={({ pressed }) => [st.viralLink, pressed && { opacity: 0.5 }]}>
+            <Text style={st.viralLinkText}>Zaproś kogoś do kręgu</Text>
           </Pressable>
 
           <Pressable
@@ -555,9 +566,8 @@ const st = StyleSheet.create({
   /* status circle */
   statusCircle: { width: STATUS_SIZE, height: STATUS_SIZE, borderRadius: STATUS_SIZE / 2, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   statusCircleOk: { backgroundColor: Colors.safeLight, borderWidth: 3, borderColor: Colors.safe },
-  statusCirclePending: { backgroundColor: Colors.surface, borderWidth: 2, borderColor: Colors.border },
+  statusCirclePending: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.safe, opacity: 0.4 },
   statusCheckmark: { fontSize: 48, color: Colors.safe, fontWeight: '300' },
-  statusQuestion: { fontSize: 28, color: Colors.textMuted, letterSpacing: 4 },
 
   /* status text */
   title: { fontSize: 20, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center' },
@@ -591,7 +601,8 @@ const st = StyleSheet.create({
   reactionsRow: { flexDirection: 'row', gap: 16, justifyContent: 'center' },
   reactionBtn: {
     width: 64, height: 64, borderRadius: 16,
-    backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: Colors.cardStrong, borderWidth: 1, borderColor: Colors.border,
+    justifyContent: 'center', alignItems: 'center',
   },
   reactionSymbol: { fontSize: 22 },
   reactionLabel: { fontSize: 9, color: Colors.textMuted, marginTop: 2 },
@@ -601,13 +612,9 @@ const st = StyleSheet.create({
   },
   responseSentText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
 
-  /* viral — grow circle */
-  viralCard: {
-    marginTop: 20, marginBottom: 8, paddingVertical: 14, paddingHorizontal: 20,
-    borderRadius: 16, backgroundColor: Colors.surface, alignItems: 'center', alignSelf: 'center',
-  },
-  viralText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.accent },
-  viralSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  /* viral — subtle link */
+  viralLink: { marginTop: 16, marginBottom: 4, minHeight: 40, justifyContent: 'center', alignItems: 'center' },
+  viralLinkText: { fontSize: 13, color: Colors.textMuted },
 
   /* bottom — text-only link */
   bottomLink: { alignItems: 'center', paddingVertical: 14, marginBottom: 32 },
