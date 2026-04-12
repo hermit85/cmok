@@ -6,7 +6,7 @@ interface BrandMotifProps {
 }
 
 export function BrandMotif({ size = 72 }: BrandMotifProps) {
-  const dotR = 7;
+  const dotR = 9;
   const lineY = size / 2;
   const leftX = size * 0.25;
   const rightX = size * 0.75;
@@ -22,7 +22,7 @@ export function BrandMotif({ size = 72 }: BrandMotifProps) {
         strokeWidth={2}
         strokeLinecap="round"
       />
-      <Circle cx={leftX} cy={lineY} r={dotR} fill={Colors.accent} />
+      <Circle cx={leftX} cy={lineY} r={dotR} fill={Colors.love} />
       <Circle cx={rightX} cy={lineY} r={dotR} fill={Colors.safe} />
     </Svg>
   );

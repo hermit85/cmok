@@ -26,8 +26,8 @@ function CodeBoxes({ code, focusedIndex }: { code: string; focusedIndex: number 
   return (
     <View style={s.boxRow}>
       {digits.map((digit, i) => (
-        <View key={i} style={[s.box, i === focusedIndex && s.boxFocused]}>
-          {digit.trim().length > 0 && <Text style={s.boxDigit}>{digit}</Text>}
+        <View key={i} style={[s.box, i === focusedIndex && s.boxFocused, digit.trim().length > 0 && s.boxFilled]}>
+          {digit.trim().length > 0 && <Text style={[s.boxDigit, s.boxDigitFilled]}>{digit}</Text>}
         </View>
       ))}
     </View>
@@ -126,7 +126,7 @@ export function JoinScreen({
       <SafeAreaView style={[s.container, s.centered, { backgroundColor: Colors.background }]}>
         <Animated.View style={{ opacity: successOpacity, transform: [{ scale: successScale }], alignItems: 'center' }}>
           <View style={s.successCheck}>
-            <Text style={s.successCheckText}>✓</Text>
+            <Text style={s.successCheckText}><Text style={{ fontFamily: undefined, fontSize: 36 }}>✓</Text></Text>
           </View>
           <Text style={s.successTitle}>Jesteście połączeni</Text>
           <Text style={s.successSub}>
@@ -234,11 +234,13 @@ const s = StyleSheet.create({
   title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 8, lineHeight: 34 },
   subtitle: { fontSize: Typography.body, color: Colors.textSecondary, marginBottom: 24, lineHeight: 23 },
   joiningTitle: { fontSize: 22, fontWeight: '700', color: Colors.text, textAlign: 'center' },
-  codeCard: { width: '100%', backgroundColor: Colors.card, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, padding: 16 },
+  codeCard: { width: '100%', backgroundColor: Colors.surface, borderRadius: 20, padding: 16 },
   boxRow: { flexDirection: 'row', gap: 8, justifyContent: 'space-between' },
-  box: { width: 46, height: 46, borderRadius: 23, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: 'transparent' },
-  boxFocused: { borderColor: Colors.accent },
-  boxDigit: { fontSize: 24, fontFamily: Typography.fontFamilyBold, color: Colors.text },
+  box: { flex: 1, minHeight: 58, borderRadius: 14, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  boxFocused: { borderColor: Colors.safe },
+  boxFilled: { backgroundColor: Colors.safe },
+  boxDigit: { fontSize: 24, fontFamily: Typography.headingFamily, color: Colors.text },
+  boxDigitFilled: { color: '#FFFFFF' },
   hiddenInput: { position: 'absolute', opacity: 0, height: 0, width: 0 },
   error: { fontSize: 15, color: Colors.alert, textAlign: 'center', marginTop: 12 },
   joinBtn: { width: '100%', marginTop: 24 },

@@ -106,8 +106,8 @@ const styles = StyleSheet.create({
   backText: { fontSize: 16, fontWeight: '500', color: Colors.accent },
   title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 20 },
   card: {
-    backgroundColor: Colors.cardStrong, borderWidth: 1, borderColor: Colors.border,
-    borderRadius: Radius.md, padding: Spacing.card, marginBottom: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: 16, padding: Spacing.card, marginBottom: 16,
   },
   cardLabel: { fontSize: 12, fontWeight: '600', color: Colors.textMuted, marginBottom: 8 },
   cardValue: { fontSize: Typography.bodyLarge, fontFamily: Typography.fontFamilyBold, color: Colors.text },
@@ -115,13 +115,14 @@ const styles = StyleSheet.create({
   circleRow: { flexDirection: 'row', alignItems: 'center' },
   miniAvatar: {
     width: MINI_AV, height: MINI_AV, borderRadius: MINI_AV / 2,
-    backgroundColor: Colors.safeLight, justifyContent: 'center', alignItems: 'center', marginRight: 12,
+    backgroundColor: Colors.safe, justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
-  miniAvatarText: { fontSize: 14, fontWeight: '700', color: Colors.safe },
+  miniAvatarText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   circleInfo: { flex: 1 },
   chevron: { fontSize: 18, color: Colors.textMuted },
   logoutButton: {
-    backgroundColor: Colors.surface, minHeight: 52, borderRadius: Radius.sm,
+    backgroundColor: 'transparent', minHeight: 52, borderRadius: 16,
+    borderWidth: 1.5, borderColor: Colors.border,
     justifyContent: 'center', alignItems: 'center', marginTop: 8,
   },
   logoutText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },

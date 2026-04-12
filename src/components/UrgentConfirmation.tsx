@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import { Colors } from '../constants/colors';
+import { Typography } from '../constants/typography';
 
 interface UrgentConfirmationProps {
   visible: boolean;
@@ -11,20 +12,22 @@ export function UrgentConfirmation({ visible, onConfirm, onCancel }: UrgentConfi
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
-        <Text style={styles.title} maxFontSizeMultiplier={1.3}>
-          Daj znać bliskim
-        </Text>
-        <Text style={styles.subtitle} maxFontSizeMultiplier={1.4}>
-          Twoja bliska osoba dostanie powiadomienie, że prosisz o kontakt
-        </Text>
+        <View style={styles.card}>
+          <Text style={styles.title} maxFontSizeMultiplier={1.3}>
+            Daj znać bliskim
+          </Text>
+          <Text style={styles.subtitle} maxFontSizeMultiplier={1.4}>
+            Twoja bliska osoba dostanie powiadomienie, że prosisz o kontakt
+          </Text>
 
-        <Pressable onPress={onConfirm} style={({ pressed }) => [styles.confirmButton, pressed && { opacity: 0.8 }]}>
-          <Text style={styles.confirmText}>Tak, wyślij</Text>
-        </Pressable>
+          <Pressable onPress={onConfirm} style={({ pressed }) => [styles.confirmButton, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
+            <Text style={styles.confirmText}>Tak, wyślij</Text>
+          </Pressable>
 
-        <Pressable onPress={onCancel} style={({ pressed }) => [styles.cancelButton, pressed && { opacity: 0.6 }]}>
-          <Text style={styles.cancelText}>Anuluj</Text>
-        </Pressable>
+          <Pressable onPress={onCancel} style={({ pressed }) => [styles.cancelButton, pressed && { opacity: 0.6 }]}>
+            <Text style={styles.cancelText}>Anuluj</Text>
+          </Pressable>
+        </View>
       </View>
     </Modal>
   );
@@ -33,49 +36,60 @@ export function UrgentConfirmation({ visible, onConfirm, onCancel }: UrgentConfi
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(31, 36, 48, 0.94)',
+    backgroundColor: 'rgba(45, 41, 38, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 24,
+  },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
     padding: 32,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 340,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontSize: 24,
+    fontFamily: Typography.headingFamily,
+    color: Colors.text,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.6)',
+    fontSize: 15,
+    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 48,
+    marginBottom: 32,
   },
   confirmButton: {
     backgroundColor: Colors.accent,
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 18,
+    minHeight: 56,
     paddingHorizontal: 48,
     minWidth: 200,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
+    shadowColor: '#E85D3A',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
   },
   confirmText: {
     fontSize: 17,
-    fontWeight: '600',
+    fontFamily: Typography.headingFamily,
     color: '#FFFFFF',
   },
   cancelButton: {
-    minWidth: 72,
-    minHeight: 56,
+    minHeight: 44,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
   },
   cancelText: {
-    fontSize: 17,
-    color: '#FFFFFF',
-    opacity: 0.6,
+    fontSize: 16,
+    color: Colors.textSecondary,
   },
 });

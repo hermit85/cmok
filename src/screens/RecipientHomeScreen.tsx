@@ -60,7 +60,7 @@ function StatusCircle({ ok }: { ok: boolean }) {
   return (
     <View style={[st.statusCircle, ok ? st.statusCircleOk : st.statusCirclePending]}>
       <Text style={ok ? st.statusCheckmark : st.statusQuestion}>
-        {ok ? '✓' : '?'}
+        {ok ? <Text style={{ fontFamily: undefined }}>✓</Text> : <Text style={{ fontFamily: undefined }}>?</Text>}
       </Text>
     </View>
   );
@@ -381,7 +381,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               style={({ pressed }) => [st.nudgeBtn, pressed && !nudgeSent && { opacity: 0.7 }]}
             >
               <Text style={[st.nudgeBtnText, nudgeSent && st.nudgeBtnTextSent]}>
-                {nudgeSent ? 'Wysłano ✓' : nudgeSending ? '...' : 'Przypomnij delikatnie'}
+                {nudgeSent ? <Text>Wysłano <Text style={{ fontFamily: undefined }}>✓</Text></Text> : nudgeSending ? <Text>...</Text> : <Text>Przypomnij delikatnie</Text>}
               </Text>
             </Pressable>
           ) : null}
@@ -442,10 +442,11 @@ const st = StyleSheet.create({
   /* response — pill button */
   responseSection: { alignItems: 'center', marginBottom: 16 },
   responsePill: {
-    backgroundColor: Colors.accentLight, minHeight: 48, paddingHorizontal: 32,
-    borderRadius: 999, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: Colors.love, minHeight: 50, paddingHorizontal: 32,
+    borderRadius: 16, justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#FF6B6B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 16,
   },
-  responsePillText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
+  responsePillText: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },
   responseSentPill: {
     backgroundColor: Colors.safeLight, minHeight: 44, paddingHorizontal: 24,
     borderRadius: 999, justifyContent: 'center', alignItems: 'center',

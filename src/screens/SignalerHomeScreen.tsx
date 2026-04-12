@@ -483,7 +483,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                     <Text style={[s.btnText, buttonDone && s.btnTextDone, buttonDisabled && s.btnTextOff]} maxFontSizeMultiplier={1.2}>
                       {buttonLabel}
                     </Text>
-                    {buttonDone ? <Text style={s.btnCheck}>✓</Text> : null}
+                    {buttonDone ? <Text style={[s.btnCheck, { fontFamily: undefined }]}>✓</Text> : null}
                   </Pressable>
                 </Animated.View>
               </Animated.View>
@@ -557,10 +557,11 @@ const s = StyleSheet.create({
   copyLineDone: { fontSize: 17, lineHeight: 24, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, textAlign: 'center', marginTop: 20, maxWidth: 280 },
   timeLine: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
   responseReceipt: {
-    marginTop: 14, backgroundColor: Colors.accentLight, paddingHorizontal: 18, paddingVertical: 8,
-    borderRadius: 999, alignSelf: 'center',
+    marginTop: 14, backgroundColor: Colors.love, paddingHorizontal: 20, paddingVertical: 10,
+    borderRadius: 20, alignSelf: 'center',
+    shadowColor: '#FF6B6B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12,
   },
-  responseReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
+  responseReceiptText: { fontSize: 13, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },
   dotsWrap: { marginTop: 32 },
 
   /* urgent link — text-only, no background */

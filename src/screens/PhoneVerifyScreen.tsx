@@ -39,8 +39,8 @@ function CodeBoxes({ code }: { code: string }) {
         const isFocused = index === code.length && code.length < 6;
         const isFilled = digit.trim().length > 0;
         return (
-          <View key={index} style={[s.box, isFocused && s.boxFocused]}>
-            {isFilled ? <Text style={s.boxDigit}>{digit}</Text> : null}
+          <View key={index} style={[s.box, isFocused && s.boxFocused, isFilled && s.boxFilled]}>
+            {isFilled ? <Text style={[s.boxDigit, s.boxDigitFilled]}>{digit}</Text> : null}
           </View>
         );
       })}
@@ -312,27 +312,28 @@ const s = StyleSheet.create({
 
   /* phone input */
   inputCard: {
-    backgroundColor: Colors.card, borderRadius: 24, borderWidth: 1, borderColor: Colors.border, padding: 16,
-    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.05, shadowRadius: 20, elevation: 2,
+    backgroundColor: Colors.surface, borderRadius: 16, padding: 16,
   },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 18, paddingHorizontal: 18, minHeight: 58 },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 16, paddingHorizontal: 18, minHeight: 56 },
   prefix: { fontSize: 20, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, marginRight: 8 },
   input: { flex: 1, fontSize: 20, color: Colors.text, letterSpacing: 1.5 },
 
   helper: { fontSize: Typography.caption, color: Colors.textMuted, lineHeight: 18, marginTop: 12 },
   helperReady: { color: Colors.safeStrong },
 
-  sendBtn: { minHeight: 58, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 24 },
-  sendBtnActive: { backgroundColor: Colors.accent },
-  sendBtnDisabled: { backgroundColor: Colors.disabled, borderWidth: 1, borderColor: Colors.borderStrong },
-  sendBtnText: { fontSize: Typography.body, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },
+  sendBtn: { minHeight: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 24 },
+  sendBtnActive: { backgroundColor: Colors.accent, shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5 },
+  sendBtnDisabled: { backgroundColor: Colors.accent, opacity: 0.4 },
+  sendBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
 
   /* code input */
-  codeCard: { width: '100%', backgroundColor: Colors.card, borderRadius: 24, borderWidth: 1, borderColor: Colors.border, padding: 16 },
+  codeCard: { width: '100%', backgroundColor: Colors.surface, borderRadius: 20, padding: 16 },
   boxRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  box: { width: 46, height: 46, borderRadius: 23, backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
-  boxFocused: { borderColor: Colors.accent },
+  box: { flex: 1, minHeight: 58, borderRadius: 14, backgroundColor: Colors.surface, borderWidth: 2, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  boxFocused: { borderColor: Colors.safe },
   boxDigit: { fontSize: 26, fontWeight: '700', color: Colors.text },
+  boxFilled: { backgroundColor: Colors.safe },
+  boxDigitFilled: { color: '#FFFFFF' },
   hiddenInput: { position: 'absolute', opacity: 0, height: 0, width: 0 },
 
   error: { fontSize: 15, color: Colors.alert, textAlign: 'center', marginTop: 12 },
