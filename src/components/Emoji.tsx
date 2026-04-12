@@ -1,4 +1,4 @@
-import { Text, TextStyle, StyleProp } from 'react-native';
+import { Text, TextStyle, StyleProp, Platform } from 'react-native';
 
 interface EmojiProps {
   children: string;
@@ -6,10 +6,24 @@ interface EmojiProps {
 }
 
 /**
- * Renders emoji with platform-native font (no custom fontFamily).
- * Use this everywhere emoji appears inside Text with custom fonts,
- * otherwise the emoji may render as squares or tofu on some devices.
+ * Renders emoji with platform-native system font.
+ * Must NOT be nested inside <Text> with custom fontFamily —
+ * place as a sibling View, or use allowFontScaling={false}.
  */
 export function Emoji({ children, style }: EmojiProps) {
-  return <Text style={[{ fontFamily: undefined }, style]}>{children}</Text>;
+  return (
+    <Text
+      style={[
+        {
+          fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+        },
+        style,
+      ]}
+      allowFontScaling={false}
+    >
+      {children}
+    </Text>
+  );
 }

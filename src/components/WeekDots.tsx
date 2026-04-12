@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
-import { Emoji } from './Emoji';
 
 type DayStatus = 'ok' | 'missing' | 'future';
 
@@ -115,9 +114,9 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
       )}
 
       {fullWeek ? (
-        <Text style={styles.fullWeekLabel}>Pełny tydzień! <Emoji>🎉</Emoji></Text>
+        <Text style={styles.fullWeekLabel}>Pełny tydzień!</Text>
       ) : label ? (
-        <Text style={styles.label}>{label} <Emoji>🔥</Emoji></Text>
+        <Text style={styles.label}>{label}</Text>
       ) : null}
     </View>
   );
@@ -135,14 +134,12 @@ const styles = StyleSheet.create({
   dotTodayChecked: { borderWidth: 2, borderColor: Colors.highlight },
   fullWeekLabel: {
     fontSize: 13,
-    fontFamily: Typography.headingFamily,
-    color: Colors.highlight,
-    marginTop: 8,
+    fontFamily: Typography.headingFamilySemiBold,
+    color: Colors.safe,
   },
   label: {
     fontSize: 13,
     fontFamily: Typography.headingFamilySemiBold,
     color: Colors.safe,
-    marginTop: 8,
   },
 });

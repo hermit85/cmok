@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import NetInfo from '@react-native-community/netinfo';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
-import { Emoji } from '../components/Emoji';
 import { Particles } from '../components/Particles';
 import { UrgentConfirmation } from '../components/UrgentConfirmation';
 import { SupportParticipants } from '../components/SupportParticipants';
@@ -420,9 +419,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       // Default pool — deterministic pick based on day-of-year
       const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
       const pool = [
-        hasName ? `Jest znak dla ${rf.genitive}` : 'Znak wysłany',
-        'Znak wysłany',
-        hasName ? `Gotowe — spokojny dzień dla ${rf.genitive}` : 'Gotowe — spokojny dzień',
+        hasName ? `${name} wie, że wszystko OK` : 'Znak wysłany',
+        hasName ? `Spokojny dzień dla ${rf.genitive}` : 'Spokojny dzień',
+        hasName ? `${name} może być spokojna` : 'Gotowe na dziś',
       ];
       copyLine = pool[dayOfYear % pool.length];
     }
@@ -497,7 +496,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>{responseName ? `Jest znak od ${responseName}` : 'Jest znak'} <Emoji>✓</Emoji></Text>
+                  <Text style={s.responseReceiptText}>{responseName ? `${responseName} jest z Tobą` : 'Jest znak'}</Text>
                 </View>
               ) : null}
             </Animated.View>

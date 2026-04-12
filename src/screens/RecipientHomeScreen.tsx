@@ -60,7 +60,7 @@ function StatusCircle({ ok }: { ok: boolean }) {
   return (
     <View style={[st.statusCircle, ok ? st.statusCircleOk : st.statusCirclePending]}>
       <Text style={ok ? st.statusCheckmark : st.statusQuestion}>
-        {ok ? <Text style={{ fontFamily: undefined }}>✓</Text> : <Text style={{ fontFamily: undefined }}>?</Text>}
+        {ok ? <Text style={st.statusCheckmark}>✓</Text> : <Text style={st.statusQuestion}>···</Text>}
       </Text>
     </View>
   );
@@ -110,7 +110,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
       ) : (
         <Animated.View style={{ transform: [{ scale }] }}>
           <Pressable onPress={handleTap} style={({ pressed }) => [st.responsePill, pressed && { opacity: 0.85 }]}>
-            <Text style={st.responsePillText}>Wyślij serduszko <Emoji style={{ fontSize: 18 }}>💚</Emoji></Text>
+            <Text style={st.responsePillText}>Wyślij serduszko</Text>
           </Pressable>
         </Animated.View>
       )}
@@ -336,17 +336,17 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       ? `Pierwszy znak od ${nameFrom}`
       : `Znak od ${nameFrom}`
     : hasReceiverGap
-      ? 'Kilka dni bez znaku'
+      ? 'Dawno nie było znaku'
       : effLast
-        ? 'Jeszcze bez znaku'
+        ? 'Czekamy na dzisiejszy znak'
         : 'Czekamy na pierwszy znak';
   const sub = effOk
     ? `Na dziś jest kontakt${effTime ? ` · ${effTime}` : ''}`
     : hasReceiverGap
-      ? 'To bywa. Może odezwij się bezpośrednio?'
+      ? 'Może napisz lub zadzwoń?'
       : effLast
         ? `Ostatnio: ${effLast}`
-        : 'To dopiero początek';
+        : 'Spokojnie — dopiero zaczynacie';
 
   return (
     <SafeAreaView style={[st.container, effOk && st.containerAfter]}>
@@ -398,7 +398,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             onPress={() => openPhoneCall(callPhone, 'Nie można połączyć.')}
             style={({ pressed }) => [st.bottomLink, pressed && { opacity: 0.6 }]}
           >
-            <Text style={st.bottomLinkText}>W razie czego</Text>
+            <Text style={st.bottomLinkText}>Zadzwoń bezpośrednio</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -421,10 +421,10 @@ const st = StyleSheet.create({
 
   /* status circle */
   statusCircle: { width: STATUS_SIZE, height: STATUS_SIZE, borderRadius: STATUS_SIZE / 2, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  statusCircleOk: { backgroundColor: Colors.safeLight, borderWidth: 2, borderColor: Colors.safe },
-  statusCirclePending: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.border },
-  statusCheckmark: { fontSize: 48, color: Colors.safe },
-  statusQuestion: { fontSize: 36, color: Colors.textSecondary },
+  statusCircleOk: { backgroundColor: Colors.safeLight, borderWidth: 3, borderColor: Colors.safe },
+  statusCirclePending: { backgroundColor: Colors.surface, borderWidth: 2, borderColor: Colors.border },
+  statusCheckmark: { fontSize: 48, color: Colors.safe, fontWeight: '300' },
+  statusQuestion: { fontSize: 28, color: Colors.textMuted, letterSpacing: 4 },
 
   /* status text */
   title: { fontSize: 20, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center' },
