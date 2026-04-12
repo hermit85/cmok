@@ -9,6 +9,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
 import { Particles } from '../components/Particles';
 import { UrgentConfirmation } from '../components/UrgentConfirmation';
+import { MilestoneCelebration } from '../components/MilestoneCelebration';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
@@ -75,6 +76,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const [pendingCheckinTime, setPendingCheckinTime] = useState<string | null>(null);
   const [justChecked, setJustChecked] = useState(false);
   const [celebrationVisible, setCelebrationVisible] = useState(false);
+  const [milestoneVisible, setMilestoneVisible] = useState(false);
   const [statusPicked, setStatusPicked] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<SignalerHomePreview | null>(preview);
 
@@ -223,7 +225,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
     if (isMilestone) {
-      celebrationTimeoutRef.current = setTimeout(() => setCelebrationVisible(false), 1200);
+      celebrationTimeoutRef.current = setTimeout(() => {
+        setCelebrationVisible(false);
+        setMilestoneVisible(true); // show full-screen celebration after particle burst
+      }, 1200);
     }
   }, [buttonScale, releaseRingOpacity, releaseRingScale, breatheShadow, isMilestone]);
 
@@ -477,6 +482,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   return (
     <SafeAreaView style={[s.container, showChecked && s.containerAfter]}>
       <UrgentConfirmation visible={showUrgentModal} onConfirm={handleUrgentConfirm} onCancel={() => setShowUrgentModal(false)} circleCount={recipients.length} />
+      <MilestoneCelebration visible={milestoneVisible} streak={currentStreak} recipientName={primaryName} onDismiss={() => setMilestoneVisible(false)} />
       <ScreenHeader subtitle={hasName ? name : undefined} />
 
       {isOffline ? <Text style={s.offlineBadge}>Brak internetu</Text> : null}
@@ -501,7 +507,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                 } : undefined}>
                 <Animated.View style={{ transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] }}>
                   <Pressable
-                    onPress={handleCheckin} disabled={!canCheckin}
+                    onPress={handleCheckin}
+                    onLongPress={() => { if (canUrgent) { haptics.heavy(); setShowUrgentModal(true); } }}
+                    delayLongPress={2000}
+                    disabled={!canCheckin && !canUrgent}
                     style={({ pressed }) => [
                       s.btn, buttonDone && s.btnDone, buttonDisabled && s.btnOff, !buttonDone && !buttonDisabled && s.btnActive,
                       pressed && canCheckin && { transform: [{ scale: 0.96 }], opacity: 0.94 },
@@ -524,7 +533,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>{responseName ? `${responseName} jest z Tobą` : 'Jest znak'}</Text>
+                  <Text style={s.responseReceiptText}>{responseName ? `${responseName} jest z Toba` : 'Jest znak'}</Text>
                 </View>
               ) : null}
               {!statusPicked ? (
@@ -548,10 +557,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
                 </Text>
               )}
-              {isMilestone ? (
-                <Pressable onPress={handleMilestoneShare} style={({ pressed }) => [s.shareBtn, pressed && { opacity: 0.7 }]}>
-                  <Text style={s.shareBtnText}>Podziel się</Text>
-                </Pressable>
+              {!isMilestone && currentStreak >= 2 ? (
+                <Text style={s.tomorrowHook}>Jutro dzień {currentStreak + 1}!</Text>
               ) : null}
             </Animated.View>
           ) : (
@@ -632,6 +639,7 @@ const s = StyleSheet.create({
   statusSymbol: { fontSize: 16, marginBottom: 2 },
   statusLabel: { fontSize: 9, color: Colors.textMuted },
   statusPicked: { fontSize: 14, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: 16 },
+  tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 16 },
   shareBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.surface },
   shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },
 

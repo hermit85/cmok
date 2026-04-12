@@ -175,9 +175,12 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
   return (
     <View style={st.responseSection}>
       {sent ? (
-        <Animated.View style={[st.responseSentPill, justSent ? { transform: [{ scale: sentScale }] } : undefined]}>
-          <Text style={st.responseSentText}>{signalerName} zobaczy Twój gest</Text>
-        </Animated.View>
+        <>
+          <Animated.View style={[st.responseSentPill, justSent ? { transform: [{ scale: sentScale }] } : undefined]}>
+            <Text style={st.responseSentText}>{signalerName} zobaczy Twoj gest</Text>
+          </Animated.View>
+          <Text style={st.tomorrowHook}>Do zobaczenia jutro</Text>
+        </>
       ) : (
         <View>
           <Text style={st.responsePrompt}>Odpowiedz jednym gestem</Text>
@@ -611,6 +614,7 @@ const st = StyleSheet.create({
     borderRadius: 999, justifyContent: 'center', alignItems: 'center',
   },
   responseSentText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+  tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 12, textAlign: 'center' },
 
   /* viral — subtle link */
   viralLink: { marginTop: 16, marginBottom: 4, minHeight: 40, justifyContent: 'center', alignItems: 'center' },
