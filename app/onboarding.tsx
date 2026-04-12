@@ -106,17 +106,30 @@ export default function OnboardingFlow() {
       return;
     }
 
-    // Case 2: Profile exists but no active relationship → respect user's intent from IntentScreen
+    // Case 2: Profile exists but no active relationship
     if (profile) {
-      // Update profile role if user picked a different path
-      if (profile.role !== role) {
-        await supabase.from('users').update({ role }).eq('id', profile.id).then(() => {});
+      // If user came via "Mam już konto" (no selectedRole), use DB role
+      const effectiveRole = selectedRole || profile.role;
+
+      // Pending relationship → go to waiting/join
+      if (relationshipStatus === 'pending') {
+        if (effectiveRole === 'recipient') { setDestinationRoute('/waiting'); setStep('done'); }
+        else {
+          if (pendingInvite) { setPendingInviteCode(pendingInvite.code); }
+          setStep('join');
+        }
+        return;
       }
-      if (pendingInvite && role === 'signaler') {
-        logInviteEvent('invite_resume_started', { code: pendingInvite.code });
+
+      // No relationship at all → user needs to set one up
+      if (selectedRole && profile.role !== selectedRole) {
+        await supabase.from('users').update({ role: selectedRole }).eq('id', profile.id).then(() => {});
+      }
+      const setupRole = selectedRole || profile.role;
+      if (pendingInvite && setupRole === 'signaler') {
         setPendingInviteCode(pendingInvite.code);
       }
-      setStep(role === 'recipient' ? 'setup' : 'join');
+      setStep(setupRole === 'recipient' ? 'setup' : 'join');
       return;
     }
 
