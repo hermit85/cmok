@@ -533,7 +533,7 @@ const BTN = 200;
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  containerAfter: { backgroundColor: Colors.safeWash },
+  containerAfter: { backgroundColor: Colors.background },
   scroll: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8 },
   offlineBadge: { textAlign: 'center', fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, backgroundColor: Colors.surface, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', marginTop: 4 },

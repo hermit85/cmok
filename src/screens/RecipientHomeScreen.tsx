@@ -45,6 +45,7 @@ function fmtRelative(ld: string | null, ca: string | null): string | null {
 
 function connectionLabel(days: number | null): string | null {
   if (days == null || days < 1) return null;
+  if (days === 1) return 'Razem od 1 dnia';
   if (days === 7) return 'Razem od tygodnia';
   if (days === 14) return 'Razem od 2 tygodni';
   if (days === 30) return 'Razem od miesiąca';
@@ -53,7 +54,7 @@ function connectionLabel(days: number | null): string | null {
 
 /* ─── Status circle ─── */
 
-const STATUS_SIZE = 200;
+const STATUS_SIZE = 180;
 
 function StatusCircle({ ok }: { ok: boolean }) {
   return (
@@ -109,7 +110,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
       ) : (
         <Animated.View style={{ transform: [{ scale }] }}>
           <Pressable onPress={handleTap} style={({ pressed }) => [st.responsePill, pressed && { opacity: 0.85 }]}>
-            <Text style={st.responsePillText}>Wyślij serduszko <Emoji>💚</Emoji></Text>
+            <Text style={st.responsePillText}>Wyślij serduszko <Emoji style={{ fontSize: 18 }}>💚</Emoji></Text>
           </Pressable>
         </Animated.View>
       )}
@@ -409,7 +410,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  containerAfter: { backgroundColor: Colors.safeWash },
+  containerAfter: { backgroundColor: Colors.background },
   scroll: { flexGrow: 1, paddingHorizontal: 24 },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 

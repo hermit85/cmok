@@ -123,7 +123,7 @@ export function JoinScreen({
   if (joined) {
     logInviteEvent('first_sign_cta_seen');
     return (
-      <SafeAreaView style={[s.container, s.centered, { backgroundColor: Colors.safeWash }]}>
+      <SafeAreaView style={[s.container, s.centered, { backgroundColor: Colors.background }]}>
         <Animated.View style={{ opacity: successOpacity, transform: [{ scale: successScale }], alignItems: 'center' }}>
           <View style={s.successCheck}>
             <Text style={s.successCheckText}>✓</Text>
