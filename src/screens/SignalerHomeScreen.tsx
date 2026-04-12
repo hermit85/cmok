@@ -436,7 +436,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     } else {
       copyLine = hasName ? `Daj dziś znak ${rf.dative}` : 'Daj dziś spokojny znak';
     }
-    buttonLabel = !pv && !authReady ? '...' : authBlocked ? 'Zaloguj' : isFirstEver ? 'Wyślij' : 'Daj znak';
+    buttonLabel = !pv && !authReady ? '...' : authBlocked ? 'Zaloguj' : 'Daj znak';
   }
 
   const timeLine = confirmedDone && displayTime ? `o ${displayTime}` : null;
