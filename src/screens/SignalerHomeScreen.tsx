@@ -341,6 +341,14 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     : urgentCase;
   const showUrgent = localUrgentOffline || pvSupport || (urgentActive && effectiveAlert && effectiveUrgent?.viewerRole === 'signaler');
 
+  // These tracking hooks must be called unconditionally (React rules of hooks)
+  const showCheckedEarly = !showUrgent && (confirmedDone || isSending || isPendingOffline);
+  useEffect(() => {
+    if (showUrgent) return;
+    if (showCheckedEarly) logInviteEvent('daily_sign_completed_seen');
+    else logInviteEvent('daily_sign_pending_seen');
+  }, [showUrgent, showCheckedEarly]);
+
   if (showUrgent) {
     const loc = effectiveAlert?.latitude != null;
     const claimer = effectiveUrgent?.claimerName;
@@ -364,8 +372,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           ) : null}
           {effectiveUrgent ? <SupportParticipants participants={effectiveUrgent.participants} /> : null}
           <Pressable onPress={() => retrySend().catch(() => {})} disabled={urgentLoading || localUrgentOffline}
-            style={({ pressed }) => [s.urgentBtn, (urgentLoading || localUrgentOffline) && s.urgentBtnOff, pressed && { opacity: 0.9 }]}>
-            <Text style={s.urgentBtnText}>Wyślij ponownie</Text>
+            style={({ pressed }) => [s.urgentRetryBtn, (urgentLoading || localUrgentOffline) && s.urgentRetryBtnOff, pressed && { opacity: 0.9 }]}>
+            <Text style={s.urgentRetryBtnText}>Wyślij ponownie</Text>
           </Pressable>
           <Pressable onPress={() => { if (currentAlert) cancelUrgent(currentAlert.id).catch(() => {}); else setLocalUrgentOffline(false); }}
             style={({ pressed }) => [s.cancelLink, pressed && { opacity: 0.65 }]}>
@@ -403,19 +411,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     return yesterday === 'missing' && hadContact;
   })();
 
-  // Track state views
-  useEffect(() => {
-    if (showChecked) logInviteEvent('daily_sign_completed_seen');
-    else if (hasGap) logInviteEvent('sender_recovery_state_seen');
-    else logInviteEvent('daily_sign_pending_seen');
-  }, [showChecked, hasGap]);
-
-  useEffect(() => {
-    if (hasResponse && showChecked) {
-      logInviteEvent('sender_response_seen');
-      logInviteEvent('sender_response_receipt_restored');
-    }
-  }, [hasResponse, showChecked]);
 
   const isReallyFirstEver = isFirstEver && dbTotalCount === 0;
   const isComeback = showChecked && !isReallyFirstEver && currentStreak === 1 && dbTotalCount > 0;
@@ -481,7 +476,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   return (
     <SafeAreaView style={[s.container, showChecked && s.containerAfter]}>
-      <UrgentConfirmation visible={showUrgentModal} onConfirm={handleUrgentConfirm} onCancel={() => setShowUrgentModal(false)} />
+      <UrgentConfirmation visible={showUrgentModal} onConfirm={handleUrgentConfirm} onCancel={() => setShowUrgentModal(false)} circleCount={recipients.length} />
       <ScreenHeader subtitle={hasName ? name : undefined} />
 
       {isOffline ? <Text style={s.offlineBadge}>Brak internetu</Text> : null}
@@ -576,15 +571,16 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           ) : null}
         </View>
 
-        {/* ─── URGENT LINK ─── */}
+        {/* ─── URGENT BUTTON ─── */}
         <Pressable
           onPress={() => {
             if (!canUrgent) { Alert.alert('Zaloguj się', 'Żeby dać znać bliskim, połącz telefon z kontem.'); return; }
             setShowUrgentModal(true);
           }}
-          style={({ pressed }) => [s.urgentLink, pressed && { opacity: 0.6 }]}
+          style={({ pressed }) => [s.urgentBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.98 }] }]}
         >
-          <Text style={s.urgentLinkText}>Daj znać, że coś się dzieje</Text>
+          <Text style={s.urgentBtnLabel}>Potrzebuję pomocy</Text>
+          <Text style={s.urgentBtnSub}>Wyślij sygnał do kręgu bliskich</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -643,12 +639,15 @@ const s = StyleSheet.create({
   viralLink: { marginTop: 16, minHeight: 40, justifyContent: 'center', alignItems: 'center' },
   viralLinkText: { fontSize: 13, color: Colors.textMuted },
 
-  /* urgent link — text-only, no background */
-  urgentLink: {
-    alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, marginBottom: 32,
-    alignSelf: 'center',
+  /* urgent button — visible but not alarming */
+  urgentBtn: {
+    alignItems: 'center', paddingVertical: 16, paddingHorizontal: 24, marginBottom: 32,
+    alignSelf: 'stretch', marginHorizontal: 24,
+    borderRadius: 16, borderWidth: 1.5, borderColor: Colors.border,
+    backgroundColor: Colors.cardStrong,
   },
-  urgentLinkText: { fontSize: 13, color: Colors.textSecondary },
+  urgentBtnLabel: { fontSize: 15, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
+  urgentBtnSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
   /* urgent full state */
   urgentScroll: { paddingHorizontal: 24, paddingTop: 26, paddingBottom: 28 },
@@ -657,9 +656,9 @@ const s = StyleSheet.create({
   urgentBody: { fontSize: 16, lineHeight: 24, color: Colors.textSecondary, marginTop: 8, marginBottom: 18 },
   urgentDetail: { backgroundColor: Colors.card, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, padding: 18, marginBottom: 14 },
   urgentDetailText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 2 },
-  urgentBtn: { height: 56, borderRadius: 16, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
-  urgentBtnOff: { backgroundColor: Colors.disabled },
-  urgentBtnText: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
+  urgentRetryBtn: { height: 56, borderRadius: 16, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
+  urgentRetryBtnOff: { backgroundColor: Colors.disabled },
+  urgentRetryBtnText: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
   urgentSecBtn: { height: 52, borderRadius: 16, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
   urgentSecBtnText: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: Colors.textSecondary },
   cancelLink: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 12 },
