@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMotif } from '../components/BrandMotif';
 import { Colors } from '../constants/colors';
@@ -10,6 +11,7 @@ interface WelcomeScreenProps {
 }
 
 export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
+  const router = useRouter();
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoTranslateY = useRef(new Animated.Value(-10)).current;
   const buttonsOpacity = useRef(new Animated.Value(0)).current;
@@ -67,6 +69,11 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         >
           <Text style={styles.primaryBtnText}>Zacznij</Text>
         </Pressable>
+        {__DEV__ ? (
+          <Pressable onPress={() => router.push('/dev-screens' as any)} style={({ pressed }) => [styles.devLink, pressed && { opacity: 0.5 }]}>
+            <Text style={styles.devLinkText}>🔧 Dev: preview all screens</Text>
+          </Pressable>
+        ) : null}
       </Animated.View>
     </SafeAreaView>
   );
@@ -134,4 +141,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.headingFamily,
     color: '#FFFFFF',
   },
+  devLink: { marginTop: 16, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+  devLinkText: { fontSize: 13, color: Colors.textMuted },
 });
