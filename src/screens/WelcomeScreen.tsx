@@ -15,16 +15,16 @@ interface WelcomeScreenProps {
 
 const SLIDES = [
   {
-    headline: 'Twoja mama\nmieszka sama?',
-    body: 'Martwisz się, bo nie wiesz\nczy u niej wszystko OK.',
+    headline: 'Ktoś bliski\nmieszka sam?',
+    body: 'Mama, tata, babcia, sąsiad\n— martwisz się, czy wszystko OK.',
   },
   {
-    headline: 'Jeden tap dziennie\n— wiesz, że jest dobrze',
-    body: 'Mama daje Ci znak.\nTy masz spokój. Ona czuje się bezpiecznie.',
+    headline: 'Jeden gest dziennie\n— wiesz, że jest dobrze',
+    body: 'Bliska osoba daje Ci znak.\nTy masz spokój. Ona czuje się bezpiecznie.',
   },
   {
-    headline: 'A jeśli coś się dzieje\n— Ty wiesz pierwszy',
-    body: 'Szybki sygnał do Ciebie,\nsąsiada, kogokolwiek z kręgu.',
+    headline: 'A jeśli coś się dzieje\n— wiesz pierwszy',
+    body: 'Szybki sygnał do Ciebie\ni do całego kręgu bliskich.',
   },
 ];
 
