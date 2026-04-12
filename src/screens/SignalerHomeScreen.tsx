@@ -533,7 +533,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>{responseName ? `${responseName} jest z Toba` : 'Jest znak'}</Text>
+                  <Text style={s.responseReceiptText}>{responseName ? `${responseName} jest z Tobą` : 'Jest znak'}</Text>
                 </View>
               ) : null}
               {!statusPicked ? (

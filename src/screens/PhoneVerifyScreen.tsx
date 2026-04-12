@@ -128,8 +128,11 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       setFullPhone(formattedPhone);
       setResendCooldown(60);
       transitionToCode();
-    } catch {
-      Alert.alert('Coś poszło nie tak', 'Nie udało się wysłać kodu SMS. Sprawdź numer i spróbuj ponownie.');
+    } catch (err: any) {
+      const msg = err?.message?.includes('sms_send_failed')
+        ? 'Usługa SMS jest tymczasowo niedostępna. Spróbuj za chwilę.'
+        : 'Nie udało się wysłać kodu SMS. Sprawdź numer i spróbuj ponownie.';
+      Alert.alert('Coś poszło nie tak', msg);
     } finally {
       setLoading(false);
     }

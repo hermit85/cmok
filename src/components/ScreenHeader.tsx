@@ -22,6 +22,8 @@ export function ScreenHeader({ subtitle }: ScreenHeaderProps) {
         onPress={() => router.push('/settings')}
         style={({ pressed }) => [styles.gear, pressed && { opacity: 0.5 }]}
         hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+        accessibilityLabel="Ustawienia"
+        accessibilityRole="button"
       >
         <GearIcon size={24} color={Colors.textMuted} />
       </Pressable>

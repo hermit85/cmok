@@ -177,7 +177,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
       {sent ? (
         <>
           <Animated.View style={[st.responseSentPill, justSent ? { transform: [{ scale: sentScale }] } : undefined]}>
-            <Text style={st.responseSentText}>{signalerName} zobaczy Twoj gest</Text>
+            <Text style={st.responseSentText}>{signalerName} zobaczy Twój gest</Text>
           </Animated.View>
           <Text style={st.tomorrowHook}>Do zobaczenia jutro</Text>
         </>
@@ -484,7 +484,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         {/* ─── Warm toast on first view ─── */}
         {showWarmToast ? (
           <Animated.View style={[st.warmToast, { opacity: toastFade }]}>
-            <Text style={st.warmToastText}>{nameFrom} pamięta o Tobie</Text>
+            <Text style={st.warmToastText}>{name} pamięta o Tobie</Text>
           </Animated.View>
         ) : null}
 
