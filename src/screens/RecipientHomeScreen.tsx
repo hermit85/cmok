@@ -54,6 +54,16 @@ function connectionLabel(days: number | null): string | null {
   return `Razem od ${days} dni`;
 }
 
+/* ─── status moods (shared with SignalerHome) ─── */
+
+const STATUS_MOOD_LABELS: Record<string, string> = {
+  good: 'Dobrze',
+  calm: 'Spokojnie',
+  tired: 'Zm\u{0119}czona',
+  walk: 'Na spacerze',
+  doctor: 'U lekarza',
+};
+
 /* ─── Status circle ─── */
 
 const STATUS_SIZE = 180;
@@ -188,6 +198,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const { streak: sigStreak } = useCheckinStats(sigId);
 
   const [isOk, setIsOk] = useState(false);
+  const [signerStatus, setSignerStatus] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const hasSeenSign = useRef(false);
   const [todayTime, setTodayTime] = useState<string | null>(null);
@@ -208,10 +219,10 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     try {
       const today = new Date();
       const todayStr = todayDateKey(today);
-      const { data } = await supabase.from('daily_checkins').select('local_date, checked_at')
+      const { data } = await supabase.from('daily_checkins').select('local_date, checked_at, status_emoji')
         .eq('senior_id', sigId).gte('local_date', todayStr).lte('local_date', todayStr).limit(1).maybeSingle();
 
-      const todayRow = data as DailyCheckin | null;
+      const todayRow = data as (DailyCheckin & { status_emoji?: string | null }) | null;
 
       // Last contact from recent history
       const ago = new Date(today); ago.setDate(today.getDate() - 6);
@@ -229,6 +240,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       }
 
       setTodayTime(todayRow ? fmtTime(todayRow.checked_at) : null);
+      setSignerStatus(todayRow?.status_emoji || null);
       setLastContact(fmtRelative(latestRow?.local_date ?? null, latestRow?.checked_at ?? null));
       setIsOk(urgentCase?.viewerRole === 'primary' && currentAlert ? false : !!todayRow);
     } catch (e) { console.error('fetchData:', e); } finally { setDataLoading(false); }
@@ -396,8 +408,11 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       : effLast
         ? 'Czekamy na dzisiejszy znak'
         : 'Czekamy na pierwszy znak';
+  const statusLabel = signerStatus ? STATUS_MOOD_LABELS[signerStatus] || null : null;
   const sub = effOk
-    ? `Na dziś jest kontakt${effTime ? ` · ${effTime}` : ''}`
+    ? statusLabel
+      ? `${statusLabel}${effTime ? ` · ${effTime}` : ''}`
+      : `Na dziś jest kontakt${effTime ? ` · ${effTime}` : ''}`
     : hasReceiverGap
       ? 'Może napisz lub zadzwoń?'
       : effLast

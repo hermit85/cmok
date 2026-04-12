@@ -19,11 +19,22 @@ import { useSignals } from '../hooks/useSignals';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { useWeekRhythm } from '../hooks/useWeekRhythm';
 import { useCheckinStats } from '../hooks/useCheckinStats';
+import { supabase } from '../services/supabase';
 import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync';
 import { logInviteEvent } from '../utils/invite';
 import type { Signal, SupportParticipant } from '../types';
 import type { SignalerHomePreview } from '../dev/homePreview';
 import { getRelationForms, relationDisplay } from '../utils/relationCopy';
+
+/* ─── status moods ─── */
+
+const STATUS_MOODS = [
+  { key: 'good', symbol: '\u{2665}', label: 'Dobrze', color: Colors.love },
+  { key: 'calm', symbol: '\u{2022}', label: 'Spokojnie', color: Colors.safe },
+  { key: 'tired', symbol: '\u{223C}', label: 'Zm\u{0119}czona', color: Colors.delight },
+  { key: 'walk', symbol: '\u{2192}', label: 'Na spacerze', color: Colors.accent },
+  { key: 'doctor', symbol: '+', label: 'U lekarza', color: Colors.alert },
+] as const;
 
 /* ─── helpers ─── */
 
@@ -64,6 +75,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const [pendingCheckinTime, setPendingCheckinTime] = useState<string | null>(null);
   const [justChecked, setJustChecked] = useState(false);
   const [celebrationVisible, setCelebrationVisible] = useState(false);
+  const [statusPicked, setStatusPicked] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<SignalerHomePreview | null>(preview);
 
   const isSubmitting = useRef(false);
@@ -256,6 +268,16 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       isSubmitting.current = false;
     }
   }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, playSuccess, refreshWeek, refreshStats]);
+
+  const handleStatusPick = useCallback(async (statusKey: string) => {
+    setStatusPicked(statusKey);
+    haptics.light();
+    if (pv || !userId) return;
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      await supabase.from('daily_checkins').update({ status_emoji: statusKey }).eq('senior_id', userId).eq('local_date', today);
+    } catch { /* silent — status is optional */ }
+  }, [pv, userId]);
 
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
@@ -499,6 +521,27 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   <Text style={s.responseReceiptText}>{responseName ? `${responseName} jest z Tobą` : 'Jest znak'}</Text>
                 </View>
               ) : null}
+              {!statusPicked ? (
+                <View style={s.statusSection}>
+                  <Text style={s.statusPrompt}>Jak się dziś czujesz?</Text>
+                  <View style={s.statusRow}>
+                    {STATUS_MOODS.map((mood) => (
+                      <Pressable
+                        key={mood.key}
+                        onPress={() => handleStatusPick(mood.key)}
+                        style={({ pressed }) => [s.statusChip, pressed && { opacity: 0.7 }]}
+                      >
+                        <Text style={[s.statusSymbol, { color: mood.color }]}>{mood.symbol}</Text>
+                        <Text style={s.statusLabel}>{mood.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                <Text style={s.statusPicked}>
+                  {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
+                </Text>
+              )}
             </Animated.View>
           ) : (
             <View style={{ alignItems: 'center' }}>
@@ -561,7 +604,19 @@ const s = StyleSheet.create({
     shadowColor: '#FF6B6B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12,
   },
   responseReceiptText: { fontSize: 13, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },
-  dotsWrap: { marginTop: 32 },
+  /* status mood picker */
+  statusSection: { marginTop: 20, alignItems: 'center' },
+  statusPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 10 },
+  statusRow: { flexDirection: 'row', gap: 8 },
+  statusChip: {
+    paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12,
+    backgroundColor: Colors.surface, alignItems: 'center', minWidth: 56,
+  },
+  statusSymbol: { fontSize: 16, marginBottom: 2 },
+  statusLabel: { fontSize: 9, color: Colors.textMuted },
+  statusPicked: { fontSize: 14, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: 16 },
+
+  dotsWrap: { marginTop: 24 },
 
   /* urgent link — text-only, no background */
   urgentLink: {
