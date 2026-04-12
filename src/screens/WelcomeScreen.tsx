@@ -55,7 +55,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             Jeden spokojny znak{'\n'}dziennie od bliskiej osoby
           </Text>
           <Text style={styles.supporting}>
-            Mniej dzwonienia z niepokoju.{'\n'}Więcej zwykłej bliskości.
+            Mniej martwienia się.{'\n'}Więcej spokoju.
           </Text>
         </Animated.View>
       </View>

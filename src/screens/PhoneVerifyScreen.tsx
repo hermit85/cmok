@@ -250,7 +250,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                       pressed && isValid && { opacity: 0.85, transform: [{ scale: 0.98 }] },
                     ]}
                   >
-                    <Text style={[s.sendBtnText, !isValid && { color: Colors.textMuted }]}>Wyślij kod</Text>
+                    <Text style={s.sendBtnText}>Wyślij kod</Text>
                   </Pressable>
                 )}
               </>
@@ -329,7 +329,7 @@ const s = StyleSheet.create({
   /* code input */
   codeCard: { width: '100%', backgroundColor: Colors.surface, borderRadius: 20, padding: 16 },
   boxRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-  box: { flex: 1, minHeight: 58, borderRadius: 14, backgroundColor: Colors.surface, borderWidth: 2, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  box: { flex: 1, minHeight: 58, borderRadius: 14, backgroundColor: Colors.cardStrong, borderWidth: 2, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
   boxFocused: { borderColor: Colors.safe },
   boxDigit: { fontSize: 26, fontWeight: '700', color: Colors.text },
   boxFilled: { backgroundColor: Colors.safe },

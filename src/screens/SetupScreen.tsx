@@ -118,7 +118,7 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
               pressed && isValid && { opacity: 0.85, transform: [{ scale: 0.98 }] },
             ]}
           >
-            <Text style={[styles.primaryBtnText, !isValid && { color: '#A39E98' }]}>Dalej</Text>
+            <Text style={styles.primaryBtnText}>Dalej</Text>
           </Pressable>
         )}
       </View>

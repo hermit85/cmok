@@ -129,7 +129,7 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: 24 },
-  top: { flex: 1, paddingTop: 16 },
+  top: { flex: 1, justifyContent: 'center', paddingHorizontal: 0 },
   miniLogo: { fontSize: 14, fontFamily: Typography.headingFamily, color: Colors.accent, marginBottom: 22 },
   backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginLeft: -8, paddingHorizontal: 8, marginBottom: 18 },
   backText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },

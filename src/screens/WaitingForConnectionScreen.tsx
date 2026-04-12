@@ -55,12 +55,14 @@ export function WaitingForConnectionScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.miniLogo}>Cmok</Text>
-
-      <View style={styles.content}>
+      <View style={styles.topBar}>
+        <Text style={styles.miniLogo}>Cmok</Text>
         <Pressable onPress={() => router.replace('/onboarding')} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
+      </View>
+
+      <View style={styles.content}>
         <Text style={styles.eyebrow}>Prawie gotowe</Text>
         <Text style={styles.title}>Zaproś{'\n'}{relationship.signalerLabel || 'bliską osobę'}</Text>
         <Text style={styles.subtitle}>Wyślij kod lub pokaż go na tym ekranie.</Text>
@@ -93,7 +95,8 @@ export function WaitingForConnectionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered: { justifyContent: 'center', alignItems: 'center' },
-  miniLogo: { fontSize: 16, fontFamily: Typography.headingFamily, color: Colors.accent, paddingHorizontal: 28, paddingTop: 16 },
+  topBar: { paddingHorizontal: 28, paddingTop: 16 },
+  miniLogo: { fontSize: 16, fontFamily: Typography.headingFamily, color: Colors.accent, marginBottom: 8 },
   content: { flex: 1, paddingHorizontal: 28, justifyContent: 'center', alignItems: 'center' },
   eyebrow: { fontSize: Typography.caption, fontFamily: Typography.headingFamily, color: Colors.accentStrong, marginBottom: 10 },
   title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center', marginBottom: 12, lineHeight: 34 },
