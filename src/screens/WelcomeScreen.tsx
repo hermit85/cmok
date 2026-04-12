@@ -1,146 +1,153 @@
-import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated } from 'react-native';
+import { useState, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMotif } from '../components/BrandMotif';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
+import { haptics } from '../utils/haptics';
+
+const { width: SCREEN_W } = Dimensions.get('window');
 
 interface WelcomeScreenProps {
   onStart: () => void;
 }
 
+const SLIDES = [
+  {
+    headline: 'Twoja mama\nmieszka sama?',
+    body: 'Martwisz się, bo nie wiesz\nczy u niej wszystko OK.',
+  },
+  {
+    headline: 'Jeden tap dziennie\n— wiesz, że jest dobrze',
+    body: 'Mama daje Ci znak.\nTy masz spokój. Ona czuje się bezpiecznie.',
+  },
+  {
+    headline: 'A jeśli coś się dzieje\n— Ty wiesz pierwszy',
+    body: 'Szybki sygnał do Ciebie,\nsąsiada, kogokolwiek z kręgu.',
+  },
+];
+
 export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   const router = useRouter();
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const logoTranslateY = useRef(new Animated.Value(-10)).current;
-  const buttonsOpacity = useRef(new Animated.Value(0)).current;
-
-  // Breathing animation for brand motif dots
+  const [slide, setSlide] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
   const breathe = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(logoOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(logoTranslateY, { toValue: 0, duration: 600, useNativeDriver: true }),
-    ]).start();
-
-    Animated.timing(buttonsOpacity, {
-      toValue: 1, duration: 500, delay: 300, useNativeDriver: true,
-    }).start();
-
-    // Subtle breathing loop for the motif
-    const loop = Animated.loop(
+  // Breathing for motif on slide 0
+  useState(() => {
+    Animated.loop(
       Animated.sequence([
         Animated.timing(breathe, { toValue: 1.06, duration: 1000, useNativeDriver: true }),
         Animated.timing(breathe, { toValue: 1, duration: 1000, useNativeDriver: true }),
       ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, []);
+    ).start();
+  });
+
+  const goNext = useCallback(() => {
+    haptics.light();
+    if (slide >= SLIDES.length - 1) {
+      onStart();
+      return;
+    }
+    // Cross-fade to next slide
+    Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
+      setSlide((s) => s + 1);
+      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+    });
+  }, [slide, fadeAnim, onStart]);
+
+  const isLast = slide >= SLIDES.length - 1;
+  const current = SLIDES[slide];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Animated.View
-          style={[
-            styles.logoArea,
-            { opacity: logoOpacity, transform: [{ translateY: logoTranslateY }] },
-          ]}
-        >
-          <Text style={styles.logo}>Cmok</Text>
-          <Animated.View style={{ transform: [{ scale: breathe }] }}>
-            <BrandMotif size={48} />
-          </Animated.View>
-          <Text style={styles.tagline}>
-            Jeden spokojny znak{'\n'}dziennie od bliskiej osoby
-          </Text>
-          <Text style={styles.supporting}>
-            Mniej martwienia się.{'\n'}Więcej spokoju.
-          </Text>
+    <SafeAreaView style={s.container}>
+      {/* Logo — always visible */}
+      <View style={s.logoRow}>
+        <Text style={s.logo}>Cmok</Text>
+        <Animated.View style={{ transform: [{ scale: breathe }] }}>
+          <BrandMotif size={40} />
         </Animated.View>
       </View>
 
-      <Animated.View style={[styles.bottom, { opacity: buttonsOpacity }]}>
+      {/* Slide content */}
+      <Animated.View style={[s.slideArea, { opacity: fadeAnim }]}>
+        <Text style={s.headline}>{current.headline}</Text>
+        <Text style={s.body}>{current.body}</Text>
+      </Animated.View>
+
+      {/* Dots + CTA */}
+      <View style={s.bottom}>
+        {/* Dot indicators */}
+        <View style={s.dots}>
+          {SLIDES.map((_, i) => (
+            <View key={i} style={[s.dot, i === slide && s.dotActive]} />
+          ))}
+        </View>
+
         <Pressable
-          onPress={onStart}
-          style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+          onPress={goNext}
+          style={({ pressed }) => [s.primaryBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
         >
-          <Text style={styles.primaryBtnText}>Zacznij</Text>
+          <Text style={s.primaryBtnText}>{isLast ? 'Zacznij' : 'Dalej'}</Text>
         </Pressable>
-        {__DEV__ ? (
-          <Pressable onPress={() => router.push('/dev-screens' as any)} style={({ pressed }) => [styles.devLink, pressed && { opacity: 0.5 }]}>
-            <Text style={styles.devLinkText}>🔧 Dev: preview all screens</Text>
+
+        {slide === 0 && !isLast ? (
+          <Pressable onPress={onStart} style={({ pressed }) => [s.skipLink, pressed && { opacity: 0.5 }]}>
+            <Text style={s.skipText}>Mam już konto</Text>
           </Pressable>
         ) : null}
-      </Animated.View>
+
+        {__DEV__ ? (
+          <Pressable onPress={() => router.push('/dev-screens' as any)} style={({ pressed }) => [s.devLink, pressed && { opacity: 0.5 }]}>
+            <Text style={s.devLinkText}>Dev: preview all screens</Text>
+          </Pressable>
+        ) : null}
+      </View>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 18,
-    paddingBottom: 22,
+    flex: 1, backgroundColor: Colors.background,
+    justifyContent: 'space-between', paddingHorizontal: 28, paddingBottom: 22,
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 36,
-  },
-  logoArea: {
-    alignItems: 'center',
-    maxWidth: 340,
+  logoRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 10, paddingTop: 24, marginBottom: 8,
   },
   logo: {
-    fontSize: 40,
-    fontFamily: Typography.headingFamily,
-    color: Colors.accent,
-    marginBottom: 16,
+    fontSize: 32, fontFamily: Typography.headingFamily, color: Colors.accent,
   },
-  tagline: {
-    fontSize: 26,
-    fontFamily: Typography.headingFamily,
-    color: Colors.text,
-    textAlign: 'center',
-    lineHeight: 34,
-    marginTop: 20,
+  slideArea: {
+    flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 8,
   },
-  supporting: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 23,
-    marginTop: 12,
-    maxWidth: 280,
+  headline: {
+    fontSize: 28, fontFamily: Typography.headingFamily, color: Colors.text,
+    textAlign: 'center', lineHeight: 36, marginBottom: 16,
   },
-  bottom: {
-    gap: 10,
-    paddingBottom: 12,
+  body: {
+    fontSize: 16, color: Colors.textSecondary, textAlign: 'center',
+    lineHeight: 24, maxWidth: 300,
   },
+  bottom: { paddingBottom: 4 },
+  dots: {
+    flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 24,
+  },
+  dot: {
+    width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.border,
+  },
+  dotActive: { backgroundColor: Colors.accent, width: 24 },
   primaryBtn: {
-    backgroundColor: Colors.accent,
-    minHeight: 56,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#E85D3A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 5,
+    backgroundColor: Colors.accent, minHeight: 56, borderRadius: 18,
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35, shadowRadius: 20, elevation: 5,
   },
-  primaryBtnText: {
-    fontSize: 17,
-    fontFamily: Typography.headingFamily,
-    color: '#FFFFFF',
-  },
-  devLink: { marginTop: 16, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+  primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
+  skipLink: { marginTop: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+  skipText: { fontSize: 15, color: Colors.textSecondary },
+  devLink: { marginTop: 8, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   devLinkText: { fontSize: 13, color: Colors.textMuted },
 });

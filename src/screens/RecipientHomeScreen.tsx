@@ -66,6 +66,12 @@ const STATUS_MOOD_LABELS: Record<string, string> = {
 
 /* ─── Status circle ─── */
 
+const MORNING_THOUGHTS = [
+  { key: 'hug', emoji: '\u{1F917}', symbol: '\u{2665}', label: 'Przytulam', color: Colors.love },
+  { key: 'coffee', emoji: '\u{2615}', symbol: '\u{2022}', label: 'Dobry dzień!', color: Colors.accent },
+  { key: 'think', emoji: '\u{1F4AD}', symbol: '\u{2605}', label: 'Myślę o Tobie', color: Colors.delight },
+] as const;
+
 const STATUS_SIZE = 180;
 
 function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: boolean }) {
@@ -145,12 +151,21 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
     } catch { /* silent */ }
   };
 
+  // Post-reaction celebration
+  const sentScale = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (justSent) {
+      sentScale.setValue(0);
+      Animated.spring(sentScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }).start();
+    }
+  }, [justSent]);
+
   return (
     <View style={st.responseSection}>
       {sent ? (
-        <View style={st.responseSentPill}>
-          <Text style={st.responseSentText}>Wysłano</Text>
-        </View>
+        <Animated.View style={[st.responseSentPill, justSent ? { transform: [{ scale: sentScale }] } : undefined]}>
+          <Text style={st.responseSentText}>{signalerName} zobaczy Twój gest</Text>
+        </Animated.View>
       ) : (
         <View>
           <Text style={st.responsePrompt}>Odpowiedz jednym gestem</Text>
@@ -185,6 +200,7 @@ const PV_PARTICIPANTS: SParticipant[] = [
 export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHomePreview | null }) {
   const router = useRouter();
   const { signalers, loading: circleLoading } = useCircle();
+  const { sendSignal, hasSentReactionToday } = useSignals();
   const { urgentCase, currentAlert, claim, resolve, loading: urgentLoading } = useUrgentSignal();
 
   const signaler = signalers[0] || null;
@@ -341,6 +357,16 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     finally { setNudgeSending(false); }
   };
 
+  const [morningSent, setMorningSent] = useState(false);
+  const handleMorningThought = async (emoji: string, toUserId: string) => {
+    if (morningSent) return;
+    haptics.light();
+    try {
+      await sendSignal(toUserId, emoji);
+      setMorningSent(true);
+    } catch { /* silent */ }
+  };
+
   /* ─── loading ─── */
   if (!pv && (circleLoading || dataLoading)) {
     return <SafeAreaView style={st.container}><View style={st.loadingWrap}><ActivityIndicator size="large" color={Colors.accent} /></View></SafeAreaView>;
@@ -436,6 +462,28 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             <View style={{ alignItems: 'center' }}>
               <Text style={st.titlePending} maxFontSizeMultiplier={1.3}>{title}</Text>
               {sub ? <Text style={st.sub}>{sub}</Text> : null}
+              {/* Morning thought — give recipient something to DO */}
+              {sigId && !pv ? (
+                morningSent || hasSentReactionToday(sigId) ? (
+                  <Text style={st.morningSent}>Wysłano poranną myśl</Text>
+                ) : (
+                  <View style={st.morningSection}>
+                    <Text style={st.morningPrompt}>Wyślij poranną myśl</Text>
+                    <View style={st.morningRow}>
+                      {MORNING_THOUGHTS.map((t) => (
+                        <Pressable
+                          key={t.key}
+                          onPress={() => handleMorningThought(t.emoji, sigId)}
+                          style={({ pressed }) => [st.morningChip, pressed && { opacity: 0.7 }]}
+                        >
+                          <Text style={[st.morningSymbol, { color: t.color }]}>{t.symbol}</Text>
+                          <Text style={st.morningLabel}>{t.label}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                )
+              ) : null}
             </View>
           )}
         </View>
@@ -503,6 +551,18 @@ const st = StyleSheet.create({
   titlePending: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.textSecondary, textAlign: 'center' },
   sub: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
   streakBadge: { fontSize: 13, fontFamily: Typography.headingFamilySemiBold, color: Colors.safe, marginTop: 8 },
+
+  /* morning thoughts — recipient proactive engagement */
+  morningSection: { marginTop: 24, alignItems: 'center' },
+  morningPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 10 },
+  morningRow: { flexDirection: 'row', gap: 12 },
+  morningChip: {
+    width: 80, paddingVertical: 10, borderRadius: 14,
+    backgroundColor: Colors.surface, alignItems: 'center',
+  },
+  morningSymbol: { fontSize: 18, marginBottom: 3 },
+  morningLabel: { fontSize: 10, color: Colors.textMuted },
+  morningSent: { fontSize: 14, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: 20 },
 
   /* nudge */
   nudgeBtn: { marginTop: 16, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: Colors.surface, borderRadius: 999 },
