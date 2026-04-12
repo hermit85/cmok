@@ -283,7 +283,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     const streakText = currentStreak === 7 ? 'tydzień' : currentStreak === 14 ? '2 tygodnie' : currentStreak === 21 ? '3 tygodnie' : currentStreak === 30 ? 'miesiąc' : `${currentStreak} dni`;
     const displayName = primaryName || null;
     const msg = displayName
-      ? `${displayName} i ja — ${streakText} codziennego kontaktu w Cmok! Znasz kogoś, kto mieszka sam? Cmok daje spokój obu stronom.\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645`
+      ? `${displayName} i ja, ${streakText} codziennego kontaktu w Cmok! Znasz kogoś, kto mieszka sam? Cmok daje spokój obu stronom.\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645`
       : `${streakText} codziennego kontaktu w Cmok!\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
@@ -369,7 +369,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           </Pressable>
           <Pressable onPress={() => { if (currentAlert) cancelUrgent(currentAlert.id).catch(() => {}); else setLocalUrgentOffline(false); }}
             style={({ pressed }) => [s.cancelLink, pressed && { opacity: 0.65 }]}>
-            <Text style={s.cancelLinkText}>To pomyłka — anuluj</Text>
+            <Text style={s.cancelLinkText}>To pomyłka, anuluj</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -445,7 +445,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     } else if (currentStreak === 14) {
       copyLine = 'Dwa tygodnie razem';
     } else if (currentStreak === 21) {
-      copyLine = 'Trzy tygodnie — to już nawyk';
+      copyLine = 'Trzy tygodnie, to już nawyk';
     } else if (currentStreak === 30) {
       copyLine = hasName ? `Miesiąc! ${name} może na Ciebie liczyć` : 'Miesiąc!';
     } else {
@@ -568,6 +568,14 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
           {/* ─── WEEK DOTS ─── */}
           {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} showLabel={showChecked} /></View> : null}
+
+          {/* ─── VIRAL: grow circle ─── */}
+          {showChecked && currentStreak >= 3 ? (
+            <Pressable onPress={handleMilestoneShare} style={({ pressed }) => [s.viralCard, pressed && { opacity: 0.8 }]}>
+              <Text style={s.viralText}>Powiększ swój krąg bliskich</Text>
+              <Text style={s.viralSub}>Zaproś kolejną osobę do Cmok</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* ─── URGENT LINK ─── */}
@@ -635,6 +643,12 @@ const s = StyleSheet.create({
   shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },
 
   dotsWrap: { marginTop: 24 },
+  viralCard: {
+    marginTop: 20, paddingVertical: 14, paddingHorizontal: 20,
+    borderRadius: 16, backgroundColor: Colors.surface, alignItems: 'center',
+  },
+  viralText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.accent },
+  viralSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
   /* urgent link — text-only, no background */
   urgentLink: {

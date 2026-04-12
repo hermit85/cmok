@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,16 +15,16 @@ interface WelcomeScreenProps {
 
 const SLIDES = [
   {
-    headline: 'Ktoś bliski\nmieszka sam?',
-    body: 'Mama, tata, babcia, sąsiad\n— martwisz się, czy wszystko OK.',
+    headline: 'Codzienny znak,\nże wszystko OK',
+    body: 'Dla Ciebie i Twoich bliskich.\nBez dzwonienia, bez stresu.',
   },
   {
-    headline: 'Jeden gest dziennie\n— wiesz, że jest dobrze',
-    body: 'Bliska osoba daje Ci znak.\nTy masz spokój. Ona czuje się bezpiecznie.',
+    headline: 'Jeden gest dziennie.\nSpokój dla obu stron.',
+    body: 'Ty dajesz znak albo go dostajesz.\nProste jak cmok na dzień dobry.',
   },
   {
-    headline: 'A jeśli coś się dzieje\n— wiesz pierwszy',
-    body: 'Szybki sygnał do Ciebie\ni do całego kręgu bliskich.',
+    headline: 'Stwórz swój krąg\nbliskich osób',
+    body: 'Im więcej osób w kręgu,\ntym większe bezpieczeństwo.',
   },
 ];
 
@@ -34,15 +34,17 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const breathe = useRef(new Animated.Value(1)).current;
 
-  // Breathing for motif on slide 0
-  useState(() => {
-    Animated.loop(
+  // Breathing for motif
+  useEffect(() => {
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(breathe, { toValue: 1.06, duration: 1000, useNativeDriver: true }),
         Animated.timing(breathe, { toValue: 1, duration: 1000, useNativeDriver: true }),
       ]),
-    ).start();
-  });
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
 
   const goNext = useCallback(() => {
     haptics.light();

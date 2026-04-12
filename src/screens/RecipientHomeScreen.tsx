@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Animated,
-  ActivityIndicator, ScrollView, Alert,
+  ActivityIndicator, ScrollView, Alert, Share, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -367,6 +367,13 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     } catch { /* silent */ }
   };
 
+  const handleShareInvite = async () => {
+    const msg = 'Dołącz do mojego kręgu w Cmok! Codzienny znak, że wszystko OK. Bez dzwonienia, bez stresu.\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645';
+    try {
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
+    } catch { /* cancelled */ }
+  };
+
   /* ─── loading ─── */
   if (!pv && (circleLoading || dataLoading)) {
     return <SafeAreaView style={st.container}><View style={st.loadingWrap}><ActivityIndicator size="large" color={Colors.accent} /></View></SafeAreaView>;
@@ -410,7 +417,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           ) : null}
           {byMe ? (
             <Pressable onPress={handleResolve} disabled={urgentLoading} style={({ pressed }) => [st.resolveBtn, pressed && { opacity: 0.8 }]}>
-              <Text style={st.resolveBtnText}>Wszystko OK — zamknij</Text>
+              <Text style={st.resolveBtnText}>Wszystko OK, zamknij</Text>
             </Pressable>
           ) : null}
           <SupportParticipants participants={effUrgent.participants} />
@@ -443,7 +450,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       ? 'Może napisz lub zadzwoń?'
       : effLast
         ? `Ostatnio: ${effLast}`
-        : 'Spokojnie — dopiero zaczynacie';
+        : 'Spokojnie, dopiero zaczynacie';
 
   return (
     <SafeAreaView style={[st.container, effOk && st.containerAfter]}>
@@ -514,6 +521,12 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               <ResponseTap signalerName={name} signalerId={sigId} preview={pv} />
             </Animated.View>
           ) : null}
+          {/* Viral: grow circle */}
+          <Pressable onPress={handleShareInvite} style={({ pressed }) => [st.viralCard, pressed && { opacity: 0.8 }]}>
+            <Text style={st.viralText}>Powiększ krąg bliskich</Text>
+            <Text style={st.viralSub}>Zaproś kolejną osobę do Cmok</Text>
+          </Pressable>
+
           <Pressable
             onPress={() => openPhoneCall(callPhone, 'Nie można połączyć.')}
             style={({ pressed }) => [st.bottomLink, pressed && { opacity: 0.6 }]}
@@ -587,6 +600,14 @@ const st = StyleSheet.create({
     borderRadius: 999, justifyContent: 'center', alignItems: 'center',
   },
   responseSentText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+
+  /* viral — grow circle */
+  viralCard: {
+    marginTop: 20, marginBottom: 8, paddingVertical: 14, paddingHorizontal: 20,
+    borderRadius: 16, backgroundColor: Colors.surface, alignItems: 'center', alignSelf: 'center',
+  },
+  viralText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.accent },
+  viralSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
   /* bottom — text-only link */
   bottomLink: { alignItems: 'center', paddingVertical: 14, marginBottom: 32 },
