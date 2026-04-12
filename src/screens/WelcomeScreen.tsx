@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Animated, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMotif } from '../components/BrandMotif';
 import { Colors } from '../constants/colors';
@@ -29,7 +28,6 @@ const SLIDES = [
 ];
 
 export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
-  const router = useRouter();
   const [slide, setSlide] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const breathe = useRef(new Animated.Value(1)).current;
@@ -100,11 +98,6 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           </Pressable>
         ) : null}
 
-        {__DEV__ ? (
-          <Pressable onPress={() => router.push('/dev-screens' as any)} style={({ pressed }) => [s.devLink, pressed && { opacity: 0.5 }]}>
-            <Text style={s.devLinkText}>Dev: preview all screens</Text>
-          </Pressable>
-        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -150,6 +143,4 @@ const s = StyleSheet.create({
   primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   skipLink: { marginTop: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   skipText: { fontSize: 12, color: Colors.textMuted },
-  devLink: { marginTop: 8, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
-  devLinkText: { fontSize: 13, color: Colors.textMuted },
 });
