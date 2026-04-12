@@ -60,6 +60,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const phoneInputRef = useRef<TextInput>(null);
   const codeInputRef = useRef<TextInput>(null);
 
   // Transition animation
@@ -75,6 +76,14 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
     : isValid
       ? 'To wygląda dobrze. Za chwilę wyślemy kod SMS.'
       : `Jeszcze ${9 - phone.length} cyfr.`;
+
+  // Focus phone input on mount (autoFocus can be unreliable in switch/case renders)
+  useEffect(() => {
+    if (phase === 'phone') {
+      const timer = setTimeout(() => phoneInputRef.current?.focus(), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [phase]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -211,10 +220,11 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                 <Text style={s.title}>Podaj numer telefonu</Text>
                 <Text style={s.subtitle}>Użyjemy go tylko do wejścia do Cmok.</Text>
 
-                <View style={s.inputCard}>
+                <Pressable style={s.inputCard} onPress={() => phoneInputRef.current?.focus()}>
                   <View style={s.inputWrapper}>
                     <Text style={s.prefix}>+48</Text>
                     <TextInput
+                      ref={phoneInputRef}
                       style={s.input}
                       value={displayNumber}
                       onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 9))}
@@ -226,7 +236,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                     />
                   </View>
                   <Text style={[s.helper, isValid && s.helperReady]}>{helperText}</Text>
-                </View>
+                </Pressable>
 
                 {loading ? (
                   <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: 24 }} />
