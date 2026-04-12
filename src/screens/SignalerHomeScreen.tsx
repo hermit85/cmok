@@ -13,7 +13,6 @@ import { UrgentConfirmation } from '../components/UrgentConfirmation';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
-import { Shadows } from '../constants/tokens';
 import { haptics } from '../utils/haptics';
 import { useCheckin } from '../hooks/useCheckin';
 import { useCircle } from '../hooks/useCircle';
@@ -70,6 +69,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   const isSubmitting = useRef(false);
   const breatheScale = useRef(new Animated.Value(1)).current;
+  const breatheShadow = useRef(new Animated.Value(0.4)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
   const releaseRingScale = useRef(new Animated.Value(0.84)).current;
   const releaseRingOpacity = useRef(new Animated.Value(0)).current;
@@ -138,15 +138,22 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       breatheScale.setValue(1);
       return;
     }
-    const loop = Animated.loop(
+    const scaleLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(breatheScale, { toValue: 1.02, duration: 1500, useNativeDriver: true }),
-        Animated.timing(breatheScale, { toValue: 1, duration: 1500, useNativeDriver: true }),
+        Animated.timing(breatheScale, { toValue: 1.03, duration: 1250, useNativeDriver: true }),
+        Animated.timing(breatheScale, { toValue: 1, duration: 1250, useNativeDriver: true }),
       ]),
     );
-    loop.start();
-    return () => loop.stop();
-  }, [showChecked, canCheckin, breatheScale]);
+    const shadowLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breatheShadow, { toValue: 0.2, duration: 1250, useNativeDriver: false }),
+        Animated.timing(breatheShadow, { toValue: 0.4, duration: 1250, useNativeDriver: false }),
+      ]),
+    );
+    scaleLoop.start();
+    shadowLoop.start();
+    return () => { scaleLoop.stop(); shadowLoop.stop(); };
+  }, [showChecked, canCheckin, breatheScale, breatheShadow]);
 
   /* ─── transition: animate afterFade when showChecked changes ─── */
 
@@ -180,27 +187,34 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const isMilestone = currentStreak === 7 || currentStreak === 14 || currentStreak === 21 || currentStreak === 30;
 
   const playSuccess = useCallback(() => {
-    // Only show confetti on milestone days
-    if (isMilestone) setCelebrationVisible(true);
+    if (isMilestone) {
+      setCelebrationVisible(true);
+      haptics.success(); // longer, more satisfying for milestones
+    } else {
+      haptics.medium();
+    }
 
     releaseRingScale.setValue(0.84);
     releaseRingOpacity.setValue(0.28);
 
-    // 1. Scale down to 0.92 (100ms)
-    Animated.timing(buttonScale, { toValue: 0.92, duration: 100, useNativeDriver: true }).start(() => {
-      // 2. Release ring + scale back
+    // 1. Deep press down to 0.88 (120ms)
+    Animated.timing(buttonScale, { toValue: 0.88, duration: 120, useNativeDriver: true }).start(() => {
+      // 2. Spring bounce back (overshoots to ~1.05)
       Animated.parallel([
-        Animated.spring(buttonScale, { toValue: 1, useNativeDriver: true, speed: 18, bounciness: 5 }),
+        Animated.spring(buttonScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }),
         Animated.timing(releaseRingScale, { toValue: 1.22, duration: 700, useNativeDriver: true }),
         Animated.timing(releaseRingOpacity, { toValue: 0, duration: 700, useNativeDriver: true }),
       ]).start();
     });
 
+    // Stop breathing shadow on done
+    breatheShadow.setValue(0);
+
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
     if (isMilestone) {
       celebrationTimeoutRef.current = setTimeout(() => setCelebrationVisible(false), 1200);
     }
-  }, [buttonScale, releaseRingOpacity, releaseRingScale, isMilestone]);
+  }, [buttonScale, releaseRingOpacity, releaseRingScale, breatheShadow, isMilestone]);
 
   /* ─── handlers ─── */
 
@@ -209,7 +223,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     if (isSubmitting.current) return;
 
     if (pv) {
-      if (previewMode === 'before') { setPreviewMode('after'); setJustChecked(true); haptics.success(); playSuccess(); }
+      if (previewMode === 'before') { setPreviewMode('after'); setJustChecked(true); playSuccess(); }
       return;
     }
     if (!authReady) return;
@@ -221,7 +235,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     if (isOffline) {
       try {
         if (!userId) throw new Error('AUTH');
-        await savePendingCheckin(userId); setPendingSaved(true); setPendingCheckinTime(t); setJustChecked(true); haptics.success(); playSuccess();
+        await savePendingCheckin(userId); setPendingSaved(true); setPendingCheckinTime(t); setJustChecked(true); playSuccess();
       } catch { Alert.alert('Nie udało się', 'Spróbuj za chwilę.'); }
       finally { isSubmitting.current = false; }
       return;
@@ -234,7 +248,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       if (prevOk === 1) logInviteEvent('second_day_sign_sent');
       if (prevOk === 2) logInviteEvent('third_day_sign_sent');
       if (hasGap) logInviteEvent('sign_sent_after_gap');
-      setJustChecked(true); haptics.success(); playSuccess();
+      setJustChecked(true); playSuccess();
       refreshWeek(); refreshStats();
     } catch (e) {
       if (e instanceof Error && e.name === 'AUTH_REQUIRED') { Alert.alert('Zaloguj się', 'Ten telefon musi być połączony z kontem.'); return; }
@@ -445,12 +459,21 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           {/* ─── THE BUTTON ─── */}
           <View style={s.buttonArea}>
             <Animated.View pointerEvents="none" style={[s.releaseRing, { opacity: releaseRingOpacity, transform: [{ scale: releaseRingScale }] }]} />
-            <Particles visible={celebrationVisible} count={12} colors={[Colors.safe, Colors.accent, '#E5B865']} />
+            <Particles visible={celebrationVisible} count={14} colors={[Colors.safe, Colors.love, Colors.highlight, Colors.delight]} />
 
             {checkinLoading && !showChecked ? (
               <View style={s.loadingCircle}><ActivityIndicator size="large" color={Colors.safe} /></View>
             ) : (
-              <Animated.View style={{ transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] }}>
+              <Animated.View style={[
+                { transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] },
+                !buttonDone && !buttonDisabled && {
+                  shadowColor: '#2EC4B6',
+                  shadowOffset: { width: 0, height: 8 },
+                  shadowOpacity: breatheShadow,
+                  shadowRadius: 32,
+                  elevation: 8,
+                },
+              ]}>
                 <Pressable
                   onPress={handleCheckin} disabled={!canCheckin}
                   style={({ pressed }) => [
@@ -520,11 +543,11 @@ const s = StyleSheet.create({
   releaseRing: { position: 'absolute', width: BTN + 24, height: BTN + 24, borderRadius: (BTN + 24) / 2, backgroundColor: Colors.safeLight },
   loadingCircle: { width: BTN, height: BTN, borderRadius: BTN / 2, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center' },
   btn: { width: BTN, height: BTN, borderRadius: BTN / 2, alignItems: 'center', justifyContent: 'center' },
-  btnActive: { backgroundColor: Colors.safe, ...Shadows.primaryGlow },
-  btnDone: { backgroundColor: Colors.safeLight, borderWidth: 2, borderColor: Colors.safe },
+  btnActive: { backgroundColor: Colors.safe },
+  btnDone: { backgroundColor: Colors.safeLight, borderWidth: 3, borderColor: Colors.safe },
   btnOff: { backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border },
-  btnText: { fontSize: 24, fontFamily: Typography.headingFamily, color: '#FFFFFF', textAlign: 'center' },
-  btnTextDone: { color: Colors.safeStrong, fontSize: 24 },
+  btnText: { fontSize: 22, fontFamily: Typography.headingFamily, color: '#FFFFFF', textAlign: 'center' },
+  btnTextDone: { color: Colors.safe, fontSize: 22, fontFamily: Typography.headingFamilySemiBold },
   btnTextOff: { color: Colors.textMuted, fontSize: 22 },
   btnCheck: { fontSize: 14, color: Colors.safeStrong, marginTop: 2 },
 
