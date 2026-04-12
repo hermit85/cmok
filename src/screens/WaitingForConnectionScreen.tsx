@@ -64,8 +64,11 @@ export function WaitingForConnectionScreen() {
 
       <View style={styles.content}>
         <Text style={styles.eyebrow}>Prawie gotowe</Text>
-        <Text style={styles.title}>Zaproś{'\n'}{relationship.signalerLabel || 'bliską osobę'}</Text>
-        <Text style={styles.subtitle}>Wyślij kod lub pokaż go na tym ekranie.</Text>
+        <Text style={styles.title}>Wyślij kod do{'\n'}{relationship.signalerLabel || 'bliskiej osoby'}</Text>
+        <Text style={styles.subtitle}>
+          Pokaż ten kod lub wyślij go.{'\n'}
+          Gdy {relationship.signalerLabel || 'bliska osoba'} go wpisze, połączycie się.
+        </Text>
 
         {relationship.inviteCode ? (
           <Pressable onPress={handleCopyCode} style={({ pressed }) => [styles.codeFrame, pressed && { opacity: 0.85 }]}>
@@ -81,11 +84,18 @@ export function WaitingForConnectionScreen() {
           <Text style={styles.shareBtnText}>Wyślij zaproszenie</Text>
         </Pressable>
 
+        <View style={styles.infoBox}>
+          <Text style={styles.infoText}>
+            Damy Ci znać, gdy {relationship.signalerLabel || 'bliska osoba'} dołączy.
+            Możesz spokojnie zamknąć aplikację.
+          </Text>
+        </View>
+
         <Pressable
           onPress={refreshRelationship}
           style={({ pressed }) => [styles.refreshLink, pressed && { opacity: 0.6 }]}
         >
-          <Text style={styles.refreshLinkText}>Odśwież status</Text>
+          <Text style={styles.refreshLinkText}>Sprawdź teraz</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -114,7 +124,12 @@ const styles = StyleSheet.create({
     shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5,
   },
   shareBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
-  refreshLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 16 },
+  infoBox: {
+    marginTop: 20, paddingVertical: 14, paddingHorizontal: 20,
+    borderRadius: 14, backgroundColor: Colors.safeLight, alignItems: 'center',
+  },
+  infoText: { fontSize: 13, color: Colors.safeStrong, textAlign: 'center', lineHeight: 20 },
+  refreshLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 12 },
   refreshLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
   backButton: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 8, minHeight: 44, marginBottom: 8, marginLeft: -8 },
   backText: { fontSize: 16, fontWeight: '500', color: Colors.accent },
