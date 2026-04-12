@@ -276,7 +276,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       setSignerStatus(todayRow?.status_emoji || null);
       setLastContact(fmtRelative(latestRow?.local_date ?? null, latestRow?.checked_at ?? null));
       setIsOk(urgentCase?.viewerRole === 'primary' && currentAlert ? false : !!todayRow);
-    } catch (e) { console.error('fetchData:', e); } finally { setDataLoading(false); }
+    } catch (e) { console.warn('fetchData:', e); } finally { setDataLoading(false); }
   }, [sigId, urgentCase?.viewerRole, currentAlert]);
 
   useEffect(() => {
