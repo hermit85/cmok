@@ -159,17 +159,21 @@ export default function OnboardingFlow() {
 
   switch (step) {
     case 'welcome':
-      return <WelcomeScreen onStart={() => {
-        logInviteEvent('onboarding_started');
-        if (pendingInviteCode) {
-          // Deep link invite → skip role selection, go straight to signaler auth
-          setSelectedRole('signaler');
-          logInviteEvent('invite_intent_skipped', { code: pendingInviteCode });
+      return <WelcomeScreen
+        onStart={() => {
+          logInviteEvent('onboarding_started');
+          if (pendingInviteCode) {
+            setSelectedRole('signaler');
+            setStep('phone');
+          } else {
+            setStep('intent');
+          }
+        }}
+        onLogin={() => {
+          // "Mam już konto" — go straight to phone auth, handleVerified will route
           setStep('phone');
-        } else {
-          setStep('intent');
-        }
-      }} />;
+        }}
+      />;
     case 'intent':
       return <IntentScreen onSelect={handleIntent} onBack={goBack} simplified={!ALLOW_ORGANIC_SIGNUP} />;
     case 'who-gets-sign':

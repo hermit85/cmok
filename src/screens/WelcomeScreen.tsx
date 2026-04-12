@@ -10,6 +10,7 @@ const { width: SCREEN_W } = Dimensions.get('window');
 
 interface WelcomeScreenProps {
   onStart: () => void;
+  onLogin?: () => void;
 }
 
 const SLIDES = [
@@ -27,7 +28,7 @@ const SLIDES = [
   },
 ];
 
-export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
+export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
   const [slide, setSlide] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const breathe = useRef(new Animated.Value(1)).current;
@@ -93,7 +94,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         </Pressable>
 
         {slide === 0 && !isLast ? (
-          <Pressable onPress={onStart} style={({ pressed }) => [s.skipLink, pressed && { opacity: 0.5 }]}>
+          <Pressable onPress={onLogin || onStart} style={({ pressed }) => [s.skipLink, pressed && { opacity: 0.5 }]}>
             <Text style={s.skipText}>Mam już konto</Text>
           </Pressable>
         ) : null}
