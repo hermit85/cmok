@@ -464,28 +464,28 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             {checkinLoading && !showChecked ? (
               <View style={s.loadingCircle}><ActivityIndicator size="large" color={Colors.safe} /></View>
             ) : (
-              <Animated.View style={[
-                { transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] },
-                !buttonDone && !buttonDisabled && {
+              <Animated.View style={!buttonDone && !buttonDisabled ? {
                   shadowColor: '#2EC4B6',
                   shadowOffset: { width: 0, height: 8 },
                   shadowOpacity: breatheShadow,
                   shadowRadius: 32,
                   elevation: 8,
-                },
-              ]}>
-                <Pressable
-                  onPress={handleCheckin} disabled={!canCheckin}
-                  style={({ pressed }) => [
-                    s.btn, buttonDone && s.btnDone, buttonDisabled && s.btnOff, !buttonDone && !buttonDisabled && s.btnActive,
-                    pressed && canCheckin && { transform: [{ scale: 0.96 }], opacity: 0.94 },
-                  ]}
-                >
-                  <Text style={[s.btnText, buttonDone && s.btnTextDone, buttonDisabled && s.btnTextOff]} maxFontSizeMultiplier={1.2}>
-                    {buttonLabel}
-                  </Text>
-                  {buttonDone ? <Text style={s.btnCheck}>✓</Text> : null}
-                </Pressable>
+                  borderRadius: BTN / 2,
+                } : undefined}>
+                <Animated.View style={{ transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] }}>
+                  <Pressable
+                    onPress={handleCheckin} disabled={!canCheckin}
+                    style={({ pressed }) => [
+                      s.btn, buttonDone && s.btnDone, buttonDisabled && s.btnOff, !buttonDone && !buttonDisabled && s.btnActive,
+                      pressed && canCheckin && { transform: [{ scale: 0.96 }], opacity: 0.94 },
+                    ]}
+                  >
+                    <Text style={[s.btnText, buttonDone && s.btnTextDone, buttonDisabled && s.btnTextOff]} maxFontSizeMultiplier={1.2}>
+                      {buttonLabel}
+                    </Text>
+                    {buttonDone ? <Text style={s.btnCheck}>✓</Text> : null}
+                  </Pressable>
+                </Animated.View>
               </Animated.View>
             )}
           </View>
