@@ -123,20 +123,18 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
     if (!isValid) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOtp({ phone: formattedPhone });
-      console.log('[PHONE] signInWithOtp result:', { phone: formattedPhone, data: JSON.stringify(data), error: error ? JSON.stringify(error) : null });
+      const { error } = await supabase.auth.signInWithOtp({ phone: formattedPhone });
       if (error) throw error;
       setFullPhone(formattedPhone);
       setResendCooldown(60);
       transitionToCode();
     } catch (err: any) {
-      const errDetail = err?.message || err?.msg || err?.code || JSON.stringify(err);
-      console.warn('[PHONE] OTP error:', errDetail);
-      if (__DEV__) {
-        Alert.alert('DEV: OTP Error', `Phone: ${formattedPhone}\n\nError: ${errDetail}\n\nStatus: ${err?.status || 'unknown'}`);
-      } else {
-        Alert.alert('Coś poszło nie tak', 'Nie udało się wysłać kodu SMS. Sprawdź numer i spróbuj ponownie.');
-      }
+      const errMsg = err?.message || '';
+      Alert.alert('Coś poszło nie tak',
+        errMsg.includes('sms_send_failed') ? 'Usługa SMS jest tymczasowo niedostępna. Spróbuj za chwilę.'
+        : errMsg.includes('rate_limit') ? 'Za dużo prób. Poczekaj chwilę.'
+        : 'Nie udało się wysłać kodu SMS. Sprawdź numer i spróbuj ponownie.'
+      );
     } finally {
       setLoading(false);
     }

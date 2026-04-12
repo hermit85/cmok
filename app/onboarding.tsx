@@ -97,16 +97,6 @@ export default function OnboardingFlow() {
     const { profile, relationshipStatus } = result;
     const pendingInvite = await getPendingInvite();
 
-    if (__DEV__) {
-      console.log('[ONBOARDING] handleVerified:', {
-        hasProfile: !!profile,
-        profileRole: profile?.role,
-        relationshipStatus,
-        selectedRole,
-        hasPendingInvite: !!pendingInvite,
-      });
-    }
-
     // Case 1: Active relationship → go home. Role from DB is authoritative.
     if (profile && relationshipStatus === 'active') {
       if (pendingInvite) await clearPendingInvite();
