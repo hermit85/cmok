@@ -34,9 +34,9 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
   if (simplified) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.top}>
-          <Text style={styles.miniLogo}>Cmok</Text>
+        <Text style={styles.miniLogo}>Cmok</Text>
 
+        <View style={styles.content}>
           <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
             <Text style={styles.backText}>← Wróć</Text>
           </Pressable>
@@ -46,21 +46,19 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
             Cmok łączy dwie bliskie osoby w codzienny rytuał kontaktu.
           </Text>
 
-          <View style={styles.options}>
-            <Pressable
-              onPress={() => { haptics.light(); onSelect('i-am-center'); }}
-              style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
-            >
-              <Text style={styles.primaryBtnText}>Mam kod zaproszenia</Text>
-            </Pressable>
+          <Pressable
+            onPress={() => { haptics.light(); onSelect('i-am-center'); }}
+            style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+          >
+            <Text style={styles.primaryBtnText}>Mam kod zaproszenia</Text>
+          </Pressable>
 
-            <Pressable
-              onPress={() => { haptics.light(); onSelect('join-circle'); }}
-              style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}
-            >
-              <Text style={styles.secondaryBtnText}>Chcę zaprosić bliską osobę</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={() => { haptics.light(); onSelect('join-circle'); }}
+            style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.secondaryBtnText}>Chcę zaprosić bliską osobę</Text>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -68,9 +66,8 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.top}>
-        <Text style={styles.miniLogo}>Cmok</Text>
-
+      <Text style={styles.miniLogo}>Cmok</Text>
+      <View style={styles.content}>
         <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
@@ -128,12 +125,12 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: 24 },
-  top: { flex: 1, justifyContent: 'center', paddingHorizontal: 0 },
-  miniLogo: { fontSize: 14, fontFamily: Typography.headingFamily, color: Colors.accent, marginBottom: 22 },
-  backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', marginLeft: -8, paddingHorizontal: 8, marginBottom: 18 },
-  backText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
-  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 22 },
+  container: { flex: 1, backgroundColor: Colors.background },
+  content: { flex: 1, paddingHorizontal: 28, paddingTop: 38 },
+  miniLogo: { fontSize: 16, fontFamily: Typography.headingFamily, color: Colors.accent, paddingHorizontal: 28, paddingTop: 16 },
+  backButton: { alignSelf: 'flex-start' as const, paddingVertical: 8, paddingHorizontal: 8, minHeight: 44, marginBottom: 18, marginLeft: -8 },
+  backText: { fontSize: Typography.body, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
+  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 12 },
   simplifiedSubtitle: { fontSize: Typography.body, color: Colors.textSecondary, lineHeight: 23, marginBottom: 32, maxWidth: 300 },
   primaryBtn: {
     backgroundColor: Colors.accent, minHeight: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center',
