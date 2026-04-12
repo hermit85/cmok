@@ -70,7 +70,7 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
       logInviteEvent('invite_created', { label: label.trim() });
       onDone();
     } catch (err) {
-      console.error('[SETUP] error:', err);
+      console.warn('[SETUP] error:', err);
       Alert.alert('Coś poszło nie tak', 'Nie udało się utworzyć połączenia. Spróbuj ponownie.');
     } finally {
       setLoading(false);

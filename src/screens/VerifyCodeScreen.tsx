@@ -109,7 +109,7 @@ export function VerifyCodeScreen({ onBack, phone, relationLabel = 'bliskiej osob
         relationshipStatus,
       });
     } catch (err) {
-      console.error('[VERIFY] error:', err);
+      console.warn('[VERIFY] error:', err);
       setError('Nieprawidłowy kod. Spróbuj ponownie.');
       setCode('');
       inputRef.current?.focus();
