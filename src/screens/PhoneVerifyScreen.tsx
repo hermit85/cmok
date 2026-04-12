@@ -159,7 +159,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
         const role = normalizeAppRole(profile.role);
         if (!role) throw new Error('Nieznana rola użytkownika');
         const col = role === 'recipient' ? 'caregiver_id' : 'senior_id';
-        const statuses = role === 'recipient' ? ['active', 'pending'] : ['active'];
+        const statuses = ['active', 'pending'];
         const { data: rels } = await supabase
           .from('care_pairs').select('id, status').eq(col, user.id).in('status', statuses).limit(5);
         const best = (rels || []).sort((a, b) => (a.status === 'active' ? -1 : 1) - (b.status === 'active' ? -1 : 1))[0];

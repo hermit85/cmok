@@ -161,7 +161,8 @@ export default function OnboardingFlow() {
       case 'intent': setStep('welcome'); break;
       case 'who-gets-sign': setStep('intent'); break;
       case 'phone': {
-        if (pendingInviteCode) setStep('welcome');
+        if (!selectedRole) setStep('welcome'); // came from "Mam już konto"
+        else if (pendingInviteCode) setStep('welcome');
         else if (selectedRole === 'signaler' && ALLOW_ORGANIC_SIGNUP) setStep('who-gets-sign');
         else setStep('intent');
         break;
