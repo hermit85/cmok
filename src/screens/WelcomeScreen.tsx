@@ -1,12 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, PanResponder } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandMotif } from '../components/BrandMotif';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { haptics } from '../utils/haptics';
-
-const { width: SCREEN_W } = Dimensions.get('window');
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -28,12 +26,14 @@ const SLIDES = [
   },
 ];
 
+const SWIPE_THRESHOLD = 50;
+
 export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
   const [slide, setSlide] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const translateX = useRef(new Animated.Value(0)).current;
   const breathe = useRef(new Animated.Value(1)).current;
 
-  // Breathing for motif
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
@@ -45,25 +45,56 @@ export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
     return () => loop.stop();
   }, []);
 
+  const animateToSlide = useCallback((next: number, direction: 'left' | 'right') => {
+    const out = direction === 'left' ? -80 : 80;
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
+      Animated.timing(translateX, { toValue: out, duration: 120, useNativeDriver: true }),
+    ]).start(() => {
+      setSlide(next);
+      translateX.setValue(direction === 'left' ? 80 : -80);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.spring(translateX, { toValue: 0, tension: 80, friction: 12, useNativeDriver: true }),
+      ]).start();
+    });
+  }, [fadeAnim, translateX]);
+
   const goNext = useCallback(() => {
     haptics.light();
     if (slide >= SLIDES.length - 1) {
       onStart();
       return;
     }
-    // Cross-fade to next slide
-    Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
-      setSlide((s) => s + 1);
-      Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
-    });
-  }, [slide, fadeAnim, onStart]);
+    animateToSlide(slide + 1, 'left');
+  }, [slide, onStart, animateToSlide]);
+
+  const goPrev = useCallback(() => {
+    if (slide <= 0) return;
+    haptics.light();
+    animateToSlide(slide - 1, 'right');
+  }, [slide, animateToSlide]);
+
+  // Swipe gesture
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 10 && Math.abs(gs.dy) < 30,
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dx < -SWIPE_THRESHOLD && slide < SLIDES.length - 1) {
+          goNext();
+        } else if (gs.dx > SWIPE_THRESHOLD && slide > 0) {
+          goPrev();
+        }
+      },
+    })
+  ).current;
 
   const isLast = slide >= SLIDES.length - 1;
   const current = SLIDES[slide];
 
   return (
     <SafeAreaView style={s.container}>
-      {/* Logo — always visible */}
+      {/* Logo */}
       <View style={s.logoRow}>
         <Text style={s.logo}>Cmok</Text>
         <Animated.View style={{ transform: [{ scale: breathe }] }}>
@@ -71,15 +102,17 @@ export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
         </Animated.View>
       </View>
 
-      {/* Slide content */}
-      <Animated.View style={[s.slideArea, { opacity: fadeAnim }]}>
+      {/* Slide content — swipeable */}
+      <Animated.View
+        style={[s.slideArea, { opacity: fadeAnim, transform: [{ translateX }] }]}
+        {...panResponder.panHandlers}
+      >
         <Text style={s.headline}>{current.headline}</Text>
         <Text style={s.body}>{current.body}</Text>
       </Animated.View>
 
-      {/* Dots + CTA */}
+      {/* Bottom — fixed height so CTA doesn't jump */}
       <View style={s.bottom}>
-        {/* Dot indicators */}
         <View style={s.dots}>
           {SLIDES.map((_, i) => (
             <View key={i} style={[s.dot, i === slide && s.dotActive]} />
@@ -93,12 +126,13 @@ export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
           <Text style={s.primaryBtnText}>{isLast ? 'Zacznij' : 'Dalej'}</Text>
         </Pressable>
 
-        {slide === 0 && !isLast ? (
-          <Pressable onPress={onLogin || onStart} style={({ pressed }) => [s.skipLink, pressed && { opacity: 0.5 }]}>
-            <Text style={s.skipText}>Mam już konto</Text>
-          </Pressable>
-        ) : null}
-
+        {/* Always reserve space — visible only on slide 0 */}
+        <Pressable
+          onPress={onLogin || onStart}
+          style={({ pressed }) => [s.skipLink, pressed && { opacity: 0.5 }, slide !== 0 && s.hidden]}
+        >
+          <Text style={s.skipText}>Mam już konto</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -144,4 +178,5 @@ const s = StyleSheet.create({
   primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   skipLink: { marginTop: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
   skipText: { fontSize: 12, color: Colors.textMuted },
+  hidden: { opacity: 0 },
 });
