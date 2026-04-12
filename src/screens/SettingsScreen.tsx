@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, Pressable, Alert, ScrollView, Share, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, ScrollView, Share, Platform, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../services/supabase';
+import { supabase, SUPABASE_URL } from '../services/supabase';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius, Spacing } from '../constants/tokens';
@@ -27,6 +27,43 @@ export function SettingsScreen() {
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
     } catch { /* cancelled */ }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Usunąć konto?',
+      'Wszystkie Twoje dane zostaną trwale usunięte. Tej operacji nie można cofnąć.',
+      [
+        { text: 'Anuluj', style: 'cancel' },
+        {
+          text: 'Usuń konto',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (!session) throw new Error('Brak sesji');
+              // Call edge function to purge all user data
+              const response = await fetch(
+                `${SUPABASE_URL}/functions/v1/delete-account`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
+                  body: '{}',
+                },
+              );
+              if (!response.ok) throw new Error('Delete failed');
+              await supabase.auth.signOut();
+              router.replace('/onboarding');
+            } catch {
+              Alert.alert('Błąd', 'Nie udało się usunąć konta. Spróbuj ponownie.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleLogout = async () => {
@@ -101,13 +138,30 @@ export function SettingsScreen() {
           </View>
         ) : null}
 
+        {/* ─── Legal ─── */}
+        <View style={styles.legalRow}>
+          <Pressable onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')} style={({ pressed }) => pressed && { opacity: 0.5 }}>
+            <Text style={styles.legalLink}>Polityka prywatności</Text>
+          </Pressable>
+          <Text style={styles.legalDot}> · </Text>
+          <Pressable onPress={() => Linking.openURL('https://cmok.app/regulamin')} style={({ pressed }) => pressed && { opacity: 0.5 }}>
+            <Text style={styles.legalLink}>Regulamin</Text>
+          </Pressable>
+        </View>
+
         <Pressable
           onPress={handleLogout}
           style={({ pressed }) => [styles.logoutButton, pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] }]}
         >
           <Text style={styles.logoutText}>Wyloguj ten telefon</Text>
         </Pressable>
-        <Text style={styles.logoutHint}>Wyloguje tylko to urządzenie.</Text>
+
+        <Pressable
+          onPress={handleDeleteAccount}
+          style={({ pressed }) => [styles.deleteButton, pressed && { opacity: 0.7 }]}
+        >
+          <Text style={styles.deleteText}>Usuń konto i dane</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -144,5 +198,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center', marginTop: 8,
   },
   logoutText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
-  logoutHint: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 10 },
+  deleteButton: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 12 },
+  deleteText: { fontSize: 14, color: Colors.alert },
+  legalRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 24, marginBottom: 16 },
+  legalLink: { fontSize: 13, color: Colors.textMuted },
+  legalDot: { fontSize: 13, color: Colors.textMuted },
 });

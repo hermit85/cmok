@@ -25,6 +25,7 @@
       }
     },
     "android": {
+      "package": "com.hermit85.cmok",
       "adaptiveIcon": {
         "backgroundColor": "#F7F3EE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -33,7 +34,8 @@
       },
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
@@ -46,7 +48,7 @@
         "expo-notifications",
         {
           "icon": "./assets/icon.png",
-          "color": "#6F8F72"
+          "color": "#2EC4B6"
         }
       ],
       "expo-secure-store",
