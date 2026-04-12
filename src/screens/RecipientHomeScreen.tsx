@@ -98,35 +98,39 @@ function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: b
 
 /* ─── Response tap ─── */
 
+const REACTIONS = [
+  { emoji: '\u{2764}\u{FE0F}', symbol: '\u{2665}', label: 'Kocham', color: Colors.love },
+  { emoji: '\u{2615}', symbol: '\u{2022}', label: 'Dobranoc', color: Colors.delight },
+  { emoji: '\u{1F44B}', symbol: '\u{2713}', label: 'OK!', color: Colors.safe },
+  { emoji: '\u{1F31E}', symbol: '\u{2605}', label: 'Super!', color: Colors.highlight },
+] as const;
+
 function ResponseTap({ signalerName, signalerId, preview }: { signalerName: string; signalerId: string; preview: boolean }) {
   const { sendSignal, hasSentReactionToday } = useSignals();
   const alreadySent = !preview && hasSentReactionToday(signalerId);
-  const [justSent, setJustSent] = useState(false);
-  const sent = alreadySent || justSent;
-  const scale = useRef(new Animated.Value(1)).current;
+  const [justSent, setJustSent] = useState<string | null>(null);
+  const sent = alreadySent || !!justSent;
+  const scales = useRef(REACTIONS.map(() => new Animated.Value(1))).current;
 
   useEffect(() => {
     if (alreadySent) logInviteEvent('recipient_response_state_restored');
     else logInviteEvent('recipient_response_cta_seen');
   }, [alreadySent]);
 
-  const handleTap = async () => {
-    if (sent) {
-      logInviteEvent('recipient_response_duplicate_blocked');
-      return;
-    }
+  const handleTap = async (emoji: string, index: number) => {
+    if (sent) return;
     haptics.medium();
     logInviteEvent('recipient_response_started');
     Animated.sequence([
-      Animated.spring(scale, { toValue: 1.15, useNativeDriver: true, speed: 50, bounciness: 10 }),
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }),
+      Animated.spring(scales[index], { toValue: 1.3, useNativeDriver: true, speed: 50, bounciness: 10 }),
+      Animated.spring(scales[index], { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }),
     ]).start();
     try {
       if (!preview) {
-        const ok = await sendSignal(signalerId, '\u{1F49B}');
+        const ok = await sendSignal(signalerId, emoji);
         if (!ok) { logInviteEvent('recipient_response_duplicate_blocked'); return; }
       }
-      setJustSent(true);
+      setJustSent(emoji);
       logInviteEvent('recipient_response_sent');
     } catch { /* silent */ }
   };
@@ -135,14 +139,25 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
     <View style={st.responseSection}>
       {sent ? (
         <View style={st.responseSentPill}>
-          <Text style={st.responseSentText}>Serduszko wysłane <Emoji>✓</Emoji></Text>
+          <Text style={st.responseSentText}>Wysłano</Text>
         </View>
       ) : (
-        <Animated.View style={{ transform: [{ scale }] }}>
-          <Pressable onPress={handleTap} style={({ pressed }) => [st.responsePill, pressed && { opacity: 0.85 }]}>
-            <Text style={st.responsePillText}>Wyślij serduszko</Text>
-          </Pressable>
-        </Animated.View>
+        <View>
+          <Text style={st.responsePrompt}>Odpowiedz jednym gestem</Text>
+          <View style={st.reactionsRow}>
+            {REACTIONS.map((r, i) => (
+              <Animated.View key={r.symbol} style={{ transform: [{ scale: scales[i] }] }}>
+                <Pressable
+                  onPress={() => handleTap(r.emoji, i)}
+                  style={({ pressed }) => [st.reactionBtn, pressed && { opacity: 0.7 }]}
+                >
+                  <Text style={[st.reactionSymbol, { color: r.color }]}>{r.symbol}</Text>
+                  <Text style={st.reactionLabel}>{r.label}</Text>
+                </Pressable>
+              </Animated.View>
+            ))}
+          </View>
+        </View>
       )}
     </View>
   );
@@ -482,20 +497,21 @@ const st = StyleSheet.create({
   /* rhythm */
   connectionLabel: { fontSize: 12, color: Colors.textSecondary, marginTop: 8, textAlign: 'center' },
 
-  /* response — pill button */
+  /* response — reaction buttons */
   responseSection: { alignItems: 'center', marginBottom: 16 },
-  responsePill: {
-    backgroundColor: Colors.love, minHeight: 50, paddingHorizontal: 32,
-    borderRadius: 16, justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#FF6B6B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 16,
+  responsePrompt: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginBottom: 12 },
+  reactionsRow: { flexDirection: 'row', gap: 16, justifyContent: 'center' },
+  reactionBtn: {
+    width: 64, height: 64, borderRadius: 16,
+    backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center',
   },
-  responsePillText: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },
+  reactionSymbol: { fontSize: 22 },
+  reactionLabel: { fontSize: 9, color: Colors.textMuted, marginTop: 2 },
   responseSentPill: {
     backgroundColor: Colors.safeLight, minHeight: 44, paddingHorizontal: 24,
     borderRadius: 999, justifyContent: 'center', alignItems: 'center',
   },
   responseSentText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
-  emoji: { fontFamily: undefined },
 
   /* bottom — text-only link */
   bottomLink: { alignItems: 'center', paddingVertical: 14, marginBottom: 32 },
