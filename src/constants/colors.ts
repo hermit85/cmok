@@ -1,6 +1,6 @@
 export const Colors = {
   // Canvas
-  background: '#FAF6F1',
+  background: '#FFF8F2',
   backgroundSoft: '#F5EFE8',
   card: '#FFFCF8',
   cardStrong: '#FFFFFF',
@@ -9,14 +9,26 @@ export const Colors = {
   surfaceWarm: '#F9EEE7',
 
   // Brand
-  accent: '#D4735E',
-  accentStrong: '#C25F4B',
-  accentLight: '#E88B7A',
+  accent: '#E85D3A',
+  accentStrong: '#D04E2E',
+  accentLight: '#F08B6E',
   accentWash: '#FDF3EF',
-  safe: '#7A9B8D',
-  safeStrong: '#628071',
-  safeLight: '#E8F0EC',
-  safeWash: '#F2F7F4',
+
+  // Success / action
+  safe: '#2EC4B6',
+  safeStrong: '#23A99D',
+  safeLight: '#E0F7F5',
+  safeWash: '#F0FBFA',
+
+  // Love / heart
+  love: '#FF6B6B',
+  loveLight: '#FFE5E5',
+
+  // Highlight / today
+  highlight: '#FFD93D',
+
+  // Delight / milestone
+  delight: '#A78BFA',
 
   // Text
   text: '#2D2926',
@@ -36,8 +48,8 @@ export const Colors = {
   shadow: '#201813',
 
   // Status
-  statusOkBg: '#E8F0EC',
-  statusOkText: '#557159',
+  statusOkBg: '#E0F7F5',
+  statusOkText: '#23A99D',
   statusMissingBg: '#F8EEE8',
   statusMissingText: '#B5644F',
 } as const;
