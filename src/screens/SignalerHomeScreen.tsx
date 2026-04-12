@@ -288,8 +288,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     const streakText = currentStreak === 7 ? 'tydzień' : currentStreak === 14 ? '2 tygodnie' : currentStreak === 21 ? '3 tygodnie' : currentStreak === 30 ? 'miesiąc' : `${currentStreak} dni`;
     const displayName = primaryName || null;
     const msg = displayName
-      ? `${displayName} i ja, ${streakText} codziennego kontaktu w Cmok! Znasz kogoś, kto mieszka sam? Cmok daje spokój obu stronom.\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645`
-      : `${streakText} codziennego kontaktu w Cmok!\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645`;
+      ? `Od ${streakText} codziennie daję ${displayName} znak, że jest OK. Bez dzwonienia, bez SMS-ów. Jeden tap i obie strony mają spokój.\n\nCmok, darmowa apka:\nhttps://apps.apple.com/pl/app/cmok/id6760717645`
+      : `Od ${streakText} codziennie daję bliskiej osobie znak, że jest OK. Jeden tap i spokój.\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
     } catch { /* cancelled */ }
@@ -570,6 +570,21 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           {/* ─── WEEK DOTS ─── */}
           {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} showLabel={showChecked} /></View> : null}
 
+          {/* ─── STATS: streak + total ─── */}
+          {showChecked && dbTotalCount > 0 ? (
+            <View style={s.statsRow}>
+              <View style={s.statItem}>
+                <Text style={s.statNumber}>{currentStreak}</Text>
+                <Text style={s.statLabel}>z rzedu</Text>
+              </View>
+              <View style={s.statDivider} />
+              <View style={s.statItem}>
+                <Text style={s.statNumber}>{dbTotalCount}</Text>
+                <Text style={s.statLabel}>lącznie</Text>
+              </View>
+            </View>
+          ) : null}
+
           {/* ─── VIRAL: subtle invite link ─── */}
           {showChecked && currentStreak >= 3 ? (
             <Pressable onPress={handleMilestoneShare} style={({ pressed }) => [s.viralLink, pressed && { opacity: 0.5 }]}>
@@ -644,6 +659,11 @@ const s = StyleSheet.create({
   shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },
 
   dotsWrap: { marginTop: 24 },
+  statsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, gap: 24 },
+  statItem: { alignItems: 'center' },
+  statNumber: { fontSize: 22, fontFamily: Typography.headingFamily, color: Colors.safe },
+  statLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  statDivider: { width: 1, height: 28, backgroundColor: Colors.border },
   viralLink: { marginTop: 16, minHeight: 40, justifyContent: 'center', alignItems: 'center' },
   viralLinkText: { fontSize: 13, color: Colors.textMuted },
 

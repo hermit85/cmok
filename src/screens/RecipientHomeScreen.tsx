@@ -231,7 +231,9 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const [isOk, setIsOk] = useState(false);
   const [signerStatus, setSignerStatus] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showWarmToast, setShowWarmToast] = useState(false);
   const hasSeenSign = useRef(false);
+  const toastFade = useRef(new Animated.Value(0)).current;
   const [todayTime, setTodayTime] = useState<string | null>(null);
   const [lastContact, setLastContact] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -300,8 +302,16 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       if (!hasSeenSign.current) {
         hasSeenSign.current = true;
         setShowCelebration(true);
+        setShowWarmToast(true);
         haptics.success();
         setTimeout(() => setShowCelebration(false), 1200);
+        // Warm toast: fade in, hold 2.5s, fade out
+        toastFade.setValue(0);
+        Animated.sequence([
+          Animated.timing(toastFade, { toValue: 1, duration: 300, useNativeDriver: true }),
+          Animated.delay(2500),
+          Animated.timing(toastFade, { toValue: 0, duration: 500, useNativeDriver: true }),
+        ]).start(() => setShowWarmToast(false));
       }
       afterFade.setValue(0);
       Animated.timing(afterFade, { toValue: 1, duration: 500, useNativeDriver: true }).start();
@@ -383,7 +393,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   };
 
   const handleShareInvite = async () => {
-    const msg = 'Dołącz do mojego kręgu w Cmok! Codzienny znak, że wszystko OK. Bez dzwonienia, bez stresu.\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645';
+    const msg = 'Ktoś bliski mieszka sam? Codziennie dostaję od niego znak, że jest OK. Zero dzwonienia, zero stresu. Jeden tap.\n\nCmok, darmowa apka:\nhttps://apps.apple.com/pl/app/cmok/id6760717645';
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
     } catch { /* cancelled */ }
@@ -471,6 +481,13 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     <SafeAreaView style={[st.container, effOk && st.containerAfter]}>
       <ScreenHeader subtitle={`od ${nameFrom}`} />
       <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false} bounces={false}>
+        {/* ─── Warm toast on first view ─── */}
+        {showWarmToast ? (
+          <Animated.View style={[st.warmToast, { opacity: toastFade }]}>
+            <Text style={st.warmToastText}>{nameFrom} pamięta o Tobie</Text>
+          </Animated.View>
+        ) : null}
+
         {/* ─── SECTION 1: Status hero ─── */}
         <View style={st.heroSection}>
           <StatusCircle ok={effOk} showCelebration={showCelebration} />
@@ -565,6 +582,10 @@ const st = StyleSheet.create({
   heroSection: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 16 },
   rhythmSection: { alignItems: 'center', paddingVertical: 24 },
   actionsSection: { alignItems: 'center', paddingBottom: 16 },
+
+  /* warm toast */
+  warmToast: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, backgroundColor: Colors.safeLight, marginBottom: 12 },
+  warmToastText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
 
   /* status circle */
   statusCircle: { width: STATUS_SIZE, height: STATUS_SIZE, borderRadius: STATUS_SIZE / 2, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
