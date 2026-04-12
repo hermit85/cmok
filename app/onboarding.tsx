@@ -38,7 +38,7 @@ export default function OnboardingFlow() {
     getPendingInvite().then((inv) => { if (inv) setPendingInviteCode(inv.code); });
   }, []);
 
-  // Auto-resume: if user already has auth + profile, skip to the right step
+  // Auto-resume: ONLY skip onboarding if user has an active relationship (re-login)
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -51,9 +51,18 @@ export default function OnboardingFlow() {
       const role = profile.role === 'signaler' || profile.role === 'recipient' ? profile.role as AppRole : null;
       if (!role) return;
 
-      setSelectedRole(role);
-      // Route based on role: signaler → join, recipient → setup
-      setStep(role === 'signaler' ? 'join' : 'setup');
+      // Check for active relationship
+      const col = role === 'recipient' ? 'caregiver_id' : 'senior_id';
+      const { data: activePair } = await supabase
+        .from('care_pairs').select('id').eq(col, session.user.id).eq('status', 'active').limit(1).maybeSingle();
+
+      if (activePair) {
+        // Active relationship → re-login, go straight to home
+        setSelectedRole(role);
+        setDestinationRoute(role === 'signaler' ? '/signaler-home' : '/recipient-home');
+        setStep('done');
+      }
+      // No active relationship → let user go through onboarding normally
     })();
   }, []);
 
@@ -87,36 +96,39 @@ export default function OnboardingFlow() {
   const handleVerified = async (result: VerifyResult) => {
     const { profile, relationshipStatus } = result;
     const pendingInvite = await getPendingInvite();
+    const role = selectedRole || 'signaler'; // fallback, but selectedRole should always be set by IntentScreen
 
+    // Case 1: Active relationship → re-login, go home (role from DB is authoritative)
     if (profile && relationshipStatus === 'active') {
       if (pendingInvite) await clearPendingInvite();
-      setSelectedRole(profile.role);
       setDestinationRoute(profile.role === 'signaler' ? '/signaler-home' : '/recipient-home');
       setStep('done');
       return;
     }
-    if (profile && relationshipStatus === 'pending') {
-      setSelectedRole(profile.role);
-      if (profile.role === 'recipient') { setDestinationRoute('/waiting'); setStep('done'); }
-      else {
-        if (pendingInvite) { logInviteEvent('invite_resume_started', { code: pendingInvite.code }); setPendingInviteCode(pendingInvite.code); }
-        setStep('join');
+
+    // Case 2: Profile exists but no active relationship → respect user's intent from IntentScreen
+    if (profile) {
+      // Update profile role if user picked a different path
+      if (profile.role !== role) {
+        await supabase.from('users').update({ role }).eq('id', profile.id).then(() => {});
       }
+      if (pendingInvite && role === 'signaler') {
+        logInviteEvent('invite_resume_started', { code: pendingInvite.code });
+        setPendingInviteCode(pendingInvite.code);
+      }
+      setStep(role === 'recipient' ? 'setup' : 'join');
       return;
     }
-    if (profile && relationshipStatus === 'none') {
-      setSelectedRole(profile.role);
-      if (pendingInvite && profile.role !== 'recipient') {
-        logInviteEvent('invite_resume_started', { code: pendingInvite.code }); setPendingInviteCode(pendingInvite.code); setStep('join');
-      } else { setStep(profile.role === 'recipient' ? 'setup' : 'join'); }
-      return;
-    }
-    if (selectedRole) {
+
+    // Case 3: New user — create profile with selectedRole
+    if (role) {
       try {
-        await createProfileForRole(selectedRole);
-        if (pendingInvite && selectedRole !== 'recipient') {
-          logInviteEvent('invite_resume_started', { code: pendingInvite.code }); setPendingInviteCode(pendingInvite.code); setStep('join');
-        } else { setStep(selectedRole === 'recipient' ? 'setup' : 'join'); }
+        await createProfileForRole(role);
+        if (pendingInvite && role === 'signaler') {
+          logInviteEvent('invite_resume_started', { code: pendingInvite.code });
+          setPendingInviteCode(pendingInvite.code);
+        }
+        setStep(role === 'recipient' ? 'setup' : 'join');
       } catch (err) {
         console.error('[onboarding] error:', err);
         Alert.alert('Błąd', 'Nie udało się utworzyć profilu.');
@@ -124,6 +136,7 @@ export default function OnboardingFlow() {
       }
       return;
     }
+
     setStep('intent');
   };
 
