@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, ScrollView, Share, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
@@ -21,6 +21,13 @@ export function SettingsScreen() {
   const mainPersonName = circlePerson?.name || relationship?.signalerLabel || null;
   const mainPerson = circlePerson || (relationship && mainPersonName ? { name: mainPersonName } : null);
   const circleCount = contacts.length;
+
+  const handleInviteAnother = async () => {
+    const msg = 'Dołącz do Cmok — codzienny znak od bliskiej osoby. Mniej martwienia się, więcej spokoju.\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645';
+    try {
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
+    } catch { /* cancelled */ }
+  };
 
   const handleLogout = async () => {
     try {
@@ -69,6 +76,15 @@ export function SettingsScreen() {
           )}
         </Pressable>
 
+        {/* ─── Invite another person ─── */}
+        <Pressable
+          onPress={handleInviteAnother}
+          style={({ pressed }) => [styles.card, styles.inviteCard, pressed && { opacity: 0.88 }]}
+        >
+          <Text style={styles.inviteText}>Zaproś kolejną osobę</Text>
+          <Text style={styles.cardDetail}>Znasz kogoś, kto mieszka sam? Wyślij zaproszenie.</Text>
+        </Pressable>
+
         {/* ─── Account ─── */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Konto</Text>
@@ -80,8 +96,8 @@ export function SettingsScreen() {
         {profile?.role === 'signaler' ? (
           <View style={styles.card}>
             <Text style={styles.cardLabel}>Przypomnienie</Text>
-            <Text style={styles.cardValue}>Codzienny znak</Text>
-            <Text style={styles.cardDetail}>Powiadomienie przypominające o znaku — wkrótce.</Text>
+            <Text style={styles.cardValue}>Codzienny znak o 9:00</Text>
+            <Text style={styles.cardDetail}>Dostaniesz przypomnienie rano, jeśli jeszcze nie dałeś znaku.</Text>
           </View>
         ) : null}
 
@@ -120,6 +136,8 @@ const styles = StyleSheet.create({
   miniAvatarText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
   circleInfo: { flex: 1 },
   chevron: { fontSize: 18, color: Colors.textMuted },
+  inviteCard: { borderWidth: 1.5, borderColor: Colors.safe, borderStyle: 'dashed', backgroundColor: Colors.safeLight },
+  inviteText: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.safe, marginBottom: 4 },
   logoutButton: {
     backgroundColor: 'transparent', minHeight: 52, borderRadius: 16,
     borderWidth: 1.5, borderColor: Colors.border,
