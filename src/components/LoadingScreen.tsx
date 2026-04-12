@@ -5,7 +5,7 @@ import { Typography } from '../constants/typography';
 export function LoadingScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>Cmok</Text>
+      <Text style={styles.logo}>cmok</Text>
       <ActivityIndicator size="small" color={Colors.accent} style={styles.spinner} />
     </View>
   );

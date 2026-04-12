@@ -79,7 +79,7 @@ export function TrustedContactsScreen() {
                 keyboardType="phone-pad"
                 style={styles.input}
               />
-              <Text style={styles.helperText}>Ta osoba musi mieć konto w Cmok.</Text>
+              <Text style={styles.helperText}>Ta osoba musi mieć konto w cmok.</Text>
               <Pressable
                 onPress={handleAdd}
                 disabled={!phone.trim() || saving}
@@ -97,7 +97,7 @@ export function TrustedContactsScreen() {
               onPress={() => shareCircleInvite()}
               style={({ pressed }) => [styles.shareLink, pressed && { opacity: 0.6 }]}
             >
-              <Text style={styles.shareLinkText}>Zaproś kogoś do Cmok</Text>
+              <Text style={styles.shareLinkText}>Zaproś kogoś do cmok</Text>
             </Pressable>
 
             <View style={styles.listSection}>

@@ -47,9 +47,9 @@ export function MilestoneCelebration({ visible, streak, recipientName, onDismiss
 
   const handleShare = async () => {
     const name = recipientName || 'bliska osoba';
-    const msg = `Od ${streak} dni codziennie daję ${name} znak, że u mnie OK. Bez dzwonienia, bez stresu. Jeden tap i spokój.\n\nCmok, darmowa apka:\nhttps://cmok.app/pobierz`;
+    const msg = `Od ${streak} dni codziennie daję ${name} znak, że u mnie OK. Bez dzwonienia, bez stresu. Jeden tap i spokój.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz`;
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
     } catch { /* cancelled */ }
   };
 

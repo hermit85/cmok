@@ -141,7 +141,7 @@ export function VerifyCodeScreen({ onBack, phone, relationLabel = 'bliskiej osob
           keyboardShouldPersistTaps="handled"
           bounces={false}
         >
-          <Text style={styles.miniLogo}>Cmok</Text>
+          <Text style={styles.miniLogo}>cmok</Text>
 
           <View style={styles.content}>
             <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>

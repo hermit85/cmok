@@ -16,7 +16,7 @@ export function LocationConsentScreen({ onContinue, onBack }: LocationConsentScr
   return (
     <SafeAreaView style={s.container}>
       <View style={s.top}>
-        <Text style={s.miniLogo}>Cmok</Text>
+        <Text style={s.miniLogo}>cmok</Text>
 
         <Pressable onPress={onBack} style={({ pressed }) => [s.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
           <Text style={s.backText}>← Wróć</Text>
@@ -24,7 +24,7 @@ export function LocationConsentScreen({ onContinue, onBack }: LocationConsentScr
 
         <Text style={s.title}>Lokalizacja</Text>
         <Text style={s.subtitle}>
-          Jeśli kiedyś będziesz chcieć dać znać, że coś się dzieje, Cmok może dołączyć Twoją lokalizację — żeby bliscy wiedzieli, gdzie jesteś.
+          Jeśli kiedyś będziesz chcieć dać znać, że coś się dzieje, cmok może dołączyć Twoją lokalizację — żeby bliscy wiedzieli, gdzie jesteś.
         </Text>
 
         <View style={s.options}>

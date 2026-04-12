@@ -79,7 +79,7 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.miniLogo}>Cmok</Text>
+      <Text style={styles.miniLogo}>cmok</Text>
 
       <View style={styles.formContent}>
         <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>

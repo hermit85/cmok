@@ -288,10 +288,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     const streakText = currentStreak === 7 ? 'tydzień' : currentStreak === 14 ? '2 tygodnie' : currentStreak === 21 ? '3 tygodnie' : currentStreak === 30 ? 'miesiąc' : `${currentStreak} dni`;
     const displayName = primaryName || null;
     const msg = displayName
-      ? `Od ${streakText} codziennie daję ${displayName} znak, że jest OK. Bez dzwonienia, bez SMS-ów. Jeden tap i obie strony mają spokój.\n\nCmok, darmowa apka:\nhttps://cmok.app/pobierz`
+      ? `Od ${streakText} codziennie daję ${displayName} znak, że jest OK. Bez dzwonienia, bez SMS-ów. Jeden tap i obie strony mają spokój.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz`
       : `Od ${streakText} codziennie daję bliskiej osobie znak, że jest OK. Jeden tap i spokój.\n\nhttps://cmok.app/pobierz`;
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
     } catch { /* cancelled */ }
   }, [currentStreak, primaryName]);
 

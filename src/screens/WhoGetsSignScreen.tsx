@@ -32,7 +32,7 @@ export function WhoGetsSignScreen({ onContinue, onBack }: WhoGetsSignScreenProps
   return (
     <SafeAreaView style={s.container}>
       <View style={s.top}>
-        <Text style={s.miniLogo}>Cmok</Text>
+        <Text style={s.miniLogo}>cmok</Text>
 
         <Pressable onPress={onBack} style={({ pressed }) => [s.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
           <Text style={s.backText}>← Wróć</Text>

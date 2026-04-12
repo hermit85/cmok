@@ -72,19 +72,19 @@ export async function shareInvite(params: {
   const deepLink = `cmok://join/${code}`;
 
   const message = [
-    `Dołącz do mojego kręgu w Cmok!`,
+    `Dołącz do mojego kręgu w cmok!`,
     `Twój kod: ${code}`,
     ``,
     `Pobierz apkę: ${APP_URL}`,
     ``,
-    `Masz już Cmok? Otwórz: ${deepLink}`,
+    `Masz już cmok? Otwórz: ${deepLink}`,
   ].join('\n');
 
   try {
     const result = await Share.share(
       Platform.OS === 'ios'
         ? { message }
-        : { message, title: 'Zaproszenie do Cmok' },
+        : { message, title: 'Zaproszenie do cmok' },
     );
 
     const shared = result.action === Share.sharedAction;
@@ -100,9 +100,9 @@ export async function shareInvite(params: {
  */
 export async function shareCircleInvite(): Promise<boolean> {
   const message = [
-    `Dołącz do kręgu bliskich w Cmok.`,
+    `Dołącz do kręgu bliskich w cmok.`,
     ``,
-    `Cmok to prywatna aplikacja — ktoś bliski chce dodać Cię do swojego kręgu.`,
+    `cmok to prywatna aplikacja — ktoś bliski chce dodać Cię do swojego kręgu.`,
     `Pobierz: ${APP_URL}`,
   ].join('\n');
 
@@ -110,7 +110,7 @@ export async function shareCircleInvite(): Promise<boolean> {
     const result = await Share.share(
       Platform.OS === 'ios'
         ? { message }
-        : { message, title: 'Zaproszenie do Cmok' },
+        : { message, title: 'Zaproszenie do cmok' },
     );
 
     const shared = result.action === Share.sharedAction;

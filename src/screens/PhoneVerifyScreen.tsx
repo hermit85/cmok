@@ -72,7 +72,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
   const displayPhone = fullPhone.replace(/(\+48)(\d{3})(\d{3})(\d{3})/, '$1 $2 $3 $4');
 
   const helperText = phone.length === 0
-    ? 'Używamy numeru tylko do wejścia do Cmok.'
+    ? 'Używamy numeru tylko do wejścia do cmok.'
     : isValid
       ? 'To wygląda dobrze. Za chwilę wyślemy kod SMS.'
       : `Jeszcze ${9 - phone.length} cyfr.`;
@@ -213,7 +213,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
     <SafeAreaView style={s.container}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" bounces={false}>
-          <Text style={s.miniLogo}>Cmok</Text>
+          <Text style={s.miniLogo}>cmok</Text>
 
           <Animated.View style={[s.content, { opacity: fadeAnim }]}>
             <Pressable onPress={handleBack} style={({ pressed }) => [s.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
@@ -223,7 +223,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
             {phase === 'phone' ? (
               <>
                 <Text style={s.title}>Podaj numer telefonu</Text>
-                <Text style={s.subtitle}>Użyjemy go tylko do wejścia do Cmok.</Text>
+                <Text style={s.subtitle}>Użyjemy go tylko do wejścia do cmok.</Text>
 
                 <Pressable style={s.inputCard} onPress={() => phoneInputRef.current?.focus()}>
                   <View style={s.inputWrapper}>

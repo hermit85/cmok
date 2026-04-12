@@ -34,7 +34,7 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
   if (simplified) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.miniLogo}>Cmok</Text>
+        <Text style={styles.miniLogo}>cmok</Text>
 
         <View style={styles.content}>
           <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
@@ -43,7 +43,7 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
 
           <Text style={styles.title}>Jak zaczynasz?</Text>
           <Text style={styles.simplifiedSubtitle}>
-            Cmok łączy dwie bliskie osoby w codzienny rytuał kontaktu.
+            cmok łączy dwie bliskie osoby w codzienny rytuał kontaktu.
           </Text>
 
           <Pressable
@@ -66,7 +66,7 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.miniLogo}>Cmok</Text>
+      <Text style={styles.miniLogo}>cmok</Text>
       <View style={styles.content}>
         <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
           <Text style={styles.backText}>← Wróć</Text>

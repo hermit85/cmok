@@ -22,7 +22,7 @@ export function PhoneAuthScreen({ onBack, onCodeSent, selectedRole, relationLabe
   const isValid = number.replace(/\D/g, '').length === 9;
   const displayNumber = number.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
   const helperText = number.length === 0
-    ? 'Używamy numeru tylko do wejścia do Cmok.'
+    ? 'Używamy numeru tylko do wejścia do cmok.'
     : isValid
       ? 'To wygląda dobrze. Za chwilę wyślemy kod SMS.'
       : `Jeszcze ${9 - number.length} cyfr.`;
@@ -53,7 +53,7 @@ export function PhoneAuthScreen({ onBack, onCodeSent, selectedRole, relationLabe
           keyboardShouldPersistTaps="handled"
           bounces={false}
         >
-          <Text style={styles.miniLogo}>Cmok</Text>
+          <Text style={styles.miniLogo}>cmok</Text>
 
           <View style={styles.content}>
             <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
@@ -61,7 +61,7 @@ export function PhoneAuthScreen({ onBack, onCodeSent, selectedRole, relationLabe
             </Pressable>
 
             <Text style={styles.title}>Podaj numer telefonu</Text>
-            <Text style={styles.subtitle}>Użyjemy go tylko do wejścia do Cmok.</Text>
+            <Text style={styles.subtitle}>Użyjemy go tylko do wejścia do cmok.</Text>
 
             <View style={styles.inputCard}>
               <View style={styles.inputWrapper}>

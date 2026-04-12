@@ -393,9 +393,9 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   };
 
   const handleShareInvite = async () => {
-    const msg = 'Ktoś bliski mieszka sam? Codziennie dostaję od niego znak, że jest OK. Zero dzwonienia, zero stresu. Jeden tap.\n\nCmok, darmowa apka:\nhttps://cmok.app/pobierz';
+    const msg = 'Ktoś bliski mieszka sam? Codziennie dostaję od niego znak, że jest OK. Zero dzwonienia, zero stresu. Jeden tap.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz';
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
     } catch { /* cancelled */ }
   };
 

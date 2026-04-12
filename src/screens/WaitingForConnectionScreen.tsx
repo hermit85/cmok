@@ -56,7 +56,7 @@ export function WaitingForConnectionScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        <Text style={styles.miniLogo}>Cmok</Text>
+        <Text style={styles.miniLogo}>cmok</Text>
         <Pressable onPress={() => router.replace('/onboarding')} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>

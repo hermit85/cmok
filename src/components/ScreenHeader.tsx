@@ -15,7 +15,7 @@ export function ScreenHeader({ subtitle }: ScreenHeaderProps) {
     <View style={styles.row}>
       <View style={styles.spacer} />
       <View style={styles.center}>
-        <Text style={styles.title} maxFontSizeMultiplier={1.2}>Cmok</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={1.2}>cmok</Text>
         {subtitle ? <Text style={styles.subtitle} maxFontSizeMultiplier={1.3}>{subtitle}</Text> : null}
       </View>
       <Pressable

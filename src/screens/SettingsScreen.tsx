@@ -23,9 +23,9 @@ export function SettingsScreen() {
   const circleCount = contacts.length;
 
   const handleInviteAnother = async () => {
-    const msg = 'Dołącz do Cmok — codzienny znak od bliskiej osoby. Mniej martwienia się, więcej spokoju.\n\nhttps://cmok.app/pobierz';
+    const msg = 'Dołącz do cmok — codzienny znak od bliskiej osoby. Mniej martwienia się, więcej spokoju.\n\nhttps://cmok.app/pobierz';
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
     } catch { /* cancelled */ }
   };
 
@@ -125,7 +125,7 @@ export function SettingsScreen() {
         {/* ─── Account ─── */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Konto</Text>
-          <Text style={styles.cardValue}>{profile?.name || 'Cmok'}</Text>
+          <Text style={styles.cardValue}>{profile?.name || 'cmok'}</Text>
           {profile?.phone ? <Text style={styles.cardDetail}>{profile.phone}</Text> : null}
         </View>
 

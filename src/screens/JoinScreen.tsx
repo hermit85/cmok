@@ -159,7 +159,7 @@ export function JoinScreen({
   if (needsAuth) {
     return (
       <SafeAreaView style={s.container}>
-        <Text style={s.miniLogo}>Cmok</Text>
+        <Text style={s.miniLogo}>cmok</Text>
         <View style={s.content}>
           <Text style={s.title}>
             {inviterName ? `${inviterName} Cię zaprasza` : 'Dołącz do kręgu'}
@@ -185,7 +185,7 @@ export function JoinScreen({
 
   return (
     <SafeAreaView style={s.container}>
-      <Text style={s.miniLogo}>Cmok</Text>
+      <Text style={s.miniLogo}>cmok</Text>
       <View style={s.content}>
         <Pressable onPress={onBack} style={({ pressed }) => [s.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
           <Text style={s.backText}>← Wróć</Text>

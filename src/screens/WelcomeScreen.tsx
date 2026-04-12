@@ -96,7 +96,7 @@ export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
     <SafeAreaView style={s.container}>
       {/* Logo */}
       <View style={s.logoRow}>
-        <Text style={s.logo}>Cmok</Text>
+        <Text style={s.logo}>cmok</Text>
         <Animated.View style={{ transform: [{ scale: breathe }] }}>
           <BrandMotif size={40} />
         </Animated.View>
