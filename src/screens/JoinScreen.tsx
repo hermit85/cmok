@@ -84,6 +84,8 @@ export function JoinScreen({
     const finalCode = (joinCode || code).replace(/\D/g, '');
     if (finalCode.length !== 6) return;
 
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    console.log('[JOIN] Attempting join as user:', currentUser?.id, currentUser?.phone, 'with code:', finalCode);
     logInviteEvent('invite_code_submitted', { code: finalCode });
     setLoading(true);
     setError('');
@@ -93,7 +95,8 @@ export function JoinScreen({
       });
 
       if (rpcError) {
-        logInviteEvent('invite_resume_failed', { code: finalCode, reason: 'rpc_error' });
+        console.error('[JOIN] RPC error:', JSON.stringify(rpcError));
+        logInviteEvent('invite_resume_failed', { code: finalCode, reason: rpcError.message || 'rpc_error' });
         setError('Ten kod wygasł lub jest nieprawidłowy.\nPoproś o nowy kod.');
         setAutoJoining(false);
         return;
