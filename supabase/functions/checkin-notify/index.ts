@@ -1,7 +1,6 @@
 // ============================================================
 // Cmok — checkin-notify Edge Function
-// Wysyła push do recipienta po codziennym check-inie signalera.
-// Wywoływana fire-and-forget z klienta po upsert do daily_checkins.
+// Wysyła streak-aware push do recipienta po check-inie signalera.
 // ============================================================
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -17,6 +16,44 @@ const CORS_HEADERS = {
 function isExpoPushToken(value: string | null | undefined): value is string {
   if (!value) return false;
   return value.startsWith('ExponentPushToken[') || value.startsWith('ExpoPushToken[');
+}
+
+function formatDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function computeStreak(checkinDates: string[]): number {
+  const dateSet = new Set(checkinDates);
+  const today = new Date();
+  let streak = 0;
+  for (let i = 0; i <= 30; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    if (dateSet.has(formatDate(d))) {
+      streak++;
+    } else if (i === 0) {
+      continue; // today not checked in yet — skip, don't break
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function streakPushBody(name: string, streak: number, totalCount: number): string {
+  // First ever check-in
+  if (totalCount <= 1) return `${name} daje Ci pierwszy znak!`;
+  // Comeback after gap
+  if (streak === 1 && totalCount > 1) return `${name} wraca z dzisiejszym znakiem`;
+  // Milestones
+  if (streak === 7) return `${name} — caly tydzien! Nie zapomina o Tobie`;
+  if (streak === 14) return `${name} — dwa tygodnie z rzedu!`;
+  if (streak === 21) return `${name} — trzy tygodnie. To juz nawyk!`;
+  if (streak === 30) return `${name} — miesiac razem!`;
+  // Streak days
+  if (streak >= 2 && streak <= 6) return `${name} — dzien ${streak} z rzedu`;
+  // Default
+  return `${name} dal(a) znak — wszystko OK`;
 }
 
 serve(async (req) => {
@@ -78,7 +115,28 @@ serve(async (req) => {
       return jsonResponse({ ok: true, skipped: 'no_active_relationship' });
     }
 
-    // 3. Recipient push tokens
+    // 3. Compute streak for push copy
+    const today = new Date();
+    const ago = new Date(today);
+    ago.setDate(today.getDate() - 30);
+
+    const [{ data: checkins }, { count: totalCount }] = await Promise.all([
+      serviceSupabase
+        .from('daily_checkins')
+        .select('local_date')
+        .eq('senior_id', user.id)
+        .gte('local_date', formatDate(ago))
+        .lte('local_date', formatDate(today)),
+      serviceSupabase
+        .from('daily_checkins')
+        .select('*', { count: 'exact', head: true })
+        .eq('senior_id', user.id),
+    ]);
+
+    const dates = (checkins || []).map((r: { local_date: string }) => r.local_date);
+    const streak = computeStreak(dates);
+
+    // 4. Recipient push tokens
     const { data: devices } = await serviceSupabase
       .from('device_installations')
       .select('push_token')
@@ -94,14 +152,16 @@ serve(async (req) => {
       return jsonResponse({ ok: true, skipped: 'no_push_tokens' });
     }
 
-    // 4. Send push
+    // 5. Send streak-aware push
     const signalerName = profile.name || 'Bliska osoba';
+    const body = streakPushBody(signalerName, streak, totalCount || 0);
+
     const messages = tokens.map((token) => ({
       to: token,
       sound: 'default',
       title: 'Cmok',
-      body: `Jest znak od ${signalerName} 💚`,
-      data: { type: 'daily_checkin', senior_id: user.id },
+      body,
+      data: { type: 'daily_checkin', senior_id: user.id, streak },
       priority: 'normal' as const,
       channelId: 'default',
     }));
@@ -116,7 +176,7 @@ serve(async (req) => {
       body: JSON.stringify(messages),
     });
 
-    return jsonResponse({ ok: true, sent: response.ok });
+    return jsonResponse({ ok: true, sent: response.ok, streak, body });
   } catch (error) {
     return jsonResponse({ error: String(error) }, 500);
   }
