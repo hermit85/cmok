@@ -1,6 +1,6 @@
 import { Share, Platform } from 'react-native';
 
-const APP_STORE_URL = 'https://apps.apple.com/pl/app/cmok/id6760717645';
+const APP_URL = 'https://cmok.app/pobierz';
 
 /**
  * Minimal invite event logging.
@@ -75,7 +75,7 @@ export async function shareInvite(params: {
     `Dołącz do mojego kręgu w Cmok!`,
     `Twój kod: ${code}`,
     ``,
-    `Pobierz apkę: ${APP_STORE_URL}`,
+    `Pobierz apkę: ${APP_URL}`,
     ``,
     `Masz już Cmok? Otwórz: ${deepLink}`,
   ].join('\n');
@@ -103,7 +103,7 @@ export async function shareCircleInvite(): Promise<boolean> {
     `Dołącz do kręgu bliskich w Cmok.`,
     ``,
     `Cmok to prywatna aplikacja — ktoś bliski chce dodać Cię do swojego kręgu.`,
-    `Pobierz: ${APP_STORE_URL}`,
+    `Pobierz: ${APP_URL}`,
   ].join('\n');
 
   try {

@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { registerPushToken } from '../src/services/notifications';
+import { supabase } from '../src/services/supabase';
 import { Colors } from '../src/constants/colors';
 
 export default function RootLayout() {
@@ -18,17 +19,25 @@ export default function RootLayout() {
     Nunito_700Bold,
   });
 
-  // Rejestruj push token przy każdym uruchomieniu apki
+  // Rejestruj push token przy uruchomieniu + po zalogowaniu
   useEffect(() => {
-    registerPushToken()
-      .then((result) => {
-        if (result.status !== 'registered') {
-          console.log(`Push registration: ${result.status}`, result.reason || 'no-reason');
-        }
-      })
-      .catch((err) => {
-        console.log('Push token registration failed:', err);
-      });
+    const tryRegister = () => {
+      registerPushToken()
+        .then((result) => {
+          if (result.status !== 'registered') {
+            console.log(`Push registration: ${result.status}`, result.reason || 'no-reason');
+          }
+        })
+        .catch((err) => console.log('Push token registration failed:', err));
+    };
+
+    tryRegister(); // On mount
+
+    // Re-register after login (session might not exist on first mount)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') tryRegister();
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   if (!fontsLoaded) {

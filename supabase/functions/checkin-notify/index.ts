@@ -136,11 +136,25 @@ serve(async (req) => {
     const dates = (checkins || []).map((r: { local_date: string }) => r.local_date);
     const streak = computeStreak(dates);
 
-    // 4. Recipient push tokens
+    // 4. ALL circle members: primary recipient + trusted contacts
+    const recipientIds = [pair.caregiver_id];
+
+    const { data: trustedContacts } = await serviceSupabase
+      .from('trusted_contacts')
+      .select('user_id')
+      .eq('relationship_id', pair.id)
+      .eq('status', 'active');
+
+    for (const tc of trustedContacts || []) {
+      if (tc.user_id && !recipientIds.includes(tc.user_id)) {
+        recipientIds.push(tc.user_id);
+      }
+    }
+
     const { data: devices } = await serviceSupabase
       .from('device_installations')
       .select('push_token')
-      .eq('user_id', pair.caregiver_id)
+      .in('user_id', recipientIds)
       .eq('notifications_enabled', true)
       .not('push_token', 'is', null);
 

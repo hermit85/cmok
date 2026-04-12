@@ -78,7 +78,24 @@ serve(async (req) => {
       return jsonResponse({ ok: true, skipped: 'no_active_relationship' });
     }
 
-    // 3. Signaler push tokens
+    // 3. Dedup: max 1 nudge per day per sender
+    const todayStart = new Date();
+    todayStart.setUTCHours(0, 0, 0, 0);
+    const { data: existingNudge } = await serviceSupabase
+      .from('signals')
+      .select('id')
+      .eq('from_user_id', user.id)
+      .eq('to_user_id', pair.senior_id)
+      .eq('type', 'nudge')
+      .gte('created_at', todayStart.toISOString())
+      .limit(1)
+      .maybeSingle();
+
+    if (existingNudge) {
+      return jsonResponse({ ok: true, skipped: 'already_nudged_today' });
+    }
+
+    // 4. Signaler push tokens
     const { data: devices } = await serviceSupabase
       .from('device_installations')
       .select('push_token')

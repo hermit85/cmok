@@ -23,7 +23,7 @@ export function SettingsScreen() {
   const circleCount = contacts.length;
 
   const handleInviteAnother = async () => {
-    const msg = 'Dołącz do Cmok — codzienny znak od bliskiej osoby. Mniej martwienia się, więcej spokoju.\n\nhttps://apps.apple.com/pl/app/cmok/id6760717645';
+    const msg = 'Dołącz do Cmok — codzienny znak od bliskiej osoby. Mniej martwienia się, więcej spokoju.\n\nhttps://cmok.app/pobierz';
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'Cmok' });
     } catch { /* cancelled */ }
@@ -133,8 +133,8 @@ export function SettingsScreen() {
         {profile?.role === 'signaler' ? (
           <View style={styles.card}>
             <Text style={styles.cardLabel}>Przypomnienie</Text>
-            <Text style={styles.cardValue}>Codzienny znak o 9:00</Text>
-            <Text style={styles.cardDetail}>Dostaniesz przypomnienie rano, jeśli jeszcze nie dałeś znaku.</Text>
+            <Text style={styles.cardValue}>Poranne przypomnienie</Text>
+            <Text style={styles.cardDetail}>Będziemy przypominać o znaku, jeśli jeszcze go nie dałeś.</Text>
           </View>
         ) : null}
 
