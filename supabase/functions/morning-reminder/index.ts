@@ -1,5 +1,5 @@
 // ============================================================
-// Cmok — morning-reminder Edge Function
+// cmok, morning-reminder Edge Function
 // Wysyła poranne przypomnienie do signalera jeśli nie dał znaku.
 // Wywoływana przez pg_cron codziennie o 9:00.
 // ============================================================
@@ -114,7 +114,7 @@ serve(async (req) => {
       const messages = tokens.map((token) => ({
         to: token,
         sound: 'default',
-        title: 'Cmok',
+        title: 'cmok',
         body: reminderBody(recipientName, streak),
         data: { type: 'morning_reminder' },
         priority: 'normal' as const,

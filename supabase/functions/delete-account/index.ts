@@ -1,5 +1,5 @@
 // ============================================================
-// Cmok — delete-account Edge Function
+// cmok, delete-account Edge Function
 // Trwale usuwa wszystkie dane użytkownika (GDPR/App Store compliance).
 // ============================================================
 

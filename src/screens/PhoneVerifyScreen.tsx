@@ -153,19 +153,32 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       const user = data.user;
       if (!user?.id) throw new Error('Brak ID użytkownika');
 
-      // Record terms acceptance with versioning
+      // Record terms acceptance with versioning — must succeed before proceeding
       if (termsAccepted) {
-        try {
+        const { error: consentError } = await supabase.from('users').upsert(
+          {
+            id: user.id,
+            phone: user.phone || '',
+            terms_accepted_at: new Date().toISOString(),
+            terms_version: '1.0',
+            privacy_version: '1.0',
+          },
+          { onConflict: 'id' },
+        );
+        if (consentError) {
+          console.warn('[consent] Failed to save acceptance:', consentError.message);
+          // Retry once
           await supabase.from('users').upsert(
             {
               id: user.id,
+              phone: user.phone || '',
               terms_accepted_at: new Date().toISOString(),
               terms_version: '1.0',
               privacy_version: '1.0',
             },
             { onConflict: 'id' },
           );
-        } catch { /* non-blocking */ }
+        }
       }
 
       const { data: profile } = await supabase

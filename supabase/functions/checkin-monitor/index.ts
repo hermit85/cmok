@@ -1,5 +1,5 @@
 // ============================================================
-// Cmok — checkin-monitor Edge Function
+// cmok, checkin-monitor Edge Function
 // Uruchamiana co 30 minut (cron).
 // Sprawdza które seniorki nie kliknęły "JESTEM OK" i eskaluje.
 //
@@ -112,7 +112,7 @@ serve(async (_req) => {
             channel: 'push',
             attempt_no: 1,
             payload: {
-              title: 'Cmok',
+              title: 'cmok',
               body: 'Cześć! Daj znać że wszystko OK 😊',
               type: 'checkin_reminder',
             },
@@ -167,7 +167,7 @@ serve(async (_req) => {
             channel: 'push',
             attempt_no: 1,
             payload: {
-              title: 'Cmok — brak znaku',
+              title: 'cmok, brak znaku',
               body: `${senior.name} — dziś jeszcze bez znaku.`,
               type: 'missed_checkin',
             },
@@ -182,7 +182,7 @@ serve(async (_req) => {
             attempt_no: 1,
             payload: {
               phone: pair.sms_fallback_phone,
-              body: `Cmok: ${senior.name} — dziś jeszcze bez znaku. Sprawdź czy wszystko OK.`,
+              body: `cmok: ${senior.name} — dziś jeszcze bez znaku. Sprawdź czy wszystko OK.`,
               type: 'missed_checkin',
             },
             status: 'sent',

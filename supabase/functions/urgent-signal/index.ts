@@ -306,7 +306,7 @@ async function sendSupportPushes(params: {
       return {
         to: token,
         sound: 'default',
-        title: 'Cmok',
+        title: 'cmok',
         body: `${params.signalerName} prosi o kontakt`,
         data: {
           type: 'sos',

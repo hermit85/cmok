@@ -1,5 +1,5 @@
 // ============================================================
-// Cmok — register-device Edge Function
+// cmok, register-device Edge Function
 // Rejestruje/odświeża push token urządzenia.
 // Wywoływana przy każdym otwarciu apki.
 // ============================================================

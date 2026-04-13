@@ -1,5 +1,5 @@
 // ============================================================
-// Cmok — nudge-signal Edge Function
+// cmok, nudge-signal Edge Function
 // Recipient wysyła delikatne przypomnienie do signalera.
 // "[Imię recipienta] czeka na Twój znak 💚"
 // ============================================================
@@ -116,7 +116,7 @@ serve(async (req) => {
     const messages = tokens.map((token) => ({
       to: token,
       sound: 'default',
-      title: 'Cmok',
+      title: 'cmok',
       body: `${recipientName} czeka na Twój znak`,
       data: { type: 'nudge', from_user_id: user.id },
       priority: 'normal' as const,

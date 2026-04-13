@@ -31,6 +31,21 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
 
       if (!user) throw new Error('Brak sesji');
 
+      // Block if active pair already exists
+      const { data: activePair } = await supabase
+        .from('care_pairs')
+        .select('id')
+        .eq('caregiver_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      if (activePair) {
+        // Already has active relationship — skip setup, go to home
+        onDone();
+        return;
+      }
+
       const code = generateInviteCode();
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 

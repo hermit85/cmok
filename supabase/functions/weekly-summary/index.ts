@@ -1,5 +1,5 @@
 // ============================================================
-// Cmok — weekly-summary Edge Function
+// cmok, weekly-summary Edge Function
 // Wysyła niedzielny push do recipientów z podsumowaniem tygodnia.
 // Wywoływana przez pg_cron w niedzielę wieczorem (18:00).
 // ============================================================
@@ -94,7 +94,7 @@ serve(async (req) => {
       const messages = tokens.map((token) => ({
         to: token,
         sound: 'default',
-        title: 'Cmok — podsumowanie tygodnia',
+        title: 'cmok, podsumowanie tygodnia',
         body: summaryBody(signalerName, daysOk),
         data: { type: 'weekly_summary' },
         priority: 'normal' as const,

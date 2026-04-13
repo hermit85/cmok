@@ -1,5 +1,5 @@
 // ============================================================
-// Cmok — checkin-notify Edge Function
+// cmok, checkin-notify Edge Function
 // Wysyła streak-aware push do recipienta po check-inie signalera.
 // ============================================================
 
@@ -173,7 +173,7 @@ serve(async (req) => {
     const messages = tokens.map((token) => ({
       to: token,
       sound: 'default',
-      title: 'Cmok',
+      title: 'cmok',
       body,
       data: { type: 'daily_checkin', senior_id: user.id, streak },
       priority: 'normal' as const,

@@ -1,5 +1,5 @@
 // ============================================================
-// Cmok — missed-sign-alert Edge Function
+// cmok, missed-sign-alert Edge Function
 // Jeśli signaler nie dał znaku przez 24h — powiadamiamy krąg.
 // "[Imię] nie dał(a) znaku od wczoraj. Sprawdź czy wszystko OK."
 // Wywoływana przez pg_cron codziennie o 20:00.
@@ -91,7 +91,7 @@ serve(async (req) => {
       const messages = tokens.map((token) => ({
         to: token,
         sound: 'default',
-        title: 'Cmok',
+        title: 'cmok',
         body: `${signalerName} nie dał(a) znaku od wczoraj. Sprawdź czy wszystko OK.`,
         data: { type: 'missed_sign_alert' },
         priority: 'high' as const,
