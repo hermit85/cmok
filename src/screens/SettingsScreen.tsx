@@ -10,6 +10,7 @@ import { useRelationship } from '../hooks/useRelationship';
 import { useCircle } from '../hooks/useCircle';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
 import { shareInvite, shareCircleInvite } from '../utils/invite';
+import { analytics } from '../services/analytics';
 
 export function SettingsScreen() {
   const router = useRouter();
@@ -46,6 +47,7 @@ export function SettingsScreen() {
     try {
       await supabase.from('users').update({ name: trimmed }).eq('id', profile.id);
       setEditingName(false);
+      analytics.nameChanged();
       refreshRelationship?.();
     } catch {
       Alert.alert('Błąd', 'Nie udało się zapisać imienia.');
@@ -94,6 +96,7 @@ export function SettingsScreen() {
                 },
               );
               if (!response.ok) throw new Error('Delete failed');
+              analytics.accountDeleted();
               await supabase.auth.signOut();
               router.replace('/onboarding');
             } catch {
@@ -107,6 +110,7 @@ export function SettingsScreen() {
 
   const handleLogout = async () => {
     try {
+      analytics.loggedOut();
       await supabase.auth.signOut();
       router.replace('/onboarding');
     } catch {

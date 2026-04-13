@@ -27,6 +27,7 @@ import type { RecipientHomePreview } from '../dev/homePreview';
 import { formatClock } from '../utils/date';
 import { todayDateKey } from '../utils/today';
 import { logInviteEvent } from '../utils/invite';
+import { analytics } from '../services/analytics';
 import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils/relationCopy';
 
 /* ─── helpers ─── */
@@ -157,6 +158,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
       if (!preview) {
         const ok = await sendSignal(signalerId, emoji);
         if (!ok) { logInviteEvent('recipient_response_duplicate_blocked'); return; }
+        analytics.reactionSent(emoji);
       }
       setJustSent(emoji);
       logInviteEvent('recipient_response_sent');
@@ -388,6 +390,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     haptics.light();
     try {
       await sendSignal(toUserId, emoji);
+      analytics.morningThoughtSent(emoji);
       setMorningSent(true);
     } catch { /* silent */ }
   };

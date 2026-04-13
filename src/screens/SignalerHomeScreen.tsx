@@ -23,6 +23,7 @@ import { useCheckinStats } from '../hooks/useCheckinStats';
 import { supabase } from '../services/supabase';
 import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync';
 import { logInviteEvent } from '../utils/invite';
+import { analytics } from '../services/analytics';
 import type { Signal, SupportParticipant } from '../types';
 import type { SignalerHomePreview } from '../dev/homePreview';
 import { getRelationForms, relationDisplay } from '../utils/relationCopy';
@@ -259,6 +260,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     try {
       if (isFirstEver) logInviteEvent('first_sign_started');
       await performCheckin();
+      analytics.checkinSent(currentStreak + 1);
       if (isFirstEver) logInviteEvent('first_sign_sent');
       const prevOk = realWeekDays.filter((d) => d === 'ok').length;
       if (prevOk === 1) logInviteEvent('second_day_sign_sent');

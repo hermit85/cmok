@@ -13,6 +13,7 @@ import { LoadingScreen } from '../src/components/LoadingScreen';
 import { supabase } from '../src/services/supabase';
 import type { AppRole } from '../src/types';
 import { toLegacyRole } from '../src/utils/roles';
+import { analytics } from '../src/services/analytics';
 
 /*
   Path A (signaler): welcome → intent → who-gets-sign → phone(+verify) → join → done(/signaler-home)
@@ -81,9 +82,11 @@ export default function OnboardingFlow() {
   const handleIntent = (intent: UserIntent) => {
     if (intent === 'i-am-center') {
       setSelectedRole('signaler');
+      analytics.onboardingIntent('signaler');
       setStep(ALLOW_ORGANIC_SIGNUP ? 'who-gets-sign' : 'phone');
     } else {
       setSelectedRole('recipient');
+      analytics.onboardingIntent('recipient');
       setStep('phone');
     }
   };
@@ -157,8 +160,8 @@ export default function OnboardingFlow() {
     setStep('intent');
   };
 
-  const handleConnectionCreated = () => { setDestinationRoute('/waiting'); setStep('done'); };
-  const handleJoined = () => { setDestinationRoute('/signaler-home'); setStep('done'); };
+  const handleConnectionCreated = () => { analytics.onboardingCompleted('recipient'); setDestinationRoute('/waiting'); setStep('done'); };
+  const handleJoined = () => { analytics.onboardingCompleted('signaler'); setDestinationRoute('/signaler-home'); setStep('done'); };
 
   const goBack = () => {
     switch (step) {

@@ -5,8 +5,10 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
+import { PostHogProvider } from 'posthog-react-native';
 import { registerPushToken } from '../src/services/notifications';
 import { supabase } from '../src/services/supabase';
+import { posthog } from '../src/services/posthog';
 import { Colors } from '../src/constants/colors';
 
 export default function RootLayout() {
@@ -20,6 +22,7 @@ export default function RootLayout() {
   });
 
   // Rejestruj push token przy uruchomieniu + po zalogowaniu
+  // Identify user in PostHog after auth
   useEffect(() => {
     const tryRegister = () => {
       registerPushToken()
@@ -33,9 +36,17 @@ export default function RootLayout() {
 
     tryRegister(); // On mount
 
-    // Re-register after login (session might not exist on first mount)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN') tryRegister();
+    // Re-register after login + identify in PostHog
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        tryRegister();
+        if (session?.user?.id) {
+          posthog.identify(session.user.id, { phone: session.user.phone ?? '' });
+        }
+      }
+      if (event === 'SIGNED_OUT') {
+        posthog.reset();
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -49,15 +60,17 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: Colors.background },
-          animation: 'fade_from_bottom',
-        }}
-      />
-    </SafeAreaProvider>
+    <PostHogProvider client={posthog}>
+      <SafeAreaProvider>
+        <StatusBar style="dark" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: Colors.background },
+            animation: 'fade_from_bottom',
+          }}
+        />
+      </SafeAreaProvider>
+    </PostHogProvider>
   );
 }
