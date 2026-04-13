@@ -58,11 +58,23 @@ export function SettingsScreen() {
 
   /* ─── Invite ─── */
   const handleInviteAnother = async () => {
-    // If recipient has an active relationship, share invite code for circle
-    if (isRecipient && relationship?.inviteCode) {
-      await shareInvite({ code: relationship.inviteCode, signalerLabel: mainPersonName || undefined });
-    } else {
-      // Generic app invite
+    // Generate a fresh invite code for sharing
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Brak sesji');
+      // Create pending invite
+      await supabase.from('care_pairs').insert({
+        caregiver_id: user.id,
+        invite_code: code,
+        invite_expires_at: expiresAt,
+        status: 'pending',
+        signaler_label: profile?.name || 'Bliska osoba',
+      });
+      await shareInvite({ code, signalerLabel: profile?.name || undefined });
+    } catch {
+      // Fallback: generic invite without code
       const msg = 'Dołącz do cmok, codzienny znak od bliskiej osoby. Mniej martwienia się, więcej spokoju.\n\nhttps://cmok.app/pobierz';
       try {
         await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });

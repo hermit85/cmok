@@ -161,6 +161,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
         analytics.reactionSent(emoji);
       }
       setJustSent(emoji);
+      haptics.success();
       logInviteEvent('recipient_response_sent');
     } catch { /* silent */ }
   };

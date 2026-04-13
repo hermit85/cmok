@@ -62,7 +62,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     loading: checkinLoading, lastCheckin, performCheckin, refreshCheckin,
   } = useCheckin();
   const { recipients } = useCircle();
-  const { todaySignals } = useSignals();
+  const { todaySignals, refresh: refreshSignals } = useSignals();
   const {
     isActive: urgentActive, currentAlert, urgentCase,
     loading: urgentLoading, preflight: urgentPreflight, sendUrgentSignal, retrySend, cancel: cancelUrgent,
@@ -138,6 +138,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const isPendingOffline = !pv && pendingSaved && !checkedInToday;
   // For UI rendering: confirmed OR transitional
   const showChecked = confirmedDone || isSending || isPendingOffline;
+
+  // Poll for reactions every 30s when checked in
+  useEffect(() => {
+    if (!showChecked) return;
+    const interval = setInterval(() => refreshSignals(), 30000);
+    return () => clearInterval(interval);
+  }, [showChecked, refreshSignals]);
 
   const displayTime = pv
     ? pvChecked ? '08:14' : null
