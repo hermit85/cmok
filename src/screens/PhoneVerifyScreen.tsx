@@ -247,7 +247,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
 
             {phase === 'phone' ? (
               <>
-                <Text style={s.title}>Podaj numer telefonu</Text>
+                <Text style={s.title}>Podaj numer Twojego telefonu</Text>
                 <Text style={s.subtitle}>Użyjemy go tylko do wejścia do cmok.</Text>
 
                 <Pressable style={s.inputCard} onPress={() => phoneInputRef.current?.focus()}>
