@@ -8,7 +8,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, ActivityIndicator,
   Alert, Pressable, KeyboardAvoidingView, Platform, ScrollView,
-  Animated,
+  Animated, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
@@ -55,6 +55,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
   const [phone, setPhone] = useState('');
   const [fullPhone, setFullPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Code phase state
   const [code, setCode] = useState('');
@@ -152,6 +153,16 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       const user = data.user;
       if (!user?.id) throw new Error('Brak ID użytkownika');
 
+      // Record terms acceptance
+      if (termsAccepted) {
+        try {
+          await supabase.from('users').upsert(
+            { id: user.id, terms_accepted_at: new Date().toISOString() },
+            { onConflict: 'id' },
+          );
+        } catch { /* non-blocking */ }
+      }
+
       const { data: profile } = await supabase
         .from('users').select('id, role, name').eq('id', user.id).maybeSingle();
 
@@ -239,16 +250,33 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                   <Text style={[s.helper, isValid && s.helperReady]}>{helperText}</Text>
                 </Pressable>
 
+                {/* Terms acceptance */}
+                <Pressable
+                  onPress={() => setTermsAccepted(!termsAccepted)}
+                  style={s.termsRow}
+                  hitSlop={8}
+                >
+                  <View style={[s.checkbox, termsAccepted && s.checkboxChecked]}>
+                    {termsAccepted ? <Text style={s.checkmark}>✓</Text> : null}
+                  </View>
+                  <Text style={s.termsText}>
+                    Akceptuję{' '}
+                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok.app/regulamin')}>regulamin</Text>
+                    {' '}i{' '}
+                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')}>politykę prywatności</Text>
+                  </Text>
+                </Pressable>
+
                 {loading ? (
                   <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: 24 }} />
                 ) : (
                   <Pressable
                     onPress={handleSend}
-                    disabled={!isValid}
+                    disabled={!isValid || !termsAccepted}
                     style={({ pressed }) => [
                       s.sendBtn,
-                      isValid ? s.sendBtnActive : s.sendBtnDisabled,
-                      pressed && isValid && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+                      isValid && termsAccepted ? s.sendBtnActive : s.sendBtnDisabled,
+                      pressed && isValid && termsAccepted && { opacity: 0.85, transform: [{ scale: 0.98 }] },
                     ]}
                   >
                     <Text style={s.sendBtnText}>Wyślij kod</Text>
@@ -322,7 +350,18 @@ const s = StyleSheet.create({
   helper: { fontSize: Typography.caption, color: Colors.textMuted, lineHeight: 18, marginTop: 12 },
   helperReady: { color: Colors.safeStrong },
 
-  sendBtn: { minHeight: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 24 },
+  /* terms checkbox */
+  termsRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: 20, gap: 10, paddingRight: 8 },
+  checkbox: {
+    width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: Colors.border,
+    backgroundColor: Colors.cardStrong, justifyContent: 'center', alignItems: 'center', marginTop: 1,
+  },
+  checkboxChecked: { backgroundColor: Colors.safe, borderColor: Colors.safe },
+  checkmark: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginTop: -1 },
+  termsText: { flex: 1, fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
+  termsLink: { color: Colors.accent, textDecorationLine: 'underline' as const },
+
+  sendBtn: { minHeight: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 16 },
   sendBtnActive: { backgroundColor: Colors.accent, shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5 },
   sendBtnDisabled: { backgroundColor: Colors.accent, opacity: 0.4 },
   sendBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
