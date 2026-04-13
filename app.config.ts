@@ -19,6 +19,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.hermit85.cmok',
+    buildNumber: '2',
     infoPlist: {
       NSLocationWhenInUseUsageDescription: 'Cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
     },
