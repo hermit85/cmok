@@ -101,7 +101,7 @@ export function TrustedSupportScreen() {
             disabled={loading}
             style={({ pressed }) => [styles.secondaryButton, pressed && { opacity: 0.8 }]}
           >
-            <Text style={styles.secondaryButtonText}>Wszystko OK — zamknij</Text>
+            <Text style={styles.secondaryButtonText}>Wszystko OK, zamknij</Text>
           </Pressable>
         ) : null}
 

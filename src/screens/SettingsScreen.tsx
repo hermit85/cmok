@@ -61,7 +61,7 @@ export function SettingsScreen() {
       await shareInvite({ code: relationship.inviteCode, signalerLabel: mainPersonName || undefined });
     } else {
       // Generic app invite
-      const msg = 'Dołącz do cmok — codzienny znak od bliskiej osoby. Mniej martwienia się, więcej spokoju.\n\nhttps://cmok.app/pobierz';
+      const msg = 'Dołącz do cmok, codzienny znak od bliskiej osoby. Mniej martwienia się, więcej spokoju.\n\nhttps://cmok.app/pobierz';
       try {
         await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
       } catch { /* cancelled */ }

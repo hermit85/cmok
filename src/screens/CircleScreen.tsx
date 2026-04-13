@@ -70,7 +70,7 @@ export function CircleScreen() {
         {/* ─── Circle / trusted contacts ─── */}
         <View style={st.section}>
           <Text style={st.sectionLabel}>Krąg bliskich</Text>
-          <Text style={st.sectionHint}>Wiedzą, gdy coś się dzieje — i mogą szybko zareagować</Text>
+          <Text style={st.sectionHint}>Wiedzą, gdy coś się dzieje, i mogą szybko zareagować</Text>
 
           {contacts.length === 0 ? (
             <View style={st.emptyRow}>

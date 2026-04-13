@@ -87,7 +87,7 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
               Chcę dawać codzienny znak
             </Text>
             <Text style={styles.optionBody}>
-              Raz dziennie stukniesz „Daj znak" — bliscy będą wiedzieć, że wszystko OK.
+              Raz dziennie stukniesz „Daj znak", a bliscy będą wiedzieć, że wszystko OK.
             </Text>
           </Pressable>
           </Animated.View>

@@ -87,7 +87,7 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
         </Pressable>
 
         <Text style={styles.title}>Jak nazwać osobę, która będzie dawać Ci znak?</Text>
-        <Text style={styles.subtitle}>Za chwilę zobaczysz kod — pokaż go tej osobie.</Text>
+        <Text style={styles.subtitle}>Za chwilę zobaczysz kod, pokaż go tej osobie.</Text>
 
         <View style={styles.formCard}>
           <View style={styles.inputWrapper}>

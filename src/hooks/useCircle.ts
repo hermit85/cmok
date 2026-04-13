@@ -79,7 +79,12 @@ export function useCircle() {
 
           if (!otherId) return null;
 
-          const resolvedName = resolveLabel(pair.signaler_label || pair.senior_name, otherUser?.name);
+          // signaler_label = how recipient named the signaler (e.g. "Mama")
+          // When recipient looks at signaler → use signaler_label
+          // When signaler looks at recipient → use recipient's DB name (otherUser.name)
+          const isViewingSignaler = pair.senior_id === otherId;
+          const relLabel = isViewingSignaler ? (pair.signaler_label || pair.senior_name) : null;
+          const resolvedName = resolveLabel(relLabel, otherUser?.name);
 
           return {
             userId: otherId,

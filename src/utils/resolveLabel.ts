@@ -7,7 +7,7 @@
  * 3. fallback "Bliska osoba"
  */
 
-const GENERIC_NAMES = ['Ja', 'Bliska osoba'];
+const GENERIC_NAMES = ['Ja', 'Bliska osoba', 'cmok'];
 
 export function resolveLabel(
   relLabel: string | null | undefined,
