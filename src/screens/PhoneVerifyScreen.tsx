@@ -153,11 +153,16 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       const user = data.user;
       if (!user?.id) throw new Error('Brak ID użytkownika');
 
-      // Record terms acceptance
+      // Record terms acceptance with versioning
       if (termsAccepted) {
         try {
           await supabase.from('users').upsert(
-            { id: user.id, terms_accepted_at: new Date().toISOString() },
+            {
+              id: user.id,
+              terms_accepted_at: new Date().toISOString(),
+              terms_version: '1.0',
+              privacy_version: '1.0',
+            },
             { onConflict: 'id' },
           );
         } catch { /* non-blocking */ }
@@ -261,11 +266,12 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                   </View>
                   <Text style={s.termsText}>
                     Akceptuję{' '}
-                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok.app/regulamin')}>regulamin</Text>
-                    {' '}i{' '}
-                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')}>politykę prywatności</Text>
+                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok-web.vercel.app/regulamin')}>Regulamin</Text>
+                    {' '}i potwierdzam zapoznanie się z{' '}
+                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok-web.vercel.app/polityka-prywatnosci')}>Polityką prywatności</Text>.
                   </Text>
                 </Pressable>
+                <Text style={s.termsDisclaimer}>cmok nie zastępuje numeru 112 ani służb ratunkowych.</Text>
 
                 {loading ? (
                   <ActivityIndicator size="large" color={Colors.accent} style={{ marginTop: 24 }} />
@@ -360,6 +366,7 @@ const s = StyleSheet.create({
   checkmark: { color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginTop: -1 },
   termsText: { flex: 1, fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
   termsLink: { color: Colors.accent, textDecorationLine: 'underline' as const },
+  termsDisclaimer: { fontSize: 11, color: Colors.textMuted, marginTop: 8, textAlign: 'center' as const },
 
   sendBtn: { minHeight: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 16 },
   sendBtnActive: { backgroundColor: Colors.accent, shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5 },

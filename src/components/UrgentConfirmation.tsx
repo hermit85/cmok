@@ -39,6 +39,8 @@ export function UrgentConfirmation({ visible, onConfirm, onCancel, circleCount =
           <Pressable onPress={onCancel} style={({ pressed }) => [s.cancelBtn, pressed && { opacity: 0.6 }]}>
             <Text style={s.cancelText}>Nie, wszystko OK</Text>
           </Pressable>
+
+          <Text style={s.disclaimer}>cmok nie zastępuje numeru 112 ani służb ratunkowych. W sytuacji zagrożenia życia lub zdrowia skontaktuj się z odpowiednimi służbami.</Text>
         </View>
       </View>
     </Modal>
@@ -73,4 +75,5 @@ const s = StyleSheet.create({
   confirmText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   cancelBtn: { minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   cancelText: { fontSize: 16, color: Colors.textSecondary },
+  disclaimer: { fontSize: 10, color: Colors.textMuted, textAlign: 'center' as const, marginTop: 16, lineHeight: 14, paddingHorizontal: 8 },
 });

@@ -206,14 +206,20 @@ export function SettingsScreen() {
           </View>
         ) : null}
 
-        {/* ─── Legal ─── */}
-        <View style={styles.legalRow}>
-          <Pressable onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')} style={({ pressed }) => pressed && { opacity: 0.5 }}>
-            <Text style={styles.legalLink}>Polityka prywatności</Text>
+        {/* ─── Legal center ─── */}
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>Prawne</Text>
+          <Pressable onPress={() => Linking.openURL('https://cmok-web.vercel.app/regulamin')} style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}>
+            <Text style={styles.legalItemText}>Regulamin</Text>
+            <Text style={styles.chevron}>→</Text>
           </Pressable>
-          <Text style={styles.legalDot}> · </Text>
-          <Pressable onPress={() => Linking.openURL('https://cmok.app/regulamin')} style={({ pressed }) => pressed && { opacity: 0.5 }}>
-            <Text style={styles.legalLink}>Regulamin</Text>
+          <Pressable onPress={() => Linking.openURL('https://cmok-web.vercel.app/polityka-prywatnosci')} style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}>
+            <Text style={styles.legalItemText}>Polityka prywatności</Text>
+            <Text style={styles.chevron}>→</Text>
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL('mailto:cmok.app@gmail.com')} style={({ pressed }) => [styles.legalItem, { borderBottomWidth: 0 }, pressed && { opacity: 0.6 }]}>
+            <Text style={styles.legalItemText}>Kontakt</Text>
+            <Text style={styles.legalDetail}>cmok.app@gmail.com</Text>
           </Pressable>
         </View>
 
@@ -272,6 +278,9 @@ const styles = StyleSheet.create({
   saveBtn: { backgroundColor: Colors.safe, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
   saveBtnText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
   roleTag: { fontSize: 12, color: Colors.safe, fontWeight: '500', marginTop: 8 },
+  legalItem: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  legalItemText: { fontSize: 14, color: Colors.text },
+  legalDetail: { fontSize: 12, color: Colors.textMuted },
   logoutButton: {
     backgroundColor: 'transparent', minHeight: 52, borderRadius: 16,
     borderWidth: 1.5, borderColor: Colors.border,
