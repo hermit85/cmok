@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
 import * as Location from 'expo-location';
-import { supabase, SUPABASE_URL } from '../services/supabase';
+import { supabase } from '../services/supabase';
 import type { AlertCase, SupportCase, SupportParticipant, SupportViewerRole } from '../types';
 import { normalizeAppRole } from '../utils/roles';
 import { resolveLabel } from '../utils/resolveLabel';
@@ -229,16 +229,9 @@ export function useUrgentSignal(): UrgentSignalState {
   }, [loadState]);
 
   const callEdgeFunction = useCallback(async (payload: Record<string, unknown>) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Brak sesji');
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/urgent-signal`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify(payload),
-    });
-    const json = await response.json();
-    if (!response.ok) throw new Error(json?.error || 'Urgent signal failed');
-    return json;
+    const { data, error } = await supabase.functions.invoke('urgent-signal', { body: payload });
+    if (error) throw new Error(error.message || 'Urgent signal failed');
+    return data;
   }, []);
 
   /** Pre-check: can urgent signal be sent? */

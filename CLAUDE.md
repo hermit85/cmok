@@ -147,7 +147,7 @@ cmok to codzienny rytuał bliskości między osobami, które mieszkają osobno. 
 - Edge functions: 9 (checkin-notify, urgent-signal, nudge-signal, morning-reminder, weekly-summary, missed-sign-alert, delete-account, register-device, checkin-monitor)
 
 ## URL-e
-- App Store: https://apps.apple.com/pl/app/cmok/id6760717645
+- App Store: https://apps.apple.com/pl/app/cmok/id6762090888
 - Landing page: https://cmok-web.vercel.app (docelowo cmok.app)
 - Universal download: /pobierz (redirect by user-agent)
 - Polityka prywatności: /polityka-prywatnosci
