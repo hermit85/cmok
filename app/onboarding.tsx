@@ -107,7 +107,22 @@ export default function OnboardingFlow() {
 
     // Case 2: Profile exists, pending relationship
     if (profile && relationshipStatus === 'pending') {
-      if (profile.role === 'recipient') { setDestinationRoute('/waiting'); setStep('done'); }
+      // User's explicit choice on IntentScreen takes priority over DB role
+      const effectiveRole = selectedRole || profile.role;
+      // Update DB if roles differ
+      if (selectedRole && selectedRole !== profile.role) {
+        await supabase.from('users').update({ role: selectedRole }).eq('id', profile.id);
+      }
+      if (effectiveRole === 'recipient') {
+        // Check if recipient already completed setup (has an invite code / relationship)
+        const { data: pair } = await supabase
+          .from('care_pairs').select('id').eq('caregiver_id', profile.id).eq('status', 'pending').limit(1).maybeSingle();
+        if (pair) {
+          setDestinationRoute('/waiting'); setStep('done');
+        } else {
+          setStep('setup');
+        }
+      }
       else { setStep('join'); }
       return;
     }

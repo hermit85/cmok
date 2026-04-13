@@ -20,14 +20,25 @@ export function TrustedContactsScreen() {
 
   const canManage = profile?.role === 'recipient' && status === 'active' && !!relationship?.id;
 
+  const cleanPhone = phone.replace(/\D/g, '');
+  const isPhoneValid = cleanPhone.length === 9 || (cleanPhone.startsWith('48') && cleanPhone.length === 11);
+
   const handleAdd = async () => {
-    if (!phone.trim() || !canManage || !relationship?.id) return;
+    if (!isPhoneValid || !canManage || !relationship?.id) return;
+    // Normalize to 48XXXXXXXXX format
+    const normalized = cleanPhone.length === 9 ? `48${cleanPhone}` : cleanPhone;
     try {
-      await addTrustedContact(phone);
+      await addTrustedContact(normalized);
       setPhone('');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Nie udało się dodać.';
-      Alert.alert('Coś poszło nie tak', message);
+      const msg = error instanceof Error ? error.message : '';
+      if (msg.includes('not found') || msg.includes('nie znaleziono')) {
+        Alert.alert('Nie znaleziono', 'Ta osoba nie ma jeszcze konta w cmok. Wyślij jej zaproszenie.');
+      } else if (msg.includes('already') || msg.includes('już')) {
+        Alert.alert('Już w kręgu', 'Ta osoba jest już w Twoim kręgu.');
+      } else {
+        Alert.alert('Coś poszło nie tak', msg || 'Nie udało się dodać. Sprawdź numer i spróbuj ponownie.');
+      }
     }
   };
 
@@ -79,14 +90,16 @@ export function TrustedContactsScreen() {
                 keyboardType="phone-pad"
                 style={styles.input}
               />
-              <Text style={styles.helperText}>Ta osoba musi mieć konto w cmok.</Text>
+              <Text style={styles.helperText}>
+                {phone.length === 0 ? 'Wpisz numer telefonu osoby z cmok.' : isPhoneValid ? 'Numer wygląda dobrze.' : `Wpisz 9-cyfrowy numer telefonu.`}
+              </Text>
               <Pressable
                 onPress={handleAdd}
-                disabled={!phone.trim() || saving}
+                disabled={!isPhoneValid || saving}
                 style={({ pressed }) => [
                   styles.addButton,
-                  (!phone.trim() || saving) && styles.addButtonDisabled,
-                  pressed && phone.trim() && !saving && { opacity: 0.88 },
+                  (!isPhoneValid || saving) && styles.addButtonDisabled,
+                  pressed && isPhoneValid && !saving && { opacity: 0.88 },
                 ]}
               >
                 {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.addButtonText}>Dodaj</Text>}

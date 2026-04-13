@@ -98,23 +98,19 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
   }, [code]);
 
   const transitionToCode = useCallback(() => {
-    Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
-      setPhase('code');
-      fadeAnim.setValue(0);
-      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start(() => {
-        codeInputRef.current?.focus();
-      });
+    setPhase('code');
+    fadeAnim.setValue(0.3);
+    Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start(() => {
+      codeInputRef.current?.focus();
     });
   }, [fadeAnim]);
 
   const transitionToPhone = useCallback(() => {
-    Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }).start(() => {
-      setCode('');
-      setCodeError('');
-      setPhase('phone');
-      fadeAnim.setValue(0);
-      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
-    });
+    setCode('');
+    setCodeError('');
+    setPhase('phone');
+    fadeAnim.setValue(0.3);
+    Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
   }, [fadeAnim]);
 
   /* ── Send OTP ── */
