@@ -92,7 +92,7 @@ serve(async (req) => {
         to: token,
         sound: 'default',
         title: 'Cmok',
-        body: `${signalerName} nie dal(a) znaku od wczoraj. Sprawdz czy wszystko OK.`,
+        body: `${signalerName} nie dał(a) znaku od wczoraj. Sprawdź czy wszystko OK.`,
         data: { type: 'missed_sign_alert' },
         priority: 'high' as const,
         channelId: 'urgent',

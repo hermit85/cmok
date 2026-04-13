@@ -74,6 +74,11 @@ export function WaitingForConnectionScreen() {
           <Pressable onPress={handleCopyCode} style={({ pressed }) => [styles.codeFrame, pressed && { opacity: 0.85 }]}>
             <Text style={styles.codeValue}>{relationship.inviteCode}</Text>
             <Text style={styles.copyHint}>Stuknij, żeby skopiować</Text>
+            {relationship.inviteExpiresAt ? (
+              <Text style={styles.expiryHint}>
+                Kod ważny do {new Date(relationship.inviteExpiresAt).toLocaleString('pl-PL', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
+              </Text>
+            ) : null}
           </Pressable>
         ) : null}
 
@@ -118,6 +123,7 @@ const styles = StyleSheet.create({
   },
   codeValue: { fontSize: 36, fontFamily: Typography.headingFamily, color: Colors.text, letterSpacing: 8 },
   copyHint: { fontSize: 12, color: Colors.textMuted, marginTop: 8 },
+  expiryHint: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
   shareBtn: {
     backgroundColor: Colors.accent, minHeight: 56, borderRadius: 18,
     justifyContent: 'center', alignItems: 'center', width: '100%',

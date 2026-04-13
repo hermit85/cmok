@@ -117,7 +117,7 @@ serve(async (req) => {
       to: token,
       sound: 'default',
       title: 'Cmok',
-      body: `${recipientName} czeka na Twoj znak`,
+      body: `${recipientName} czeka na Twój znak`,
       data: { type: 'nudge', from_user_id: user.id },
       priority: 'normal' as const,
       channelId: 'default',

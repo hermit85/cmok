@@ -18,11 +18,11 @@ interface Props {
 }
 
 function milestoneText(streak: number): { headline: string; body: string } {
-  if (streak === 7) return { headline: 'Caly tydzien!', body: 'Siedem dni z rzedu.\nTo juz rytual.' };
-  if (streak === 14) return { headline: 'Dwa tygodnie!', body: 'Polowa miesiaca codziennego kontaktu.' };
-  if (streak === 21) return { headline: 'Trzy tygodnie!', body: 'To juz nawyk.\nJestes niesamowita.' };
-  if (streak === 30) return { headline: 'Caly miesiac!', body: '30 dni spokoju\ndla Ciebie i Twoich bliskich.' };
-  return { headline: `${streak} dni!`, body: 'Swietna seria!' };
+  if (streak === 7) return { headline: 'Cały tydzień!', body: 'Siedem dni z rzędu.\nTo już rytuał.' };
+  if (streak === 14) return { headline: 'Dwa tygodnie!', body: 'Połowa miesiąca codziennego kontaktu.' };
+  if (streak === 21) return { headline: 'Trzy tygodnie!', body: 'To już nawyk.\nJesteś niesamowita.' };
+  if (streak === 30) return { headline: 'Cały miesiąc!', body: '30 dni spokoju\ndla Ciebie i Twoich bliskich.' };
+  return { headline: `${streak} dni!`, body: 'Świetna seria!' };
 }
 
 export function MilestoneCelebration({ visible, streak, recipientName, onDismiss }: Props) {

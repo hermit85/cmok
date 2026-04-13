@@ -575,12 +575,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             <View style={s.statsRow}>
               <View style={s.statItem}>
                 <Text style={s.statNumber}>{currentStreak}</Text>
-                <Text style={s.statLabel}>z rzedu</Text>
+                <Text style={s.statLabel}>z rzędu</Text>
               </View>
               <View style={s.statDivider} />
               <View style={s.statItem}>
                 <Text style={s.statNumber}>{dbTotalCount}</Text>
-                <Text style={s.statLabel}>lącznie</Text>
+                <Text style={s.statLabel}>łącznie</Text>
               </View>
             </View>
           ) : null}
