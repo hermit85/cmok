@@ -266,9 +266,9 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                   </View>
                   <Text style={s.termsText}>
                     Akceptuję{' '}
-                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok-web.vercel.app/regulamin')}>Regulamin</Text>
+                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok.app/regulamin')}>Regulamin</Text>
                     {' '}i potwierdzam zapoznanie się z{' '}
-                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok-web.vercel.app/polityka-prywatnosci')}>Polityką prywatności</Text>.
+                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')}>Polityką prywatności</Text>.
                   </Text>
                 </Pressable>
                 <Text style={s.termsDisclaimer}>cmok nie zastępuje numeru 112 ani służb ratunkowych.</Text>

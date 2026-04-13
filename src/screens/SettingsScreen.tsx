@@ -213,11 +213,11 @@ export function SettingsScreen() {
         {/* ─── Legal center ─── */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Prawne</Text>
-          <Pressable onPress={() => Linking.openURL('https://cmok-web.vercel.app/regulamin')} style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}>
+          <Pressable onPress={() => Linking.openURL('https://cmok.app/regulamin')} style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}>
             <Text style={styles.legalItemText}>Regulamin</Text>
             <Text style={styles.chevron}>→</Text>
           </Pressable>
-          <Pressable onPress={() => Linking.openURL('https://cmok-web.vercel.app/polityka-prywatnosci')} style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}>
+          <Pressable onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')} style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}>
             <Text style={styles.legalItemText}>Polityka prywatności</Text>
             <Text style={styles.chevron}>→</Text>
           </Pressable>
