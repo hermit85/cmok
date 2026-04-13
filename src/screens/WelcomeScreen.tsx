@@ -75,15 +75,22 @@ export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
     animateToSlide(slide - 1, 'right');
   }, [slide, animateToSlide]);
 
-  // Swipe gesture
+  // Swipe gesture — refs to avoid stale closure in PanResponder
+  const slideRef = useRef(slide);
+  slideRef.current = slide;
+  const goNextRef = useRef(goNext);
+  goNextRef.current = goNext;
+  const goPrevRef = useRef(goPrev);
+  goPrevRef.current = goPrev;
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 10 && Math.abs(gs.dy) < 30,
       onPanResponderRelease: (_, gs) => {
-        if (gs.dx < -SWIPE_THRESHOLD && slide < SLIDES.length - 1) {
-          goNext();
-        } else if (gs.dx > SWIPE_THRESHOLD && slide > 0) {
-          goPrev();
+        if (gs.dx < -SWIPE_THRESHOLD && slideRef.current < SLIDES.length - 1) {
+          goNextRef.current();
+        } else if (gs.dx > SWIPE_THRESHOLD && slideRef.current > 0) {
+          goPrevRef.current();
         }
       },
     })
