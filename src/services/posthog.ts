@@ -7,5 +7,6 @@ export const posthog = new PostHog(
     flushInterval: 30000,
     flushAt: 20,
     captureAppLifecycleEvents: true,
+    enableExceptionAutocapture: true,
   },
 );
