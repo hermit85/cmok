@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
-import { supabase, SUPABASE_URL } from './supabase';
+import { supabase } from './supabase';
 
 type PushRegistrationStatus = 'registered' | 'skipped' | 'unavailable' | 'failed';
 
@@ -111,32 +111,14 @@ async function ensureAndroidChannels(): Promise<void> {
 
 async function registerDeviceOnServer(pushToken: string | null): Promise<void> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
     const platform = Platform.OS === 'ios' ? 'ios' : 'android';
     const appVersion = Constants.expoConfig?.version || '1.0.0';
 
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/register-device`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          platform,
-          push_token: pushToken,
-          app_version: appVersion,
-        }),
-      }
-    );
+    const { error } = await supabase.functions.invoke('register-device', {
+      body: { platform, push_token: pushToken, app_version: appVersion },
+    });
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(text || 'register-device failed');
-    }
+    if (error) throw new Error(error.message || 'register-device failed');
   } catch (err) {
     console.error('registerDeviceOnServer error:', err);
     throw err;

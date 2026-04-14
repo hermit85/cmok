@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, Share, Platform, Linking, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase, SUPABASE_URL } from '../services/supabase';
+import { supabase } from '../services/supabase';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius, Spacing } from '../constants/tokens';
@@ -94,20 +94,8 @@ export function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const { data: { session } } = await supabase.auth.getSession();
-              if (!session) throw new Error('Brak sesji');
-              const response = await fetch(
-                `${SUPABASE_URL}/functions/v1/delete-account`,
-                {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${session.access_token}`,
-                  },
-                  body: '{}',
-                },
-              );
-              if (!response.ok) throw new Error('Delete failed');
+              const { error: deleteError } = await supabase.functions.invoke('delete-account', { body: {} });
+              if (deleteError) throw new Error('Delete failed');
               analytics.accountDeleted();
               await supabase.auth.signOut();
               router.replace('/onboarding');

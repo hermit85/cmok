@@ -412,7 +412,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     ? [{ id: 'p1', from_user_id: 'r', to_user_id: 'ps', type: 'reaction' as const, emoji: '\u{1F49B}', message: null, created_at: new Date().toISOString(), seen_at: null }]
     : todaySignals;
   const hasResponse = signals.length > 0;
-  const rawResponseName = hasResponse ? effectiveCircleNames.get(signals[0].from_user_id) : null;
+  const rawResponseName = hasResponse ? (effectiveCircleNames.get(signals[0].from_user_id) || primaryName) : null;
   const responseName = rawResponseName && rawResponseName !== 'Bliska osoba' ? relationDisplay(rawResponseName) : null;
   const responseEmoji = hasResponse ? (signals[0].emoji || '\u{1F49B}') : null;
 
@@ -542,7 +542,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <View style={s.responseReceipt}>
-                  <Text style={s.responseReceiptText}>{responseName ? `${responseName} jest z Tobą` : 'Jest znak'}</Text>
+                  <Text style={s.responseReceiptText}>
+                    {responseName
+                      ? `${responseEmoji ? responseEmoji + ' ' : ''}${responseName} jest z Tobą`
+                      : 'Jest znak'}
+                  </Text>
                 </View>
               ) : null}
               {!statusPicked ? (
