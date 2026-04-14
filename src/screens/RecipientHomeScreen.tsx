@@ -397,7 +397,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     if (morningSent) return;
     haptics.light();
     try {
-      await sendSignal(toUserId, emoji);
+      await sendSignal(toUserId, emoji, undefined, 'morning_thought');
       analytics.morningThoughtSent(emoji);
       setMorningSent(true);
     } catch { /* silent */ }

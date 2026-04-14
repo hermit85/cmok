@@ -82,48 +82,49 @@ export function useSignals() {
     return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
-  /** Send a reaction signal. Returns false if duplicate for today was blocked. */
-  const sendSignal = useCallback(async (toUserId: string, emoji: string, message?: string): Promise<boolean> => {
+  /** Send a signal. type defaults to 'reaction'. Returns false if duplicate reaction for today was blocked. */
+  const sendSignal = useCallback(async (toUserId: string, emoji: string, message?: string, signalType: string = 'reaction'): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Brak zalogowanego użytkownika');
 
-    // Dedup: check if already sent reaction to this person today
-    const { data: existing } = await supabase
-      .from('signals')
-      .select('id')
-      .eq('from_user_id', user.id)
-      .eq('to_user_id', toUserId)
-      .eq('type', 'reaction')
-      .gte('created_at', todayMidnightISO())
-      .limit(1)
-      .maybeSingle();
+    // Dedup: only block duplicate reactions (not morning thoughts etc.)
+    if (signalType === 'reaction') {
+      const { data: existing } = await supabase
+        .from('signals')
+        .select('id')
+        .eq('from_user_id', user.id)
+        .eq('to_user_id', toUserId)
+        .eq('type', 'reaction')
+        .gte('created_at', todayMidnightISO())
+        .limit(1)
+        .maybeSingle();
 
-    if (existing) {
-      // Already sent today — block duplicate
-      return false;
+      if (existing) return false;
     }
 
     const { error } = await supabase.from('signals').insert({
       from_user_id: user.id,
       to_user_id: toUserId,
-      type: 'reaction',
+      type: signalType,
       emoji,
       message: message || null,
     });
 
     if (error) throw error;
 
-    // Optimistic update
-    setTodaySentSignals(prev => [{
-      id: 'optimistic',
-      from_user_id: user.id,
-      to_user_id: toUserId,
-      type: 'reaction',
-      emoji,
-      message: message || null,
-      created_at: new Date().toISOString(),
-      seen_at: null,
-    }, ...prev]);
+    // Optimistic update (only track reactions for hasSentReactionToday)
+    if (signalType === 'reaction') {
+      setTodaySentSignals(prev => [{
+        id: 'optimistic',
+        from_user_id: user.id,
+        to_user_id: toUserId,
+        type: 'reaction',
+        emoji,
+        message: message || null,
+        created_at: new Date().toISOString(),
+        seen_at: null,
+      }, ...prev]);
+    }
 
     return true;
   }, []);

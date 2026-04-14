@@ -152,54 +152,31 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    if (isRecipient) {
-      // Recipient creates invite for a new signaler to join
-      const { data: existing } = await supabase
-        .from('care_pairs')
-        .select('id')
-        .eq('caregiver_id', user.id)
-        .eq('status', 'pending')
-        .limit(1)
-        .maybeSingle();
+    const col = isRecipient ? 'caregiver_id' : 'senior_id';
 
-      if (existing?.id) {
-        await supabase
-          .from('care_pairs')
-          .update({ invite_code: code, invite_expires_at: expiresAt })
-          .eq('id', existing.id);
-      } else {
-        await supabase.from('care_pairs').insert({
-          caregiver_id: user.id,
-          invite_code: code,
-          invite_expires_at: expiresAt,
-          status: 'pending',
-        });
-      }
+    // Only reuse PENDING pairs — never touch active relationships
+    const { data: existing } = await supabase
+      .from('care_pairs')
+      .select('id')
+      .eq(col, user.id)
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle();
+
+    if (existing?.id) {
+      const { error: updateErr } = await supabase
+        .from('care_pairs')
+        .update({ invite_code: code, invite_expires_at: expiresAt })
+        .eq('id', existing.id);
+      if (updateErr) throw updateErr;
     } else {
-      // Signaler: reuse existing active pair's invite code slot,
-      // or create a new pending pair with senior_id
-      const { data: existing } = await supabase
-        .from('care_pairs')
-        .select('id')
-        .eq('senior_id', user.id)
-        .in('status', ['pending', 'active'])
-        .order('status', { ascending: true }) // pending first
-        .limit(1)
-        .maybeSingle();
-
-      if (existing?.id) {
-        await supabase
-          .from('care_pairs')
-          .update({ invite_code: code, invite_expires_at: expiresAt })
-          .eq('id', existing.id);
-      } else {
-        await supabase.from('care_pairs').insert({
-          senior_id: user.id,
-          invite_code: code,
-          invite_expires_at: expiresAt,
-          status: 'pending',
-        });
-      }
+      const { error: insertErr } = await supabase.from('care_pairs').insert({
+        [col]: user.id,
+        invite_code: code,
+        invite_expires_at: expiresAt,
+        status: 'pending',
+      });
+      if (insertErr) throw insertErr;
     }
 
     logInviteEvent('invite_created', { code });

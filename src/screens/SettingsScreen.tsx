@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, Share, Platform, Linking, ActivityIndicator, Switch } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, Share, Platform, Linking, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -24,7 +24,6 @@ export function SettingsScreen() {
   const [savingName, setSavingName] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
-  const [reminderEnabled, setReminderEnabled] = useState(true);
 
   const isRecipient = profile?.role === 'recipient';
   const isSignaler = profile?.role === 'signaler';
@@ -81,17 +80,19 @@ export function SettingsScreen() {
         .maybeSingle();
 
       if (existing?.id) {
-        await supabase.from('care_pairs')
+        const { error: updateErr } = await supabase.from('care_pairs')
           .update({ invite_code: code, invite_expires_at: expiresAt })
           .eq('id', existing.id);
+        if (updateErr) throw updateErr;
       } else {
-        await supabase.from('care_pairs').insert({
+        const { error: insertErr } = await supabase.from('care_pairs').insert({
           [col]: user.id,
           invite_code: code,
           invite_expires_at: expiresAt,
           status: 'pending',
           signaler_label: profile?.name || 'Bliska osoba',
         });
+        if (insertErr) throw insertErr;
       }
 
       logInviteEvent('invite_created', { code });
@@ -270,21 +271,8 @@ export function SettingsScreen() {
         {isSignaler ? (
           <View style={styles.card}>
             <Text style={styles.cardLabel}>Przypomnienie</Text>
-            <View style={styles.reminderRow}>
-              <View style={styles.reminderInfo}>
-                <Text style={styles.cardValue}>Poranne przypomnienie</Text>
-                <Text style={styles.cardDetail}>
-                  {reminderEnabled ? 'Przypomnimy o znaku rano' : 'Wyłączone'}
-                </Text>
-              </View>
-              <Switch
-                value={reminderEnabled}
-                onValueChange={setReminderEnabled}
-                trackColor={{ false: Colors.border, true: Colors.safe }}
-                thumbColor={Colors.cardStrong}
-                ios_backgroundColor={Colors.border}
-              />
-            </View>
+            <Text style={styles.cardValue}>Poranne przypomnienie</Text>
+            <Text style={styles.cardDetail}>Przypomnimy o znaku rano, jeśli jeszcze go nie dałeś.</Text>
           </View>
         ) : null}
 
@@ -376,8 +364,6 @@ const styles = StyleSheet.create({
   saveBtn: { backgroundColor: Colors.safe, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14 },
   saveBtnText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
   roleTag: { fontSize: 12, color: Colors.safe, fontFamily: Typography.fontFamilyMedium, marginTop: 8 },
-  reminderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  reminderInfo: { flex: 1, marginRight: 12 },
   legalItem: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
   legalItemText: { fontSize: 14, color: Colors.text },
   legalDetail: { fontSize: 12, color: Colors.textMuted },
