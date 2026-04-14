@@ -25,6 +25,7 @@ const config: ExpoConfig = {
     },
   },
   android: {
+    package: 'com.hermit85.cmok',
     adaptiveIcon: {
       backgroundColor: '#F7F3EE',
       foregroundImage: './assets/android-icon-foreground.png',
