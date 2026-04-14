@@ -3,6 +3,14 @@ import { View, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://e6321695761306adb4e11ad092aba048@o4511067380711424.ingest.de.sentry.io/4511220189691985',
+  tracesSampleRate: 1.0,
+  enableNativeCrashHandling: true,
+  enableAutoSessionTracking: true,
+});
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { PostHogProvider } from 'posthog-react-native';
@@ -11,7 +19,7 @@ import { supabase } from '../src/services/supabase';
 import { posthog } from '../src/services/posthog';
 import { Colors } from '../src/constants/colors';
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -87,3 +95,5 @@ export default function RootLayout() {
     </PostHogProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);
