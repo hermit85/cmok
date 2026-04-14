@@ -1,5 +1,6 @@
 import { Share, Platform, Alert } from 'react-native';
 import { supabase } from '../services/supabase';
+import { analytics } from '../services/analytics';
 
 const APP_URL = 'https://cmok.app/pobierz';
 
@@ -89,7 +90,7 @@ export async function shareInvite(params: {
     );
 
     const shared = result.action === Share.sharedAction;
-    if (shared) logInviteEvent('invite_shared', { code });
+    if (shared) { logInviteEvent('invite_shared', { code }); analytics.inviteShared('main'); }
     return shared;
   } catch {
     return false;
@@ -198,7 +199,7 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
     );
 
     const shared = result.action === Share.sharedAction;
-    if (shared) logInviteEvent('invite_shared', { code });
+    if (shared) { logInviteEvent('invite_shared', { code }); analytics.inviteShared('circle'); }
     return { code, shared };
   } catch (err) {
     console.warn('[invite] generateAndShareInvite error:', err);

@@ -247,12 +247,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     // Milestone
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
     if (isMilestone) {
+      analytics.milestoneReached(currentStreak);
       celebrationTimeoutRef.current = setTimeout(() => {
         setCelebrationVisible(false);
         setMilestoneVisible(true);
       }, 1200);
     }
-  }, [breatheShadow, isMilestone, toastFade]);
+  }, [breatheShadow, isMilestone, toastFade, currentStreak]);
 
   /** Quick tap success (< 150ms hold) — same feel as before */
   const playSuccess = useCallback(() => {
@@ -518,6 +519,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
     try {
       await sendUrgentSignal();
+      analytics.urgentTriggered(false);
       setLocalUrgentOffline(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';

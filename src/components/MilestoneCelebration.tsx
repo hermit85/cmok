@@ -8,6 +8,7 @@ import { View, Text, StyleSheet, Pressable, Animated, Share, Platform } from 're
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Particles } from './Particles';
+import { analytics } from '../services/analytics';
 import { haptics } from '../utils/haptics';
 
 interface Props {
@@ -49,7 +50,8 @@ export function MilestoneCelebration({ visible, streak, recipientName, onDismiss
     const name = recipientName || 'bliska osoba';
     const msg = `Od ${streak} dni codziennie daję ${name} znak, że u mnie OK. Bez dzwonienia, bez stresu. Jeden tap i spokój.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz`;
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      if (result.action === Share.sharedAction) analytics.milestoneShared(streak);
     } catch { /* cancelled */ }
   };
 

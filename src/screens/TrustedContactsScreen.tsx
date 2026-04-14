@@ -8,6 +8,7 @@ import { Radius, Spacing } from '../constants/tokens';
 import { useRelationship } from '../hooks/useRelationship';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
 import { generateAndShareInvite } from '../utils/invite';
+import { analytics } from '../services/analytics';
 
 function normalizePhone(phone: string) {
   return phone.replace(/[^\d+]/g, '');
@@ -30,6 +31,7 @@ export function TrustedContactsScreen() {
     const normalized = cleanPhone.length === 9 ? `48${cleanPhone}` : cleanPhone;
     try {
       await addTrustedContact(normalized);
+      analytics.contactAdded();
       setPhone('');
     } catch (error) {
       const msg = error instanceof Error ? error.message : '';
@@ -46,6 +48,7 @@ export function TrustedContactsScreen() {
   const handleRemove = async (contactId: string, name: string) => {
     try {
       await removeTrustedContact(contactId);
+      analytics.contactRemoved();
     } catch (error) {
       const message = error instanceof Error ? error.message : `Nie udało się usunąć ${name}.`;
       Alert.alert('Coś poszło nie tak', message);
