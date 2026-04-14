@@ -30,19 +30,19 @@ export function WaitingForConnectionScreen() {
   const sigName = relationship?.signalerLabel || 'bliska osoba';
 
   const handleCopyCode = async () => {
-    if (!relationship?.inviteCode) return;
+    if (!inviteCode) return;
     try {
-      await Clipboard.setStringAsync(relationship.inviteCode);
-      logInviteEvent('invite_code_copied', { code: relationship.inviteCode });
+      await Clipboard.setStringAsync(inviteCode);
+      logInviteEvent('invite_code_copied', { code: inviteCode });
       Alert.alert('Skopiowano', 'Kod jest w schowku.');
     } catch { /* silent */ }
   };
 
   const handleShare = async () => {
-    if (!relationship?.inviteCode) return;
+    if (!inviteCode) return;
     await shareInvite({
-      code: relationship.inviteCode,
-      signalerLabel: relationship.signalerLabel,
+      code: inviteCode,
+      signalerLabel: relationship?.signalerLabel,
     });
   };
 
@@ -73,6 +73,9 @@ export function WaitingForConnectionScreen() {
     );
   }
 
+  const inviteCode = relationship?.inviteCode;
+  const inviteExpiry = relationship?.inviteExpiresAt;
+
   return (
     <SafeAreaView style={s.container}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
@@ -86,9 +89,9 @@ export function WaitingForConnectionScreen() {
           <Text style={s.cardLabel}>Zaproś {sigName}</Text>
           <Text style={s.cardHint}>Pokaż ten kod lub wyślij go. Gdy {sigName} go wpisze, połączycie się.</Text>
 
-          {relationship.inviteCode ? (
+          {inviteCode ? (
             <Pressable onPress={handleCopyCode} style={({ pressed }) => [s.codeFrame, pressed && { opacity: 0.85 }]}>
-              <Text style={s.codeValue}>{relationship.inviteCode}</Text>
+              <Text style={s.codeValue}>{inviteCode}</Text>
               <Text style={s.copyHint}>Stuknij, żeby skopiować</Text>
             </Pressable>
           ) : null}
@@ -100,9 +103,9 @@ export function WaitingForConnectionScreen() {
             <Text style={s.shareBtnText}>Wyślij zaproszenie</Text>
           </Pressable>
 
-          {relationship.inviteExpiresAt ? (
+          {inviteExpiry ? (
             <Text style={s.expiryHint}>
-              Kod ważny do {new Date(relationship.inviteExpiresAt).toLocaleString('pl-PL', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
+              Kod ważny do {new Date(inviteExpiry).toLocaleString('pl-PL', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
             </Text>
           ) : null}
 
