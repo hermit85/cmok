@@ -73,14 +73,7 @@ export async function shareInvite(params: {
   const name = signalerLabel || 'bliskiej osoby';
   const deepLink = `cmok://join/${code}`;
 
-  const message = [
-    `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.`,
-    ``,
-    `Twój kod: ${code}`,
-    `Pobierz apkę: ${APP_URL}`,
-    ``,
-    `Masz już cmok? Otwórz: ${deepLink}`,
-  ].join('\n');
+  const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz: ${APP_URL}\nAlbo otwórz: ${deepLink}`;
 
   try {
     const result = await Share.share(
@@ -183,19 +176,12 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
     logInviteEvent('invite_created', { code });
 
     const deepLink = `cmok://join/${code}`;
-    const message = [
-      `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.`,
-      ``,
-      `Twój kod: ${code}`,
-      `Pobierz apkę: ${APP_URL}`,
-      ``,
-      `Masz już cmok? Otwórz: ${deepLink}`,
-    ].join('\n');
+    const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz: ${APP_URL}\nAlbo otwórz: ${deepLink}`;
 
     const result = await Share.share(
       Platform.OS === 'ios'
         ? { message }
-        : { message, title: 'Zaproszenie do cmok' },
+        : { message, title: 'cmok' },
     );
 
     const shared = result.action === Share.sharedAction;
