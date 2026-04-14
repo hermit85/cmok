@@ -75,7 +75,12 @@ export function useSignals() {
       }, (payload) => {
         const sig = payload.new as Signal;
         if (sig.type === 'reaction' && sig.created_at >= todayMidnightISO()) {
-          setTodaySentSignals(prev => prev.some(s => s.id === sig.id) ? prev : [sig, ...prev]);
+          setTodaySentSignals(prev => {
+            // Replace optimistic entry or skip if real ID already exists
+            const withoutOptimistic = prev.filter(s => !s.id.startsWith('optimistic-'));
+            if (withoutOptimistic.some(s => s.id === sig.id)) return prev;
+            return [sig, ...withoutOptimistic];
+          });
         }
       })
       .subscribe();
@@ -114,8 +119,9 @@ export function useSignals() {
 
     // Optimistic update (only track reactions for hasSentReactionToday)
     if (signalType === 'reaction') {
+      const optimisticId = `optimistic-${toUserId}-${Date.now()}`;
       setTodaySentSignals(prev => [{
-        id: 'optimistic',
+        id: optimisticId,
         from_user_id: user.id,
         to_user_id: toUserId,
         type: 'reaction',

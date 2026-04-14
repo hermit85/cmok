@@ -48,7 +48,8 @@ export function SettingsScreen() {
     if (!trimmed || !profile?.id) return;
     setSavingName(true);
     try {
-      await supabase.from('users').update({ name: trimmed }).eq('id', profile.id);
+      const { error } = await supabase.from('users').update({ name: trimmed }).eq('id', profile.id);
+      if (error) throw error;
       setEditingName(false);
       analytics.nameChanged();
       refreshRelationship?.();

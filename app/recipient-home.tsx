@@ -10,7 +10,8 @@ export default function RecipientHome() {
   const { profile, loading, sessionReady } = useRelationship();
 
   // Block render until role is known — prevents wrong screen flash + hook side effects
-  if (!sessionReady || loading || !profile) return <LoadingScreen />;
+  if (!sessionReady || loading) return <LoadingScreen />;
+  if (!profile) return <Redirect href="/onboarding" />;
   if (profile.role !== 'recipient') return <Redirect href="/signaler-home" />;
 
   return <RecipientHomeScreen preview={preview} />;

@@ -95,15 +95,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const responseReceiptScale = useRef(new Animated.Value(0)).current;
   const moodScales = useRef(STATUS_MOODS.map(() => new Animated.Value(1))).current;
 
-  // Charge & release refs
-  const chargeButtonScale = useRef(new Animated.Value(1)).current;
-  const chargeGlowOpacity = useRef(new Animated.Value(0)).current;
-  const chargeRingScale = useRef(new Animated.Value(1)).current;
-  const chargeRingBorder = useRef(new Animated.Value(0)).current;
+  // Press & release refs
   const pressStartRef = useRef(0);
   const chargeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chargeTriggeredUrgent = useRef(false);
-  const chargeAnimsRef = useRef<Animated.CompositeAnimation | null>(null);
   const breatheLoopRef = useRef<{ scale: Animated.CompositeAnimation; shadow: Animated.CompositeAnimation } | null>(null);
   const [particleCount, setParticleCount] = useState(14);
 
@@ -147,7 +142,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   useEffect(() => () => {
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
     if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
-    if (chargeAnimsRef.current) chargeAnimsRef.current.stop();
     if (breatheLoopRef.current) { breatheLoopRef.current.scale.stop(); breatheLoopRef.current.shadow.stop(); }
   }, []);
 
@@ -273,49 +267,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     playSuccessCommon();
   }, [buttonScale, releaseRingOpacity, releaseRingScale, isMilestone, playSuccessCommon]);
 
-  /** Charged release success — intensity 0 (150ms) to 1 (1200ms+) */
-  const playChargedSuccess = useCallback((intensity: number) => {
-    const count = 14 + Math.round(intensity * 10);
-    setParticleCount(count);
-    setCelebrationVisible(true);
-
-    if (intensity > 0.6) { haptics.heavy(); setTimeout(() => haptics.success(), 100); }
-    else { haptics.medium(); }
-
-    const squish = 0.88 - intensity * 0.06;       // 0.88 → 0.82
-    const ringEnd = 1.22 + intensity * 0.15;       // 1.22 → 1.37
-    const ringOpacity = 0.28 + intensity * 0.12;   // 0.28 → 0.40
-
-    releaseRingScale.setValue(0.84);
-    releaseRingOpacity.setValue(ringOpacity);
-
-    // Squish from current scale → deep squish → spring overshoot
-    Animated.timing(buttonScale, { toValue: squish, duration: 100, useNativeDriver: true }).start(() => {
-      Animated.parallel([
-        Animated.spring(buttonScale, { toValue: 1, tension: 160, friction: 5, useNativeDriver: true }),
-        Animated.timing(releaseRingScale, { toValue: ringEnd, duration: 600, useNativeDriver: true }),
-        Animated.timing(releaseRingOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
-      ]).start();
-    });
-
-    // Dissipate charge glow
-    Animated.timing(chargeGlowOpacity, { toValue: 0, duration: 400, useNativeDriver: true }).start();
-    chargeRingBorder.setValue(0);
-    chargeRingScale.setValue(1);
-
-    playSuccessCommon();
-  }, [buttonScale, releaseRingOpacity, releaseRingScale, chargeGlowOpacity, chargeRingBorder, chargeRingScale, playSuccessCommon]);
-
-  /* ─── charge helpers ─── */
-
-  const resetChargeVisuals = useCallback(() => {
-    chargeButtonScale.setValue(1);
-    chargeGlowOpacity.setValue(0);
-    chargeRingScale.setValue(1);
-    chargeRingBorder.setValue(0);
-    if (chargeAnimsRef.current) { chargeAnimsRef.current.stop(); chargeAnimsRef.current = null; }
-  }, [chargeButtonScale, chargeGlowOpacity, chargeRingScale, chargeRingBorder]);
-
   const restartBreatheLoop = useCallback(() => {
     if (showChecked || !canCheckin) return;
     const scaleLoop = Animated.loop(
@@ -400,33 +351,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   }, [canCheckin, canUrgent]);
 
   const handlePressOut = useCallback(() => {
-    // Cleanup charge interval + animations
     if (chargeIntervalRef.current) { clearInterval(chargeIntervalRef.current); chargeIntervalRef.current = null; }
-    if (chargeAnimsRef.current) { chargeAnimsRef.current.stop(); chargeAnimsRef.current = null; }
 
-    if (chargeTriggeredUrgent.current) {
-      resetChargeVisuals();
-      return;
-    }
+    if (chargeTriggeredUrgent.current) return;
 
-    const holdDuration = Date.now() - pressStartRef.current;
-
-    if (holdDuration < 150) {
-      // Quick tap — same as before
-      resetChargeVisuals();
-      restartBreatheLoop();
-      performCheckinLogic(playSuccess);
-    } else if (holdDuration < 1500) {
-      // Charged release — proportional burst
-      const intensity = Math.min((holdDuration - 150) / 1050, 1);
-      resetChargeVisuals();
-      performCheckinLogic(() => playChargedSuccess(intensity));
-    } else {
-      // Released after urgent triggered
-      resetChargeVisuals();
-      restartBreatheLoop();
-    }
-  }, [resetChargeVisuals, restartBreatheLoop, performCheckinLogic, playSuccess, playChargedSuccess]);
+    // Any press < 1500ms = check-in
+    performCheckinLogic(playSuccess);
+  }, [performCheckinLogic, playSuccess]);
 
   const moodPickedScale = useRef(new Animated.Value(0)).current;
   const moodPickedOpacity = useRef(new Animated.Value(0)).current;
@@ -832,8 +763,6 @@ const s = StyleSheet.create({
 
   /* button */
   buttonArea: { justifyContent: 'center', alignItems: 'center', height: BTN + 48 },
-  chargeGlow: { position: 'absolute', width: BTN + 64, height: BTN + 64, borderRadius: (BTN + 64) / 2, backgroundColor: Colors.safeLight },
-  chargeRing: { position: 'absolute', width: BTN + 16, height: BTN + 16, borderRadius: (BTN + 16) / 2, borderColor: Colors.safe },
   releaseRing: { position: 'absolute', width: BTN + 24, height: BTN + 24, borderRadius: (BTN + 24) / 2, backgroundColor: Colors.safeLight },
   loadingCircle: { width: BTN, height: BTN, borderRadius: BTN / 2, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center' },
   btn: { width: BTN, height: BTN, borderRadius: BTN / 2, alignItems: 'center', justifyContent: 'center' },
