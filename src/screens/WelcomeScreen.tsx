@@ -13,16 +13,16 @@ interface WelcomeScreenProps {
 
 const SLIDES = [
   {
-    headline: 'Jeden znak dziennie.\nSpokój dla obu stron.',
-    body: 'Bliska osoba daje znać, że jest OK.\nBez dzwonienia, bez martwienia się.',
+    headline: 'Codzienny znak,\nże jest OK',
+    body: 'Bliska osoba mieszka osobno?\nJeden gest dziennie i masz spokój.',
   },
   {
-    headline: 'Jedno dotknięcie\ni obie strony wiedzą.',
-    body: 'Proste jak cmok na dzień dobry.\nBez SMS-ów, bez stresu.',
+    headline: 'Stuknij raz.\nDruga strona wie.',
+    body: 'Bez dzwonienia, bez SMS-ów.\nŚwiecąca kropka to Wasz rytuał.',
   },
   {
-    headline: 'Wasz codzienny\nrytuał bliskości',
-    body: 'Dla rodzin, które mieszkają osobno,\nale chcą być blisko.',
+    headline: 'A gdy coś\nsię dzieje?',
+    body: 'Przytrzymaj dłużej i cały krąg\nbliskich dostanie sygnał.',
   },
 ];
 
