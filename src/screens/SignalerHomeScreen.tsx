@@ -607,7 +607,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const signals = pv && showChecked
     ? [{ id: 'p1', from_user_id: 'r', to_user_id: 'ps', type: 'reaction' as const, emoji: '\u{1F49B}', message: null, created_at: new Date().toISOString(), seen_at: null }]
     : todaySignals;
-  const hasResponse = signals.length > 0;
+  const hasResponse = signals.filter(s => s.type === 'reaction').length > 0;
+  const hasNudge = !showChecked && signals.some(s => s.type === 'nudge');
+  const nudgeFrom = hasNudge ? effectiveCircleNames.get(signals.find(s => s.type === 'nudge')!.from_user_id) || primaryName : null;
 
   // Bounce the response receipt when it first appears
   useEffect(() => {
@@ -803,6 +805,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             </Animated.View>
           ) : (
             <View style={{ alignItems: 'center' }}>
+              {hasNudge ? (
+                <View style={s.nudgeReceived}>
+                  <Text style={s.nudgeReceivedText}>{nudgeFrom ? `${nudgeFrom} czeka na Twój znak` : 'Ktoś bliski czeka na Twój znak'}</Text>
+                </View>
+              ) : null}
               <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{hasName ? `${name} czeka na Twój znak` : copyLine}</Text>
             </View>
           )}
@@ -887,6 +894,13 @@ const s = StyleSheet.create({
   responseReceiptRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   responseReceiptEmoji: { fontSize: 16 },
   responseReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+  /* nudge received */
+  nudgeReceived: {
+    backgroundColor: Colors.loveLight, paddingHorizontal: 18, paddingVertical: 8,
+    borderRadius: 999, marginBottom: 12,
+  },
+  nudgeReceivedText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.love },
+
   /* warm toast */
   warmToast: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, backgroundColor: Colors.safeLight, marginTop: 8 },
   warmToastText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
