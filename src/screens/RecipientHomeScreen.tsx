@@ -68,9 +68,9 @@ const STATUS_MOOD_LABELS: Record<string, string> = {
 /* ─── Status circle ─── */
 
 const MORNING_THOUGHTS = [
-  { key: 'hug', emoji: '\u{1F917}', symbol: '\u{2665}', label: 'Przytulam', color: Colors.love },
-  { key: 'coffee', emoji: '\u{2615}', symbol: '\u{2022}', label: 'Dobry dzień!', color: Colors.accent },
-  { key: 'think', emoji: '\u{1F4AD}', symbol: '\u{2605}', label: 'Myślę o Tobie', color: Colors.delight },
+  { key: 'hug', emoji: '\u{1F917}', label: 'Przytulam', bg: Colors.loveLight },
+  { key: 'coffee', emoji: '\u{2615}', label: 'Dobry dzień!', bg: Colors.accentWash },
+  { key: 'think', emoji: '\u{1F4AD}', label: 'Myślę o Tobie', bg: '#F0EAFF' },
 ] as const;
 
 const STATUS_SIZE = 180;
@@ -128,10 +128,10 @@ function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: b
 /* ─── Response tap ─── */
 
 const REACTIONS = [
-  { emoji: '\u{2764}\u{FE0F}', label: 'Kocham' },
-  { emoji: '\u{1F31B}', label: 'Dobranoc' },
-  { emoji: '\u{1F44D}', label: 'OK!' },
-  { emoji: '\u{1F31E}', label: 'Super!' },
+  { emoji: '\u{2764}\u{FE0F}', label: 'Kocham', bg: Colors.loveLight },
+  { emoji: '\u{1F31B}', label: 'Dobranoc', bg: '#F0EAFF' },
+  { emoji: '\u{1F44D}', label: 'OK!', bg: Colors.safeLight },
+  { emoji: '\u{1F31E}', label: 'Super!', bg: '#FFF8E1' },
 ] as const;
 
 function ResponseTap({ signalerName, signalerId, preview }: { signalerName: string; signalerId: string; preview: boolean }) {
@@ -199,7 +199,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
               <Animated.View key={r.emoji} style={{ transform: [{ scale: scales[i] }] }}>
                 <Pressable
                   onPress={() => handleTap(r.emoji, i)}
-                  style={({ pressed }) => [st.reactionBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.92 }] }]}
+                  style={({ pressed }) => [st.reactionBtn, { backgroundColor: r.bg }, pressed && { opacity: 0.8, transform: [{ scale: 0.92 }] }]}
                 >
                   <Emoji style={st.reactionEmoji}>{r.emoji}</Emoji>
                   <Text style={st.reactionLabel}>{r.label}</Text>
@@ -522,9 +522,9 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
                         <Pressable
                           key={t.key}
                           onPress={() => handleMorningThought(t.emoji, sigId)}
-                          style={({ pressed }) => [st.morningChip, pressed && { opacity: 0.7 }]}
+                          style={({ pressed }) => [st.morningChip, { backgroundColor: t.bg }, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}
                         >
-                          <Text style={[st.morningSymbol, { color: t.color }]}>{t.symbol}</Text>
+                          <Emoji style={st.morningSymbol}>{t.emoji}</Emoji>
                           <Text style={st.morningLabel}>{t.label}</Text>
                         </Pressable>
                       ))}
@@ -598,8 +598,11 @@ const st = StyleSheet.create({
 
   /* status circle */
   statusCircle: { width: STATUS_SIZE, height: STATUS_SIZE, borderRadius: STATUS_SIZE / 2, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  statusCircleOk: { backgroundColor: Colors.safeLight, borderWidth: 3, borderColor: Colors.safe },
-  statusCirclePending: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.safe, opacity: 0.4 },
+  statusCircleOk: {
+    backgroundColor: Colors.safeLight, borderWidth: 3, borderColor: Colors.safe,
+    shadowColor: Colors.safe, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 4,
+  },
+  statusCirclePending: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.safe, opacity: 0.5 },
   statusCheckmark: { fontSize: 48, color: Colors.safe, fontWeight: '300' },
 
   /* status text */
@@ -610,19 +613,24 @@ const st = StyleSheet.create({
 
   /* morning thoughts — recipient proactive engagement */
   morningSection: { marginTop: 24, alignItems: 'center' },
-  morningPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 10 },
+  morningPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
   morningRow: { flexDirection: 'row', gap: 12 },
   morningChip: {
-    width: 80, paddingVertical: 10, borderRadius: 14,
-    backgroundColor: Colors.surface, alignItems: 'center',
+    width: 84, paddingVertical: 12, borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
   },
-  morningSymbol: { fontSize: 18, marginBottom: 3 },
-  morningLabel: { fontSize: 10, color: Colors.textMuted },
+  morningSymbol: { fontSize: 20, marginBottom: 4 },
+  morningLabel: { fontSize: 10, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
   morningSent: { fontSize: 14, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: 20 },
 
   /* nudge */
-  nudgeBtn: { marginTop: 16, paddingVertical: 10, paddingHorizontal: 20, backgroundColor: Colors.surface, borderRadius: 999 },
-  nudgeBtnText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
+  nudgeBtn: {
+    marginTop: 16, paddingVertical: 12, paddingHorizontal: 24,
+    backgroundColor: Colors.surface, borderRadius: 999, borderWidth: 1, borderColor: Colors.border,
+    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 1,
+  },
+  nudgeBtnText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
   nudgeBtnTextSent: { color: Colors.safe },
 
   /* rhythm */
@@ -631,14 +639,14 @@ const st = StyleSheet.create({
   /* response — reaction buttons */
   responseSection: { alignItems: 'center', marginBottom: 16 },
   responsePrompt: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginBottom: 12 },
-  reactionsRow: { flexDirection: 'row', gap: 16, justifyContent: 'center' },
+  reactionsRow: { flexDirection: 'row', gap: 14, justifyContent: 'center' },
   reactionBtn: {
-    width: 68, height: 68, borderRadius: 18,
-    backgroundColor: Colors.cardStrong, borderWidth: 1.5, borderColor: Colors.border,
+    width: 74, height: 74, borderRadius: 20,
     justifyContent: 'center', alignItems: 'center',
+    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2,
   },
-  reactionEmoji: { fontSize: 28 },
-  reactionLabel: { fontSize: 9, color: Colors.textMuted, marginTop: 2 },
+  reactionEmoji: { fontSize: 30 },
+  reactionLabel: { fontSize: 10, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, marginTop: 3 },
   responseSentPill: {
     backgroundColor: Colors.safeLight, minHeight: 44, paddingHorizontal: 24,
     borderRadius: 999, justifyContent: 'center', alignItems: 'center',
@@ -647,12 +655,12 @@ const st = StyleSheet.create({
   tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 12, textAlign: 'center' },
 
   /* viral — subtle link */
-  viralLink: { marginTop: 16, marginBottom: 4, minHeight: 40, justifyContent: 'center', alignItems: 'center' },
-  viralLinkText: { fontSize: 13, color: Colors.textMuted },
+  viralLink: { marginTop: 20, marginBottom: 4, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
+  viralLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
 
   /* bottom — text-only link */
   bottomLink: { alignItems: 'center', paddingVertical: 14, marginBottom: 32 },
-  bottomLinkText: { fontSize: 13, color: Colors.textSecondary },
+  bottomLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
 
   /* empty */
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },

@@ -904,20 +904,24 @@ const s = StyleSheet.create({
   shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },
 
   dotsWrap: { marginTop: 24 },
-  statsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, gap: 24 },
+  statsRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, gap: 24,
+    backgroundColor: Colors.safeWash, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 24,
+  },
   statItem: { alignItems: 'center' },
-  statNumber: { fontSize: 22, fontFamily: Typography.headingFamily, color: Colors.safe },
-  statLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  statDivider: { width: 1, height: 28, backgroundColor: Colors.border },
-  viralLink: { marginTop: 16, minHeight: 40, justifyContent: 'center', alignItems: 'center' },
-  viralLinkText: { fontSize: 13, color: Colors.textMuted },
+  statNumber: { fontSize: 24, fontFamily: Typography.headingFamily, color: Colors.safe },
+  statLabel: { fontSize: 11, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, marginTop: 2 },
+  statDivider: { width: 1, height: 28, backgroundColor: Colors.safe, opacity: 0.2 },
+  viralLink: { marginTop: 20, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
+  viralLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
 
   /* urgent button — visible but not alarming */
   urgentBtn: {
-    alignItems: 'center', paddingVertical: 16, paddingHorizontal: 24, marginBottom: 32,
+    alignItems: 'center', paddingVertical: 18, paddingHorizontal: 24, marginBottom: 32,
     alignSelf: 'stretch', marginHorizontal: 24,
-    borderRadius: 16, borderWidth: 1.5, borderColor: Colors.border,
+    borderRadius: 20, borderWidth: 1.5, borderColor: Colors.border,
     backgroundColor: Colors.cardStrong,
+    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 2,
   },
   urgentBtnLabel: { fontSize: 15, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
   urgentBtnSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
