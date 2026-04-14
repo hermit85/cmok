@@ -41,23 +41,25 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
             <Text style={styles.backText}>← Wróć</Text>
           </Pressable>
 
-          <Text style={styles.title}>Jak zaczynasz?</Text>
+          <Text style={styles.title}>Kim jesteś?</Text>
           <Text style={styles.simplifiedSubtitle}>
-            Za chwilę połączysz się z bliską osobą w codzienny rytuał.
+            cmok łączy dwie osoby: jedną, która codziennie daje znak, i drugą, która go odbiera.
           </Text>
 
           <Pressable
             onPress={() => { haptics.light(); onSelect('i-am-center'); }}
-            style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            style={({ pressed }) => [styles.optionBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
           >
-            <Text style={styles.primaryBtnText}>Mam kod zaproszenia</Text>
+            <Text style={styles.optionBtnTitle}>Będę dawać znak</Text>
+            <Text style={styles.optionBtnHint}>Codziennie stukam raz, a bliscy widzą, że jest OK. Dostałem kod od kogoś bliskiego.</Text>
           </Pressable>
 
           <Pressable
             onPress={() => { haptics.light(); onSelect('join-circle'); }}
-            style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [styles.optionBtn, styles.optionBtnOutline, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
           >
-            <Text style={styles.secondaryBtnText}>Chcę zaprosić bliską osobę</Text>
+            <Text style={styles.optionBtnTitle}>Chcę odbierać znak</Text>
+            <Text style={styles.optionBtnHint}>Bliska osoba mieszka osobno. Chcę wiedzieć, że jest OK, bez codziennego dzwonienia.</Text>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -139,6 +141,13 @@ const styles = StyleSheet.create({
   primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   secondaryBtn: { minHeight: 52, justifyContent: 'center', alignItems: 'center', marginTop: 12 },
   secondaryBtnText: { fontSize: Typography.body, fontFamily: Typography.headingFamilySemiBold, color: Colors.accent },
+  optionBtn: {
+    backgroundColor: Colors.surface, borderRadius: 20, padding: 20, marginBottom: 12,
+    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
+  },
+  optionBtnOutline: { backgroundColor: Colors.cardStrong, borderWidth: 1, borderColor: Colors.border },
+  optionBtnTitle: { fontSize: 17, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 6 },
+  optionBtnHint: { fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
   options: { gap: 14 },
   optionCard: { backgroundColor: Colors.cardStrong, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 18, paddingVertical: 18, minHeight: 100, justifyContent: 'center' },
   optionCardSelected: { backgroundColor: Colors.accentWash, borderColor: Colors.accent },
