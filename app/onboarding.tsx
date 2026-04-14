@@ -98,6 +98,7 @@ export default function OnboardingFlow() {
 
   const handleVerified = async (result: VerifyResult) => {
     const { profile, relationshipStatus } = result;
+    analytics.onboardingVerified(!!profile, relationshipStatus);
     const pendingInvite = await getPendingInvite();
 
     // Case 1: Active relationship → go home. Role from DB is authoritative.
@@ -183,6 +184,7 @@ export default function OnboardingFlow() {
       return <WelcomeScreen
         onStart={() => {
           logInviteEvent('onboarding_started');
+          analytics.onboardingStarted();
           if (pendingInviteCode) {
             setSelectedRole('signaler');
             setStep('phone');

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
+import { analytics } from '../services/analytics';
 import { normalizeAppRole } from '../utils/roles';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
@@ -122,6 +123,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
     try {
       const { error } = await supabase.auth.signInWithOtp({ phone: formattedPhone });
       if (error) throw error;
+      analytics.onboardingPhoneSent();
       setFullPhone(formattedPhone);
       setResendCooldown(60);
       transitionToCode();
