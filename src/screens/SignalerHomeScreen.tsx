@@ -94,6 +94,17 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const responseReceiptScale = useRef(new Animated.Value(0)).current;
   const moodScales = useRef(STATUS_MOODS.map(() => new Animated.Value(1))).current;
 
+  // Charge & release refs
+  const chargeGlowOpacity = useRef(new Animated.Value(0)).current;
+  const chargeRingScale = useRef(new Animated.Value(1)).current;
+  const chargeRingBorder = useRef(new Animated.Value(0)).current;
+  const pressStartRef = useRef(0);
+  const chargeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const chargeTriggeredUrgent = useRef(false);
+  const chargeAnimsRef = useRef<Animated.CompositeAnimation | null>(null);
+  const breatheLoopRef = useRef<{ scale: Animated.CompositeAnimation; shadow: Animated.CompositeAnimation } | null>(null);
+  const [particleCount, setParticleCount] = useState(14);
+
   const circleNames = useMemo(
     () => new Map(recipients.map((m) => [m.userId, m.name])), [recipients],
   );
@@ -131,7 +142,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     hasSyncedPending.current = true;
     syncPendingCheckin().then((ok) => { if (ok) { refreshCheckin(); refreshWeek(); refreshStats(); } });
   }, [refreshCheckin, refreshWeek]);
-  useEffect(() => () => { if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current); }, []);
+  useEffect(() => () => {
+    if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+    if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
+  }, []);
 
   /* ─── derived: 4 clear states ─── */
 
@@ -161,6 +175,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   useEffect(() => {
     if (showChecked || !canCheckin) {
       breatheScale.setValue(1);
+      breatheLoopRef.current = null;
       return;
     }
     const scaleLoop = Animated.loop(
@@ -175,9 +190,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         Animated.timing(breatheShadow, { toValue: 0.4, duration: 1250, useNativeDriver: false }),
       ]),
     );
+    breatheLoopRef.current = { scale: scaleLoop, shadow: shadowLoop };
     scaleLoop.start();
     shadowLoop.start();
-    return () => { scaleLoop.stop(); shadowLoop.stop(); };
+    return () => { scaleLoop.stop(); shadowLoop.stop(); breatheLoopRef.current = null; };
   }, [showChecked, canCheckin, breatheScale, breatheShadow]);
 
   /* ─── transition: animate afterFade when showChecked changes ─── */
@@ -211,30 +227,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const currentStreak = showChecked && !pv ? Math.max(dbStreak + 1, 1) : dbStreak;
   const isMilestone = currentStreak === 7 || currentStreak === 14 || currentStreak === 21 || currentStreak === 30;
 
-  const playSuccess = useCallback(() => {
-    if (isMilestone) {
-      setCelebrationVisible(true);
-      haptics.success(); // longer, more satisfying for milestones
-    } else {
-      haptics.medium();
-    }
+  /* ─── success animations ─── */
 
-    releaseRingScale.setValue(0.84);
-    releaseRingOpacity.setValue(0.28);
-
-    // 1. Deep press down to 0.88 (120ms)
-    Animated.timing(buttonScale, { toValue: 0.88, duration: 120, useNativeDriver: true }).start(() => {
-      // 2. Spring bounce back (overshoots to ~1.05)
-      Animated.parallel([
-        Animated.spring(buttonScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }),
-        Animated.timing(releaseRingScale, { toValue: 1.22, duration: 700, useNativeDriver: true }),
-        Animated.timing(releaseRingOpacity, { toValue: 0, duration: 700, useNativeDriver: true }),
-      ]).start();
-    });
-
-    // Stop breathing shadow on done
+  const playSuccessCommon = useCallback(() => {
     breatheShadow.setValue(0);
-
     // Warm toast
     setShowWarmToast(true);
     toastFade.setValue(0);
@@ -243,24 +239,101 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       Animated.delay(2500),
       Animated.timing(toastFade, { toValue: 0, duration: 500, useNativeDriver: true }),
     ]).start(() => setShowWarmToast(false));
-
+    // Milestone
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
     if (isMilestone) {
       celebrationTimeoutRef.current = setTimeout(() => {
         setCelebrationVisible(false);
-        setMilestoneVisible(true); // show full-screen celebration after particle burst
+        setMilestoneVisible(true);
       }, 1200);
     }
-  }, [buttonScale, releaseRingOpacity, releaseRingScale, breatheShadow, isMilestone, toastFade]);
+  }, [breatheShadow, isMilestone, toastFade]);
 
-  /* ─── handlers ─── */
+  /** Quick tap success (< 150ms hold) — same feel as before */
+  const playSuccess = useCallback(() => {
+    if (isMilestone) { setCelebrationVisible(true); haptics.success(); } else { haptics.medium(); }
+    setParticleCount(14);
 
-  const handleCheckin = useCallback(async () => {
-    // Explicit tap guard — prevent any auto-fire from mount/effect/restore
+    releaseRingScale.setValue(0.84);
+    releaseRingOpacity.setValue(0.28);
+    Animated.timing(buttonScale, { toValue: 0.88, duration: 120, useNativeDriver: true }).start(() => {
+      Animated.parallel([
+        Animated.spring(buttonScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }),
+        Animated.timing(releaseRingScale, { toValue: 1.22, duration: 700, useNativeDriver: true }),
+        Animated.timing(releaseRingOpacity, { toValue: 0, duration: 700, useNativeDriver: true }),
+      ]).start();
+    });
+    playSuccessCommon();
+  }, [buttonScale, releaseRingOpacity, releaseRingScale, isMilestone, playSuccessCommon]);
+
+  /** Charged release success — intensity 0 (150ms) to 1 (1200ms+) */
+  const playChargedSuccess = useCallback((intensity: number) => {
+    const count = 14 + Math.round(intensity * 10);
+    setParticleCount(count);
+    setCelebrationVisible(true);
+
+    if (intensity > 0.6) { haptics.heavy(); setTimeout(() => haptics.success(), 100); }
+    else { haptics.medium(); }
+
+    const squish = 0.88 - intensity * 0.06;       // 0.88 → 0.82
+    const ringEnd = 1.22 + intensity * 0.15;       // 1.22 → 1.37
+    const ringOpacity = 0.28 + intensity * 0.12;   // 0.28 → 0.40
+
+    releaseRingScale.setValue(0.84);
+    releaseRingOpacity.setValue(ringOpacity);
+
+    // Squish from current scale → deep squish → spring overshoot
+    Animated.timing(buttonScale, { toValue: squish, duration: 100, useNativeDriver: true }).start(() => {
+      Animated.parallel([
+        Animated.spring(buttonScale, { toValue: 1, tension: 160, friction: 5, useNativeDriver: true }),
+        Animated.timing(releaseRingScale, { toValue: ringEnd, duration: 600, useNativeDriver: true }),
+        Animated.timing(releaseRingOpacity, { toValue: 0, duration: 600, useNativeDriver: true }),
+      ]).start();
+    });
+
+    // Dissipate charge glow
+    Animated.timing(chargeGlowOpacity, { toValue: 0, duration: 400, useNativeDriver: true }).start();
+    chargeRingBorder.setValue(0);
+    chargeRingScale.setValue(1);
+
+    playSuccessCommon();
+  }, [buttonScale, releaseRingOpacity, releaseRingScale, chargeGlowOpacity, chargeRingBorder, chargeRingScale, playSuccessCommon]);
+
+  /* ─── charge helpers ─── */
+
+  const resetChargeVisuals = useCallback(() => {
+    chargeGlowOpacity.setValue(0);
+    chargeRingScale.setValue(1);
+    chargeRingBorder.setValue(0);
+    breatheScale.setValue(1);
+    if (chargeAnimsRef.current) { chargeAnimsRef.current.stop(); chargeAnimsRef.current = null; }
+  }, [chargeGlowOpacity, chargeRingScale, chargeRingBorder, breatheScale]);
+
+  const restartBreatheLoop = useCallback(() => {
+    if (showChecked || !canCheckin) return;
+    const scaleLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breatheScale, { toValue: 1.03, duration: 1250, useNativeDriver: true }),
+        Animated.timing(breatheScale, { toValue: 1, duration: 1250, useNativeDriver: true }),
+      ]),
+    );
+    const shadowLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(breatheShadow, { toValue: 0.2, duration: 1250, useNativeDriver: false }),
+        Animated.timing(breatheShadow, { toValue: 0.4, duration: 1250, useNativeDriver: false }),
+      ]),
+    );
+    breatheLoopRef.current = { scale: scaleLoop, shadow: shadowLoop };
+    scaleLoop.start();
+    shadowLoop.start();
+  }, [showChecked, canCheckin, breatheScale, breatheShadow]);
+
+  /* ─── core check-in logic (shared by quick tap + charged) ─── */
+
+  const performCheckinLogic = useCallback(async (successFn: () => void) => {
     if (isSubmitting.current) return;
-
     if (pv) {
-      if (previewMode === 'before') { setPreviewMode('after'); setJustChecked(true); playSuccess(); }
+      if (previewMode === 'before') { setPreviewMode('after'); setJustChecked(true); successFn(); }
       return;
     }
     if (!authReady) return;
@@ -272,7 +345,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     if (isOffline) {
       try {
         if (!userId) throw new Error('AUTH');
-        await savePendingCheckin(userId); setPendingSaved(true); setPendingCheckinTime(t); setJustChecked(true); playSuccess();
+        await savePendingCheckin(userId); setPendingSaved(true); setPendingCheckinTime(t); setJustChecked(true); successFn();
       } catch { Alert.alert('Nie udało się', 'Spróbuj za chwilę.'); }
       finally { isSubmitting.current = false; }
       return;
@@ -286,7 +359,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       if (prevOk === 1) logInviteEvent('second_day_sign_sent');
       if (prevOk === 2) logInviteEvent('third_day_sign_sent');
       if (hasGap) logInviteEvent('sign_sent_after_gap');
-      setJustChecked(true); playSuccess();
+      setJustChecked(true); successFn();
       refreshWeek(); refreshStats();
     } catch (e) {
       if (e instanceof Error && e.name === 'AUTH_REQUIRED') { Alert.alert('Zaloguj się', 'Ten telefon musi być połączony z kontem.'); return; }
@@ -294,7 +367,82 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     } finally {
       isSubmitting.current = false;
     }
-  }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, playSuccess, refreshWeek, refreshStats]);
+  }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, refreshWeek, refreshStats]);
+
+  /* ─── press handlers: charge & release ─── */
+
+  const handlePressIn = useCallback(() => {
+    if (!canCheckin && !canUrgent) return;
+    pressStartRef.current = Date.now();
+    chargeTriggeredUrgent.current = false;
+
+    // Immediate feedback
+    haptics.light();
+
+    // Stop breathing, start charge
+    if (breatheLoopRef.current) {
+      breatheLoopRef.current.scale.stop();
+      breatheLoopRef.current.shadow.stop();
+    }
+
+    // Charge animations: button swells, glow + ring appear over 1500ms
+    const chargeAnim = Animated.parallel([
+      Animated.timing(breatheScale, { toValue: 1.06, duration: 1500, useNativeDriver: true }),
+      Animated.timing(chargeGlowOpacity, { toValue: 0.5, duration: 1500, useNativeDriver: true }),
+      Animated.timing(chargeRingScale, { toValue: 1.12, duration: 1500, useNativeDriver: true }),
+      Animated.timing(chargeRingBorder, { toValue: 5, duration: 1500, useNativeDriver: false }),
+    ]);
+    chargeAnimsRef.current = chargeAnim;
+    chargeAnim.start();
+
+    // Haptic staircase + urgent threshold
+    let lastMs = 0;
+    chargeIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - pressStartRef.current;
+      if (elapsed >= 300 && lastMs < 300) { haptics.light(); lastMs = 300; }
+      if (elapsed >= 600 && lastMs < 600) { haptics.light(); lastMs = 600; }
+      if (elapsed >= 900 && lastMs < 900) { haptics.medium(); lastMs = 900; }
+      if (elapsed >= 1200 && lastMs < 1200) { haptics.medium(); lastMs = 1200; }
+      if (elapsed >= 1500) {
+        // Urgent threshold
+        if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
+        chargeTriggeredUrgent.current = true;
+        resetChargeVisuals();
+        restartBreatheLoop();
+        haptics.heavy();
+        if (canUrgent) setShowUrgentModal(true);
+      }
+    }, 16);
+  }, [canCheckin, canUrgent, breatheScale, chargeGlowOpacity, chargeRingScale, chargeRingBorder, resetChargeVisuals, restartBreatheLoop]);
+
+  const handlePressOut = useCallback(() => {
+    // Cleanup charge interval + animations
+    if (chargeIntervalRef.current) { clearInterval(chargeIntervalRef.current); chargeIntervalRef.current = null; }
+    if (chargeAnimsRef.current) { chargeAnimsRef.current.stop(); chargeAnimsRef.current = null; }
+
+    if (chargeTriggeredUrgent.current) {
+      resetChargeVisuals();
+      return;
+    }
+
+    const holdDuration = Date.now() - pressStartRef.current;
+
+    if (holdDuration < 150) {
+      // Quick tap — same as before
+      resetChargeVisuals();
+      restartBreatheLoop();
+      performCheckinLogic(playSuccess);
+    } else if (holdDuration < 1500) {
+      // Charged release — proportional burst
+      const intensity = Math.min((holdDuration - 150) / 1050, 1);
+      resetChargeVisuals();
+      performCheckinLogic(() => playChargedSuccess(intensity));
+    } else {
+      // Released after urgent triggered
+      resetChargeVisuals();
+      restartBreatheLoop();
+    }
+  }, [resetChargeVisuals, restartBreatheLoop, performCheckinLogic, playSuccess, playChargedSuccess]);
 
   const handleStatusPick = useCallback(async (statusKey: string, index: number) => {
     setStatusPicked(statusKey);
@@ -533,8 +681,17 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         <View style={s.center}>
           {/* ─── THE BUTTON ─── */}
           <View style={s.buttonArea}>
+            {/* Charge glow — soft halo behind button */}
+            <Animated.View pointerEvents="none" style={[s.chargeGlow, { opacity: chargeGlowOpacity }]} />
+            {/* Charge ring — border grows during hold */}
+            <Animated.View pointerEvents="none" style={[s.chargeRing, {
+              opacity: chargeGlowOpacity,
+              transform: [{ scale: chargeRingScale }],
+              borderWidth: chargeRingBorder,
+            }]} />
+            {/* Release ring */}
             <Animated.View pointerEvents="none" style={[s.releaseRing, { opacity: releaseRingOpacity, transform: [{ scale: releaseRingScale }] }]} />
-            <Particles visible={celebrationVisible} count={14} colors={[Colors.safe, Colors.love, Colors.highlight, Colors.delight]} />
+            <Particles key={particleCount} visible={celebrationVisible} count={particleCount} colors={[Colors.safe, Colors.love, Colors.highlight, Colors.delight]} />
 
             {checkinLoading && !showChecked ? (
               <View style={s.loadingCircle}><ActivityIndicator size="large" color={Colors.safe} /></View>
@@ -549,13 +706,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                 } : undefined}>
                 <Animated.View style={{ transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] }}>
                   <Pressable
-                    onPress={handleCheckin}
-                    onLongPress={() => { if (canUrgent) { haptics.heavy(); setShowUrgentModal(true); } }}
-                    delayLongPress={2000}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
                     disabled={!canCheckin && !canUrgent}
-                    style={({ pressed }) => [
+                    style={[
                       s.btn, buttonDone && s.btnDone, buttonDisabled && s.btnOff, !buttonDone && !buttonDisabled && s.btnActive,
-                      pressed && canCheckin && { transform: [{ scale: 0.96 }], opacity: 0.94 },
                     ]}
                   >
                     <Text style={[s.btnText, buttonDone && s.btnTextDone, buttonDisabled && s.btnTextOff]} maxFontSizeMultiplier={1.2}>
@@ -669,6 +824,8 @@ const s = StyleSheet.create({
 
   /* button */
   buttonArea: { justifyContent: 'center', alignItems: 'center', height: BTN + 48 },
+  chargeGlow: { position: 'absolute', width: BTN + 64, height: BTN + 64, borderRadius: (BTN + 64) / 2, backgroundColor: Colors.safeLight },
+  chargeRing: { position: 'absolute', width: BTN + 16, height: BTN + 16, borderRadius: (BTN + 16) / 2, borderColor: Colors.safe },
   releaseRing: { position: 'absolute', width: BTN + 24, height: BTN + 24, borderRadius: (BTN + 24) / 2, backgroundColor: Colors.safeLight },
   loadingCircle: { width: BTN, height: BTN, borderRadius: BTN / 2, backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center' },
   btn: { width: BTN, height: BTN, borderRadius: BTN / 2, alignItems: 'center', justifyContent: 'center' },
