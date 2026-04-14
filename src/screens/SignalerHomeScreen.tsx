@@ -96,6 +96,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const moodScales = useRef(STATUS_MOODS.map(() => new Animated.Value(1))).current;
 
   // Charge & release refs
+  const chargeButtonScale = useRef(new Animated.Value(1)).current;
   const chargeGlowOpacity = useRef(new Animated.Value(0)).current;
   const chargeRingScale = useRef(new Animated.Value(1)).current;
   const chargeRingBorder = useRef(new Animated.Value(0)).current;
@@ -306,12 +307,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   /* ─── charge helpers ─── */
 
   const resetChargeVisuals = useCallback(() => {
+    chargeButtonScale.setValue(1);
     chargeGlowOpacity.setValue(0);
     chargeRingScale.setValue(1);
     chargeRingBorder.setValue(0);
-    breatheScale.setValue(1);
     if (chargeAnimsRef.current) { chargeAnimsRef.current.stop(); chargeAnimsRef.current = null; }
-  }, [chargeGlowOpacity, chargeRingScale, chargeRingBorder, breatheScale]);
+  }, [chargeButtonScale, chargeGlowOpacity, chargeRingScale, chargeRingBorder]);
 
   const restartBreatheLoop = useCallback(() => {
     if (showChecked || !canCheckin) return;
@@ -392,7 +393,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     // Charge animations: button swells, glow + ring appear over 1500ms
     // Native-driven anims (transform, opacity) run on UI thread
     const nativeAnim = Animated.parallel([
-      Animated.timing(breatheScale, { toValue: 1.06, duration: 1500, useNativeDriver: true }),
+      Animated.timing(chargeButtonScale, { toValue: 1.06, duration: 1500, useNativeDriver: true }),
       Animated.timing(chargeGlowOpacity, { toValue: 0.5, duration: 1500, useNativeDriver: true }),
       Animated.timing(chargeRingScale, { toValue: 1.12, duration: 1500, useNativeDriver: true }),
     ]);
@@ -420,7 +421,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         if (canUrgent) setShowUrgentModal(true);
       }
     }, 16);
-  }, [canCheckin, canUrgent, breatheScale, chargeGlowOpacity, chargeRingScale, chargeRingBorder, resetChargeVisuals, restartBreatheLoop]);
+  }, [canCheckin, canUrgent, chargeButtonScale, chargeGlowOpacity, chargeRingScale, chargeRingBorder, resetChargeVisuals, restartBreatheLoop]);
 
   const handlePressOut = useCallback(() => {
     // Cleanup charge interval + animations
@@ -727,7 +728,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   elevation: 8,
                   borderRadius: BTN / 2,
                 } : undefined}>
-                <Animated.View style={{ transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] }}>
+                <Animated.View style={{ transform: [{ scale: Animated.multiply(Animated.multiply(buttonScale, breatheScale), chargeButtonScale) }] }}>
                   <Pressable
                     onPressIn={handlePressIn}
                     onPressOut={handlePressOut}
