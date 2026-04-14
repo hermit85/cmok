@@ -21,6 +21,19 @@ export default function RootLayout() {
     Nunito_700Bold,
   });
 
+  // Capture JS errors in PostHog
+  useEffect(() => {
+    const prevHandler = ErrorUtils.getGlobalHandler();
+    ErrorUtils.setGlobalHandler((error, isFatal) => {
+      posthog.capture('$exception', {
+        $exception_message: error?.message || String(error),
+        $exception_stack_trace_raw: error?.stack || '',
+        $exception_is_fatal: isFatal ?? false,
+      });
+      prevHandler?.(error, isFatal);
+    });
+  }, []);
+
   // Rejestruj push token przy uruchomieniu + po zalogowaniu
   // Identify user in PostHog after auth
   useEffect(() => {
