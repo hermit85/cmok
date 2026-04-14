@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Animated,
-  ActivityIndicator, ScrollView, Alert, Share, Platform,
+  ActivityIndicator, ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -128,10 +128,10 @@ function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: b
 /* ─── Response tap ─── */
 
 const REACTIONS = [
-  { emoji: '\u{2764}\u{FE0F}', symbol: '\u{2665}', label: 'Kocham', color: Colors.love },
-  { emoji: '\u{2615}', symbol: '\u{2022}', label: 'Dobranoc', color: Colors.delight },
-  { emoji: '\u{1F44B}', symbol: '\u{2713}', label: 'OK!', color: Colors.safe },
-  { emoji: '\u{1F31E}', symbol: '\u{2605}', label: 'Super!', color: Colors.highlight },
+  { emoji: '\u{2764}\u{FE0F}', label: 'Kocham' },
+  { emoji: '\u{1F31B}', label: 'Dobranoc' },
+  { emoji: '\u{1F44D}', label: 'OK!' },
+  { emoji: '\u{1F31E}', label: 'Super!' },
 ] as const;
 
 function ResponseTap({ signalerName, signalerId, preview }: { signalerName: string; signalerId: string; preview: boolean }) {
@@ -196,12 +196,12 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
           <Text style={st.responsePrompt}>Odpowiedz jednym gestem</Text>
           <View style={st.reactionsRow}>
             {REACTIONS.map((r, i) => (
-              <Animated.View key={r.symbol} style={{ transform: [{ scale: scales[i] }] }}>
+              <Animated.View key={r.emoji} style={{ transform: [{ scale: scales[i] }] }}>
                 <Pressable
                   onPress={() => handleTap(r.emoji, i)}
                   style={({ pressed }) => [st.reactionBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.92 }] }]}
                 >
-                  <Text style={[st.reactionSymbol, { color: r.color }]}>{r.symbol}</Text>
+                  <Emoji style={st.reactionEmoji}>{r.emoji}</Emoji>
                   <Text style={st.reactionLabel}>{r.label}</Text>
                 </Pressable>
               </Animated.View>
@@ -408,13 +408,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     } catch { /* silent */ }
   };
 
-  const handleShareInvite = async () => {
-    const msg = 'Ktoś bliski mieszka sam? Codziennie dostaję od niego znak, że jest OK. Zero dzwonienia, zero stresu. Jeden tap.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz';
-    try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
-    } catch { /* cancelled */ }
-  };
-
   /* ─── loading ─── */
   if (!pv && (circleLoading || dataLoading)) {
     return <SafeAreaView style={st.container}><View style={st.loadingWrap}><ActivityIndicator size="large" color={Colors.accent} /></View></SafeAreaView>;
@@ -545,7 +538,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
         {/* ─── SECTION 2: Rhythm ─── */}
         <View style={st.rhythmSection}>
-          {effWeek.length > 0 ? <WeekDots days={effWeek} showLabel /> : null}
+          {effWeek.length > 0 ? <WeekDots days={effWeek} /> : null}
           {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
           {sigId ? <MonthGrid signalerId={sigId} /> : null}
           {/* Nudge button — only when no sign today */}
@@ -644,7 +637,7 @@ const st = StyleSheet.create({
     backgroundColor: Colors.cardStrong, borderWidth: 1.5, borderColor: Colors.border,
     justifyContent: 'center', alignItems: 'center',
   },
-  reactionSymbol: { fontSize: 24 },
+  reactionEmoji: { fontSize: 28 },
   reactionLabel: { fontSize: 9, color: Colors.textMuted, marginTop: 2 },
   responseSentPill: {
     backgroundColor: Colors.safeLight, minHeight: 44, paddingHorizontal: 24,
