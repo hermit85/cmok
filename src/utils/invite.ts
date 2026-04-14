@@ -152,51 +152,31 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    if (isRecipient) {
-      // Recipient: reuse pending pair or create new one
-      const { data: existing } = await supabase
-        .from('care_pairs')
-        .select('id')
-        .eq('caregiver_id', user.id)
-        .eq('status', 'pending')
-        .limit(1)
-        .maybeSingle();
+    const col = isRecipient ? 'caregiver_id' : 'senior_id';
 
-      if (existing?.id) {
-        const { error: updateErr } = await supabase
-          .from('care_pairs')
-          .update({ invite_code: code, invite_expires_at: expiresAt })
-          .eq('id', existing.id);
-        if (updateErr) throw updateErr;
-      } else {
-        const { error: insertErr } = await supabase.from('care_pairs').insert({
-          caregiver_id: user.id,
-          invite_code: code,
-          invite_expires_at: expiresAt,
-          status: 'pending',
-        });
-        if (insertErr) throw insertErr;
-      }
+    // Reuse existing pending pair or create new one
+    const { data: existing } = await supabase
+      .from('care_pairs')
+      .select('id')
+      .eq(col, user.id)
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle();
+
+    if (existing?.id) {
+      const { error: updateErr } = await supabase
+        .from('care_pairs')
+        .update({ invite_code: code, invite_expires_at: expiresAt })
+        .eq('id', existing.id);
+      if (updateErr) throw updateErr;
     } else {
-      // Signaler: can't create care_pair without caregiver_id (NOT NULL).
-      // Reuse existing pending pair if available, otherwise just share without DB code.
-      const { data: existing } = await supabase
-        .from('care_pairs')
-        .select('id')
-        .eq('senior_id', user.id)
-        .eq('status', 'pending')
-        .limit(1)
-        .maybeSingle();
-
-      if (existing?.id) {
-        const { error: updateErr } = await supabase
-          .from('care_pairs')
-          .update({ invite_code: code, invite_expires_at: expiresAt })
-          .eq('id', existing.id);
-        if (updateErr) throw updateErr;
-      }
-      // No pending pair? That's fine — share the app link without a DB-backed code.
-      // The code in the message is still valid for display but won't be in care_pairs.
+      const { error: insertErr } = await supabase.from('care_pairs').insert({
+        [col]: user.id,
+        invite_code: code,
+        invite_expires_at: expiresAt,
+        status: 'pending',
+      });
+      if (insertErr) throw insertErr;
     }
 
     logInviteEvent('invite_created', { code });
