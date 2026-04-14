@@ -17,12 +17,12 @@ const SLIDES = [
     body: 'Bliska osoba mieszka osobno?\nJeden gest dziennie i masz spokój.',
   },
   {
-    headline: 'Stuknij raz.\nDruga strona wie.',
-    body: 'Bez dzwonienia, bez SMS-ów.\nŚwiecąca kropka to Wasz rytuał.',
+    headline: 'Jeden gest,\ndruga strona wie',
+    body: 'Bez dzwonienia, bez SMS-ów.\nTo Wasz codzienny rytuał bliskości.',
   },
   {
-    headline: 'A gdy coś\nsię dzieje?',
-    body: 'Przytrzymaj dłużej i cały krąg\nbliskich dostanie sygnał.',
+    headline: 'A gdy trzeba\npomocy?',
+    body: 'Przytrzymaj dłużej, a krąg\nbliskich od razu dostanie sygnał.',
   },
 ];
 
