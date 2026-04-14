@@ -35,7 +35,8 @@ export function WaitingForConnectionScreen() {
     const trimmed = nameValue.trim();
     if (!trimmed || !profile?.id) return;
     try {
-      await supabase.from('users').update({ name: trimmed }).eq('id', profile.id);
+      const { error } = await supabase.from('users').update({ name: trimmed }).eq('id', profile.id);
+      if (error) throw error;
       setEditingName(false);
       refreshRelationship();
     } catch { Alert.alert('Błąd', 'Nie udało się zapisać.'); }
