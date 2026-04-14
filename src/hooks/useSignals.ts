@@ -57,7 +57,7 @@ export function useSignals() {
       }, (payload) => {
         const sig = payload.new as Signal;
         if (sig.created_at >= todayMidnightISO()) {
-          setTodaySignals(prev => [sig, ...prev]);
+          setTodaySignals(prev => prev.some(s => s.id === sig.id) ? prev : [sig, ...prev]);
         }
       })
       .subscribe();
@@ -75,7 +75,7 @@ export function useSignals() {
       }, (payload) => {
         const sig = payload.new as Signal;
         if (sig.type === 'reaction' && sig.created_at >= todayMidnightISO()) {
-          setTodaySentSignals(prev => [sig, ...prev]);
+          setTodaySentSignals(prev => prev.some(s => s.id === sig.id) ? prev : [sig, ...prev]);
         }
       })
       .subscribe();

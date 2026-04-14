@@ -161,10 +161,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   // For UI rendering: confirmed OR transitional
   const showChecked = confirmedDone || isSending || isPendingOffline;
 
-  // Poll for reactions every 30s when checked in
+  // Fallback poll for reactions (realtime is primary, this catches dropped events)
   useEffect(() => {
     if (!showChecked) return;
-    const interval = setInterval(() => refreshSignals(), 30000);
+    const interval = setInterval(() => refreshSignals(), 60000);
     return () => clearInterval(interval);
   }, [showChecked, refreshSignals]);
 
@@ -251,6 +251,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       celebrationTimeoutRef.current = setTimeout(() => {
         setCelebrationVisible(false);
         setMilestoneVisible(true);
+        celebrationTimeoutRef.current = null;
       }, 1200);
     }
   }, [breatheShadow, isMilestone, toastFade, currentStreak]);
@@ -338,6 +339,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   const performCheckinLogic = useCallback(async (successFn: () => void) => {
     if (isSubmitting.current) return;
+    // Safety: auto-reset after 15s to prevent permanent lock on network hang
+    const safetyTimer = setTimeout(() => { isSubmitting.current = false; }, 15000);
     if (pv) {
       if (previewMode === 'before') { setPreviewMode('after'); setJustChecked(true); successFn(); }
       return;
@@ -353,7 +356,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         if (!userId) throw new Error('AUTH');
         await savePendingCheckin(userId); setPendingSaved(true); setPendingCheckinTime(t); setJustChecked(true); successFn();
       } catch { Alert.alert('Nie udało się', 'Spróbuj za chwilę.'); }
-      finally { isSubmitting.current = false; }
+      finally { clearTimeout(safetyTimer); isSubmitting.current = false; }
       return;
     }
     try {
@@ -371,6 +374,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       if (e instanceof Error && e.name === 'AUTH_REQUIRED') { Alert.alert('Zaloguj się', 'Ten telefon musi być połączony z kontem.'); return; }
       Alert.alert('Nie udało się', 'Spróbuj za chwilę.');
     } finally {
+      clearTimeout(safetyTimer);
       isSubmitting.current = false;
     }
   }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, refreshWeek, refreshStats, currentStreak, realWeekDays]);

@@ -265,21 +265,23 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     try {
       const today = new Date();
       const todayStr = todayDateKey(today);
-      const { data } = await supabase.from('daily_checkins').select('local_date, checked_at, status_emoji')
-        .eq('senior_id', sigId).gte('local_date', todayStr).lte('local_date', todayStr).limit(1).maybeSingle();
-
-      const todayRow = data as (DailyCheckin & { status_emoji?: string | null }) | null;
-
-      // Last contact from recent history
       const ago = new Date(today); ago.setDate(today.getDate() - 6);
-      const { data: recent } = await supabase.from('daily_checkins').select('local_date, checked_at')
-        .eq('senior_id', sigId).gte('local_date', todayDateKey(ago)).lte('local_date', todayStr)
-        .order('local_date', { ascending: false }).limit(1).maybeSingle();
-      const latestRow = recent as DailyCheckin | null;
 
-      // Connection duration
-      const { data: pair } = await supabase.from('care_pairs').select('joined_at')
-        .eq('senior_id', sigId).eq('status', 'active').limit(1).maybeSingle();
+      // Run all 3 queries in parallel
+      const [todayResult, recentResult, pairResult] = await Promise.all([
+        supabase.from('daily_checkins').select('local_date, checked_at, status_emoji')
+          .eq('senior_id', sigId).gte('local_date', todayStr).lte('local_date', todayStr).limit(1).maybeSingle(),
+        supabase.from('daily_checkins').select('local_date, checked_at')
+          .eq('senior_id', sigId).gte('local_date', todayDateKey(ago)).lte('local_date', todayStr)
+          .order('local_date', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('care_pairs').select('joined_at')
+          .eq('senior_id', sigId).eq('status', 'active').limit(1).maybeSingle(),
+      ]);
+
+      const todayRow = todayResult.data as (DailyCheckin & { status_emoji?: string | null }) | null;
+      const latestRow = recentResult.data as DailyCheckin | null;
+      const pair = pairResult.data;
+
       if (pair?.joined_at) {
         const diff = Math.floor((Date.now() - new Date(pair.joined_at).getTime()) / 86400000);
         setConnectionDays(Math.max(diff, 1));
