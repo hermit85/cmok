@@ -267,14 +267,7 @@ export function SettingsScreen() {
           </Text>
         </View>
 
-        {/* ─── Reminder surface (signaler only) ─── */}
-        {isSignaler ? (
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>Przypomnienie</Text>
-            <Text style={styles.cardValue}>Poranne przypomnienie</Text>
-            <Text style={styles.cardDetail}>Przypomnimy o znaku rano, jeśli jeszcze go nie dałeś.</Text>
-          </View>
-        ) : null}
+        {/* Reminder — hidden until backend integration is ready */}
 
         {/* ─── Legal center ─── */}
         <View style={styles.card}>
