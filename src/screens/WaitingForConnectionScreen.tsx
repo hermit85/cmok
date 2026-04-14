@@ -63,7 +63,9 @@ export function WaitingForConnectionScreen() {
     ]);
   };
 
-  if (!sessionReady || loading || !profile || !relationship) {
+  // Only show loader on initial mount, not on polling refreshes
+  const hasData = profile && relationship;
+  if (!sessionReady || (!hasData && loading)) {
     return (
       <SafeAreaView style={[s.container, s.centered]}>
         <ActivityIndicator size="large" color={Colors.accent} />
@@ -103,6 +105,13 @@ export function WaitingForConnectionScreen() {
               Kod ważny do {new Date(relationship.inviteExpiresAt).toLocaleString('pl-PL', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
             </Text>
           ) : null}
+
+          <Pressable
+            onPress={handleShare}
+            style={({ pressed }) => [s.resendLink, pressed && { opacity: 0.6 }]}
+          >
+            <Text style={s.resendLinkText}>Wyślij do kogoś jeszcze</Text>
+          </Pressable>
         </View>
 
         {/* Card 2: Status */}
@@ -171,6 +180,8 @@ const s = StyleSheet.create({
   codeValue: { fontSize: 32, fontFamily: Typography.headingFamily, color: Colors.text, letterSpacing: 6 },
   copyHint: { fontSize: 11, color: Colors.textMuted, marginTop: 6 },
   expiryHint: { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: 10 },
+  resendLink: { minHeight: 40, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
+  resendLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
 
   /* share button */
   shareBtn: {
