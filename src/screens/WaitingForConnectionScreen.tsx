@@ -12,16 +12,14 @@ import { Spacing } from '../constants/tokens';
 
 export function WaitingForConnectionScreen() {
   const router = useRouter();
-  const { loading, profile, relationship, status, refreshRelationship } = useRelationship();
+  const { loading, sessionReady, profile, relationship, status, refreshRelationship } = useRelationship();
 
   useEffect(() => {
-    if (!loading && status === 'active' && profile?.role === 'recipient') {
+    if (!sessionReady || loading) return; // Wait for full data before routing
+    if (status === 'active' && profile?.role === 'recipient') {
       router.replace('/recipient-home');
     }
-    if (!loading && (profile?.role !== 'recipient' || status === 'none')) {
-      router.replace('/onboarding');
-    }
-  }, [loading, profile?.role, router, status]);
+  }, [sessionReady, loading, profile?.role, router, status]);
 
   useEffect(() => {
     if (status !== 'pending') return;
@@ -65,7 +63,7 @@ export function WaitingForConnectionScreen() {
     ]);
   };
 
-  if (loading || profile?.role !== 'recipient' || status !== 'pending' || !relationship) {
+  if (!sessionReady || loading || !profile || !relationship) {
     return (
       <SafeAreaView style={[s.container, s.centered]}>
         <ActivityIndicator size="large" color={Colors.accent} />
