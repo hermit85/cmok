@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { useRelationship } from '../hooks/useRelationship';
 import { shareInvite, logInviteEvent } from '../utils/invite';
+import { supabase } from '../services/supabase';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius } from '../constants/tokens';
@@ -102,6 +103,39 @@ export function WaitingForConnectionScreen() {
         >
           <Text style={styles.refreshLinkText}>Sprawdź teraz</Text>
         </Pressable>
+
+        <View style={styles.bottomActions}>
+          <Pressable
+            onPress={async () => {
+              await supabase.auth.signOut();
+              router.replace('/onboarding');
+            }}
+            style={({ pressed }) => [styles.bottomLink, pressed && { opacity: 0.6 }]}
+          >
+            <Text style={styles.bottomLinkText}>Wyloguj</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              Alert.alert('Usunąć konto?', 'Wszystkie dane zostaną trwale usunięte.', [
+                { text: 'Anuluj', style: 'cancel' },
+                {
+                  text: 'Usuń konto', style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await supabase.functions.invoke('delete-account', { body: {} });
+                      await supabase.auth.signOut();
+                      router.replace('/onboarding');
+                    } catch { Alert.alert('Błąd', 'Nie udało się usunąć konta.'); }
+                  },
+                },
+              ]);
+            }}
+            style={({ pressed }) => [styles.bottomLink, pressed && { opacity: 0.6 }]}
+          >
+            <Text style={styles.deleteText}>Usuń konto</Text>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -137,6 +171,10 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 13, color: Colors.safeStrong, textAlign: 'center', lineHeight: 20 },
   refreshLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 12 },
   refreshLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  bottomActions: { marginTop: 32, alignItems: 'center', gap: 12 },
+  bottomLink: { minHeight: 40, justifyContent: 'center', alignItems: 'center' },
+  bottomLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
+  deleteText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.alert },
   backButton: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 8, minHeight: 44, marginBottom: 8, marginLeft: -8 },
   backText: { fontSize: 16, fontWeight: '500', color: Colors.accent },
 });
