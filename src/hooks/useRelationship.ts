@@ -40,6 +40,7 @@ async function fetchProfileAndRelationship(): Promise<{
     return { profile: null, relationship: null, status: 'none', hasTrustedAccess: false };
   }
 
+  // Fetch profile first (needed to determine role for relationship query)
   const { data: profile } = await supabase
     .from('users')
     .select('id, phone, name, role, checkin_time, timezone')
@@ -57,12 +58,22 @@ async function fetchProfileAndRelationship(): Promise<{
   const relationshipLookupColumn = role === 'recipient' ? 'caregiver_id' : 'senior_id';
   const relationshipStatuses = role === 'recipient' ? ['active', 'pending'] : ['active'];
 
-  const { data: rawRelationships } = await supabase
-    .from('care_pairs')
-    .select('id, senior_id, caregiver_id, signaler_label, senior_name, invite_code, invite_expires_at, status, joined_at')
-    .eq(relationshipLookupColumn, session.user.id)
-    .in('status', relationshipStatuses)
-    .limit(5);
+  // Run relationship + trusted access queries in parallel
+  const [{ data: rawRelationships }, { data: trustedMemberships }] = await Promise.all([
+    supabase
+      .from('care_pairs')
+      .select('id, senior_id, caregiver_id, signaler_label, senior_name, invite_code, invite_expires_at, status, joined_at')
+      .eq(relationshipLookupColumn, session.user.id)
+      .in('status', relationshipStatuses)
+      .limit(5),
+    supabase
+      .from('trusted_contacts')
+      .select('id, care_pairs!inner(id, status)')
+      .eq('user_id', session.user.id)
+      .eq('status', 'active')
+      .eq('care_pairs.status', 'active')
+      .limit(1),
+  ]);
 
   const preferredRelationship = (rawRelationships || []).sort((a, b) => {
     if (a.status === b.status) return 0;
@@ -70,13 +81,6 @@ async function fetchProfileAndRelationship(): Promise<{
   })[0];
 
   const relationship = preferredRelationship ? mapRelationship(preferredRelationship) : null;
-  const { data: trustedMemberships } = await supabase
-    .from('trusted_contacts')
-    .select('id, care_pairs!inner(id, status)')
-    .eq('user_id', session.user.id)
-    .eq('status', 'active')
-    .eq('care_pairs.status', 'active')
-    .limit(1);
 
   return {
     profile: {

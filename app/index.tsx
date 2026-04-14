@@ -25,14 +25,13 @@ export default function Index() {
   const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [checkedPending, setCheckedPending] = useState(false);
 
+  // Check pending invite as soon as possible (don't wait for sessionReady)
   useEffect(() => {
-    if (!sessionReady) return;
-    (async () => {
-      const pending = await getPendingInvite();
-      if (pending && profile) setPendingCode(pending.code);
+    getPendingInvite().then((pending) => {
+      if (pending) setPendingCode(pending.code);
       setCheckedPending(true);
-    })();
-  }, [sessionReady, profile]);
+    });
+  }, []);
 
   if (loading || !sessionReady || !checkedPending) {
     return <LoadingScreen />;
