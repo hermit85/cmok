@@ -465,7 +465,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               <Text style={st.claimBtnText}>Zajmuję się tym</Text>
             </Pressable>
           ) : null}
-          {byMe ? (
+          {claimed ? (
             <Pressable onPress={handleResolve} disabled={urgentLoading} style={({ pressed }) => [st.resolveBtn, pressed && { opacity: 0.8 }]}>
               <Text style={st.resolveBtnText}>Wszystko OK, zamknij</Text>
             </Pressable>
