@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Animated,
-  ActivityIndicator, ScrollView, Alert,
+  ActivityIndicator, ScrollView, Alert, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -450,6 +450,16 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             {claimed ? byMe ? 'Zajmujesz się tym.' : `${effUrgent.claimerName} już się tym zajmuje.` : 'Nikt jeszcze nie odpowiedział.'}
           </Text>
           <Text style={st.urgentTime}>Wysłano o {fmtTime(effAlert.triggered_at)}</Text>
+          {effAlert.latitude != null && effAlert.longitude != null ? (
+            <Pressable
+              onPress={() => Linking.openURL(`https://maps.apple.com/?ll=${effAlert.latitude},${effAlert.longitude}&q=${encodeURIComponent(relationDisplay(effUrgent.signalerName))}`)}
+              style={({ pressed }) => [st.mapLink, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={st.mapLinkText}>Pokaż lokalizację na mapie</Text>
+            </Pressable>
+          ) : (
+            <Text style={st.noLocationHint}>Bez lokalizacji</Text>
+          )}
           {!claimed ? (
             <Pressable onPress={handleClaim} disabled={urgentLoading} style={({ pressed }) => [st.claimBtn, pressed && { opacity: 0.9 }]}>
               <Text style={st.claimBtnText}>Zajmuję się tym</Text>
@@ -680,7 +690,10 @@ const st = StyleSheet.create({
   urgentLabel: { fontSize: 13, fontFamily: Typography.fontFamilyBold, color: Colors.alert, marginBottom: 10 },
   urgentTitle: { fontSize: 26, lineHeight: 32, fontFamily: Typography.headingFamily, color: Colors.text },
   urgentBody: { fontSize: 16, lineHeight: 24, color: Colors.textSecondary, marginTop: 8, marginBottom: 6 },
-  urgentTime: { fontSize: 14, color: Colors.textMuted, marginBottom: 18 },
+  urgentTime: { fontSize: 14, color: Colors.textMuted, marginBottom: 10 },
+  mapLink: { backgroundColor: Colors.safe, minHeight: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 18 },
+  mapLinkText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
+  noLocationHint: { fontSize: 13, color: Colors.textMuted, marginBottom: 18 },
   claimBtn: { height: 56, borderRadius: Radius.sm, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   claimBtnText: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
   resolveBtn: { height: 52, borderRadius: Radius.sm, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
