@@ -72,10 +72,11 @@ export async function syncPendingCheckin(): Promise<boolean> {
 
     if (error) throw error;
 
+    // Remove pending BEFORE notify — prevents duplicate push if app crashes between
+    await removeItem(PENDING_CHECKIN_KEY);
+
     // Notify recipient now that the offline check-in reached the server
     supabase.functions.invoke('checkin-notify', { body: {} }).catch(() => {});
-
-    await removeItem(PENDING_CHECKIN_KEY);
     return true;
   } catch (err) {
     console.error('syncPendingCheckin error:', err);

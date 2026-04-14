@@ -134,8 +134,11 @@ const REACTIONS = [
   { emoji: '\u{1F31E}', label: 'Super!', bg: '#FFF8E1' },
 ] as const;
 
-function ResponseTap({ signalerName, signalerId, preview }: { signalerName: string; signalerId: string; preview: boolean }) {
-  const { sendSignal, hasSentReactionToday } = useSignals();
+function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentReactionToday }: {
+  signalerName: string; signalerId: string; preview: boolean;
+  sendSignal: (toUserId: string, emoji: string, message?: string, signalType?: string) => Promise<boolean>;
+  hasSentReactionToday: (toUserId: string) => boolean;
+}) {
   const alreadySent = !preview && hasSentReactionToday(signalerId);
   const [justSent, setJustSent] = useState<string | null>(null);
   const [showReactionParticles, setShowReactionParticles] = useState(false);
@@ -562,7 +565,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         <View style={st.actionsSection}>
           {effOk && sigId ? (
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
-              <ResponseTap signalerName={name} signalerId={sigId} preview={pv} />
+              <ResponseTap signalerName={name} signalerId={sigId} preview={pv} sendSignal={sendSignal} hasSentReactionToday={hasSentReactionToday} />
             </Animated.View>
           ) : null}
           {/* Viral: grow circle — subtle link */}

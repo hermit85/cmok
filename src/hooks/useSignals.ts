@@ -12,7 +12,7 @@ export function useSignals() {
   const fetchSignals = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { setLoading(false); return; }
       setUserId(user.id);
 
       const todayStart = todayMidnightISO();
