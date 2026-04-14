@@ -142,10 +142,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     if (hasSyncedPending.current) return;
     hasSyncedPending.current = true;
     syncPendingCheckin().then((ok) => { if (ok) { refreshCheckin(); refreshWeek(); refreshStats(); } });
-  }, [refreshCheckin, refreshWeek]);
+  }, [refreshCheckin, refreshWeek, refreshStats]);
   useEffect(() => () => {
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
     if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
+    if (chargeAnimsRef.current) chargeAnimsRef.current.stop();
+    if (breatheLoopRef.current) { breatheLoopRef.current.scale.stop(); breatheLoopRef.current.shadow.stop(); }
   }, []);
 
   /* ─── derived: 4 clear states ─── */

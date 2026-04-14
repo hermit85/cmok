@@ -297,7 +297,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     const filter = `senior_id=eq.${sigId}`;
     const ch = supabase.channel('r-checkins')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_checkins', filter }, () => { fetchData(); refreshWeek(); })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'daily_checkins', filter }, () => { fetchData(); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'daily_checkins', filter }, () => { fetchData(); refreshWeek(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [pv, sigId, fetchData, refreshWeek]);
