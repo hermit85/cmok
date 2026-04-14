@@ -444,20 +444,36 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     }
   }, [resetChargeVisuals, restartBreatheLoop, performCheckinLogic, playSuccess, playChargedSuccess]);
 
+  const moodPickedScale = useRef(new Animated.Value(0)).current;
+  const moodPickedOpacity = useRef(new Animated.Value(0)).current;
+  const moodFadeOut = useRef(new Animated.Value(1)).current;
+
   const handleStatusPick = useCallback(async (statusKey: string, index: number) => {
-    setStatusPicked(statusKey);
-    haptics.medium();
-    // Spring animation on the tapped chip
-    Animated.sequence([
-      Animated.spring(moodScales[index], { toValue: 1.25, useNativeDriver: true, speed: 50, bounciness: 12 }),
-      Animated.spring(moodScales[index], { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }),
-    ]).start();
+    haptics.light();
+
+    // 1. Bounce the tapped chip big (1.4x)
+    Animated.spring(moodScales[index], { toValue: 1.4, useNativeDriver: true, speed: 50, bounciness: 14 }).start(() => {
+      // 2. After peak: haptic confirmation + fade out all chips
+      haptics.success();
+      setStatusPicked(statusKey);
+
+      // 3. Fade out chips row, scale in the result pill
+      moodFadeOut.setValue(1);
+      moodPickedScale.setValue(0.6);
+      moodPickedOpacity.setValue(0);
+      Animated.parallel([
+        Animated.timing(moodFadeOut, { toValue: 0, duration: 200, useNativeDriver: true }),
+        Animated.spring(moodPickedScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }),
+        Animated.timing(moodPickedOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+    });
+
     if (pv || !userId) return;
     try {
       const today = new Date().toISOString().slice(0, 10);
       await supabase.from('daily_checkins').update({ status_emoji: statusKey }).eq('senior_id', userId).eq('local_date', today);
     } catch { /* silent — status is optional */ }
-  }, [pv, userId, moodScales]);
+  }, [pv, userId, moodScales, moodFadeOut, moodPickedScale, moodPickedOpacity]);
 
   const handleMilestoneShare = useCallback(async () => {
     const streakText = currentStreak === 7 ? 'tydzień' : currentStreak === 14 ? '2 tygodnie' : currentStreak === 21 ? '3 tygodnie' : currentStreak === 30 ? 'miesiąc' : `${currentStreak} dni`;
@@ -738,14 +754,14 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                 </Animated.View>
               ) : null}
               {!statusPicked ? (
-                <View style={s.statusSection}>
+                <Animated.View style={[s.statusSection, { opacity: moodFadeOut }]}>
                   <Text style={s.statusPrompt}>Jak się dziś czujesz?</Text>
                   <View style={s.statusRow}>
                     {STATUS_MOODS.map((mood, i) => (
                       <Animated.View key={mood.key} style={{ transform: [{ scale: moodScales[i] }] }}>
                         <Pressable
                           onPress={() => handleStatusPick(mood.key, i)}
-                          style={({ pressed }) => [s.statusChip, pressed && { opacity: 0.7 }]}
+                          style={({ pressed }) => [s.statusChip, pressed && { backgroundColor: Colors.surfacePressed }]}
                         >
                           <Text style={[s.statusSymbol, { color: mood.color }]}>{mood.symbol}</Text>
                           <Text style={s.statusLabel}>{mood.label}</Text>
@@ -753,11 +769,16 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                       </Animated.View>
                     ))}
                   </View>
-                </View>
+                </Animated.View>
               ) : (
-                <Text style={s.statusPicked}>
-                  {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
-                </Text>
+                <Animated.View style={[s.statusPickedPill, { opacity: moodPickedOpacity, transform: [{ scale: moodPickedScale }] }]}>
+                  <Text style={[s.statusPickedSymbol, { color: STATUS_MOODS.find((m) => m.key === statusPicked)?.color }]}>
+                    {STATUS_MOODS.find((m) => m.key === statusPicked)?.symbol}
+                  </Text>
+                  <Text style={s.statusPickedText}>
+                    {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
+                  </Text>
+                </Animated.View>
               )}
               {!isMilestone && currentStreak >= 2 ? (
                 <Text style={s.tomorrowHook}>Jutro dzień {currentStreak + 1}!</Text>
@@ -861,7 +882,13 @@ const s = StyleSheet.create({
   },
   statusSymbol: { fontSize: 18, marginBottom: 3 },
   statusLabel: { fontSize: 10, color: Colors.textMuted },
-  statusPicked: { fontSize: 14, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: 16 },
+  statusPickedPill: {
+    flexDirection: 'row', alignItems: 'center', marginTop: 16,
+    backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10,
+    borderRadius: 999, gap: 8,
+  },
+  statusPickedSymbol: { fontSize: 18 },
+  statusPickedText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
   tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 16 },
   shareBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.surface },
   shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },

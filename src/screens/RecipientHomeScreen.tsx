@@ -294,8 +294,10 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   useEffect(() => {
     if (pv || !sigId) return;
+    const filter = `senior_id=eq.${sigId}`;
     const ch = supabase.channel('r-checkins')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_checkins', filter: `senior_id=eq.${sigId}` }, () => { fetchData(); refreshWeek(); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'daily_checkins', filter }, () => { fetchData(); refreshWeek(); })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'daily_checkins', filter }, () => { fetchData(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [pv, sigId, fetchData, refreshWeek]);
