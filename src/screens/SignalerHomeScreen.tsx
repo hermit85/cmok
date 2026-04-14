@@ -32,11 +32,11 @@ import { getRelationForms, relationDisplay } from '../utils/relationCopy';
 /* ─── status moods ─── */
 
 const STATUS_MOODS = [
-  { key: 'good', symbol: '\u{2665}', label: 'Dobrze', color: Colors.love },
-  { key: 'calm', symbol: '\u{2022}', label: 'Spokojnie', color: Colors.safe },
-  { key: 'tired', symbol: '\u{223C}', label: 'Zm\u{0119}czona', color: Colors.delight },
-  { key: 'walk', symbol: '\u{2192}', label: 'Spacer', color: Colors.accent },
-  { key: 'doctor', symbol: '\u{2020}', label: 'U lekarza', color: Colors.alert },
+  { key: 'good', emoji: '\u{1F60A}', label: 'Dobrze' },
+  { key: 'calm', emoji: '\u{1F60C}', label: 'Spokojnie' },
+  { key: 'tired', emoji: '\u{1F634}', label: 'Zm\u{0119}czona' },
+  { key: 'walk', emoji: '\u{1F6B6}', label: 'Spacer' },
+  { key: 'doctor', emoji: '\u{1FA7A}', label: 'U lekarza' },
 ] as const;
 
 /* ─── helpers ─── */
@@ -771,7 +771,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                           onPress={() => handleStatusPick(mood.key, i)}
                           style={({ pressed }) => [s.statusChip, pressed && { backgroundColor: Colors.surfacePressed }]}
                         >
-                          <Text style={[s.statusSymbol, { color: mood.color }]}>{mood.symbol}</Text>
+                          <Emoji style={s.statusEmoji}>{mood.emoji}</Emoji>
                           <Text style={s.statusLabel}>{mood.label}</Text>
                         </Pressable>
                       </Animated.View>
@@ -780,9 +780,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                 </Animated.View>
               ) : (
                 <Animated.View style={[s.statusPickedPill, { opacity: moodPickedOpacity, transform: [{ scale: moodPickedScale }] }]}>
-                  <Text style={[s.statusPickedSymbol, { color: STATUS_MOODS.find((m) => m.key === statusPicked)?.color }]}>
-                    {STATUS_MOODS.find((m) => m.key === statusPicked)?.symbol}
-                  </Text>
+                  <Emoji style={s.statusPickedSymbol}>
+                    {STATUS_MOODS.find((m) => m.key === statusPicked)?.emoji ?? ''}
+                  </Emoji>
                   <Text style={s.statusPickedText}>
                     {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
                   </Text>
@@ -890,7 +890,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 10, borderRadius: 14,
     backgroundColor: Colors.surface, alignItems: 'center', flex: 1, maxWidth: 68,
   },
-  statusSymbol: { fontSize: 18, marginBottom: 3 },
+  statusEmoji: { fontSize: 22, marginBottom: 3 },
   statusLabel: { fontSize: 9, color: Colors.textMuted },
   statusPickedPill: {
     flexDirection: 'row', alignItems: 'center', marginTop: 16,
