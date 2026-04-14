@@ -5,7 +5,8 @@ import { Typography } from '../constants/typography';
 
 type DayStatus = 'ok' | 'missing' | 'future';
 
-const DAY_LABELS_PL = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'] as const;
+/** Fixed Mon→Sun order matching useWeekRhythm's calendar week. */
+const DAY_LABELS_PL = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'] as const;
 
 interface WeekDotsProps {
   days: DayStatus[];
@@ -17,10 +18,11 @@ function getStreakInfo(days: DayStatus[]) {
   if (okCount === 0) return { label: null, streak: 0 };
   if (okCount === 1) return { label: 'Pierwszy dzień', streak: 1 };
 
+  // Count consecutive 'ok' backwards from today (not from array end)
+  const todayIndex = (new Date().getDay() + 6) % 7; // Mon=0, Sun=6
   let streak = 0;
-  for (let i = days.length - 1; i >= 0; i--) {
+  for (let i = todayIndex; i >= 0; i--) {
     if (days[i] === 'ok') streak++;
-    else if (days[i] === 'future') continue;
     else break;
   }
 
@@ -89,14 +91,9 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
   const { label } = showLabel ? getStreakInfo(days) : { label: null };
   const fullWeek = days.length === 7 && days.every((d) => d === 'ok');
 
-  // Compute day-of-week labels dynamically: last entry = today
+  // Labels are fixed Pn→Nd, matching useWeekRhythm calendar week
   const dayLabels = useMemo(() => {
-    const today = new Date().getDay(); // 0=Sun
-    return days.map((_, i) => {
-      const offset = days.length - 1 - i; // how many days before today
-      const dow = (today - offset + 7) % 7;
-      return DAY_LABELS_PL[dow];
-    });
+    return days.map((_, i) => DAY_LABELS_PL[i] ?? '');
   }, [days.length]);
 
   return (
@@ -106,8 +103,11 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
       ) : (
         <View style={styles.row}>
           {days.map((status, i) => {
-            const isLast = i === days.length - 1;
-            const isToday = status === 'future' || (status === 'ok' && isLast);
+            // Today = the index matching current day-of-week in Mon→Sun array
+            const todayIndex = (new Date().getDay() + 6) % 7; // Mon=0, Sun=6
+            const isToday = i === todayIndex;
+            // Show checked-in today as teal+gold, pending today as gold pulse
+            const todayCheckedIn = isToday && status === 'ok';
 
             return (
               <View key={i} style={styles.dayColumn}>
@@ -115,7 +115,9 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
                   {dayLabels[i]}
                 </Text>
                 {isToday ? (
-                  <TodayDot checkedIn={status === 'ok'} />
+                  <TodayDot checkedIn={todayCheckedIn} />
+                ) : status === 'future' ? (
+                  <View style={[styles.dot, styles.dotFuture]} />
                 ) : (
                   <View
                     style={[
@@ -158,6 +160,7 @@ const styles = StyleSheet.create({
   dot: { width: DOT, height: DOT, borderRadius: DOT / 2 },
   dotOk: { backgroundColor: Colors.safe },
   dotMissing: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.border },
+  dotFuture: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.border, opacity: 0.4 },
   dotToday: { backgroundColor: Colors.highlight },
   dotTodayChecked: { borderWidth: 2, borderColor: Colors.highlight },
   fullWeekLabel: {
