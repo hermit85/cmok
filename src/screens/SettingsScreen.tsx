@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, Share, Platform, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, Share, Platform, Linking, ActivityIndicator, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
@@ -24,6 +24,7 @@ export function SettingsScreen() {
   const [savingName, setSavingName] = useState(false);
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(true);
 
   const isRecipient = profile?.role === 'recipient';
   const isSignaler = profile?.role === 'signaler';
@@ -269,8 +270,21 @@ export function SettingsScreen() {
         {isSignaler ? (
           <View style={styles.card}>
             <Text style={styles.cardLabel}>Przypomnienie</Text>
-            <Text style={styles.cardValue}>Poranne przypomnienie</Text>
-            <Text style={styles.cardDetail}>Będziemy przypominać o znaku, jeśli jeszcze go nie dałeś.</Text>
+            <View style={styles.reminderRow}>
+              <View style={styles.reminderInfo}>
+                <Text style={styles.cardValue}>Poranne przypomnienie</Text>
+                <Text style={styles.cardDetail}>
+                  {reminderEnabled ? 'Przypomnimy o znaku rano' : 'Wyłączone'}
+                </Text>
+              </View>
+              <Switch
+                value={reminderEnabled}
+                onValueChange={setReminderEnabled}
+                trackColor={{ false: Colors.border, true: Colors.safe }}
+                thumbColor={Colors.cardStrong}
+                ios_backgroundColor={Colors.border}
+              />
+            </View>
           </View>
         ) : null}
 
@@ -315,21 +329,21 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: Spacing.screen + 4, paddingTop: 16, paddingBottom: 32 },
   backButton: { alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 4, minHeight: 44, marginBottom: 20 },
-  backText: { fontSize: 16, fontWeight: '500', color: Colors.accent },
+  backText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
   title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 20 },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 16, padding: Spacing.card, marginBottom: 16,
+    borderRadius: 20, padding: Spacing.card, marginBottom: 16,
   },
-  cardLabel: { fontSize: 12, fontWeight: '600', color: Colors.textMuted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
-  cardValue: { fontSize: Typography.bodyLarge, fontFamily: Typography.fontFamilyBold, color: Colors.text },
+  cardLabel: { fontSize: 11, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 },
+  cardValue: { fontSize: Typography.bodyLarge, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
   cardDetail: { fontSize: Typography.bodySmall, color: Colors.textSecondary, marginTop: 2 },
   circleRow: { flexDirection: 'row', alignItems: 'center' },
   miniAvatar: {
     width: MINI_AV, height: MINI_AV, borderRadius: MINI_AV / 2,
     backgroundColor: Colors.safe, justifyContent: 'center', alignItems: 'center', marginRight: 12,
   },
-  miniAvatarText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
+  miniAvatarText: { fontSize: 14, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   circleInfo: { flex: 1 },
   chevron: { fontSize: 18, color: Colors.textMuted },
   inviteCard: { },
@@ -352,16 +366,18 @@ const styles = StyleSheet.create({
   dismissLinkText: { fontSize: 13, color: Colors.textMuted },
   // Editable name
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  editHint: { fontSize: 13, color: Colors.accent, fontWeight: '500' },
+  editHint: { fontSize: 13, color: Colors.accent, fontFamily: Typography.fontFamilyMedium },
   editRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   nameInput: {
-    flex: 1, fontSize: 17, color: Colors.text, fontWeight: '600',
-    backgroundColor: Colors.cardStrong, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
+    flex: 1, fontSize: 17, color: Colors.text, fontFamily: Typography.fontFamilyMedium,
+    backgroundColor: Colors.cardStrong, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
     borderWidth: 1.5, borderColor: Colors.safe,
   },
-  saveBtn: { backgroundColor: Colors.safe, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12 },
-  saveBtnText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
-  roleTag: { fontSize: 12, color: Colors.safe, fontWeight: '500', marginTop: 8 },
+  saveBtn: { backgroundColor: Colors.safe, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 14 },
+  saveBtnText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
+  roleTag: { fontSize: 12, color: Colors.safe, fontFamily: Typography.fontFamilyMedium, marginTop: 8 },
+  reminderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  reminderInfo: { flex: 1, marginRight: 12 },
   legalItem: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
   legalItemText: { fontSize: 14, color: Colors.text },
   legalDetail: { fontSize: 12, color: Colors.textMuted },

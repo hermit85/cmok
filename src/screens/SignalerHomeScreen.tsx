@@ -11,6 +11,7 @@ import { Particles } from '../components/Particles';
 import { UrgentConfirmation } from '../components/UrgentConfirmation';
 import { MilestoneCelebration } from '../components/MilestoneCelebration';
 import { SupportParticipants } from '../components/SupportParticipants';
+import { Emoji } from '../components/Emoji';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { haptics } from '../utils/haptics';
@@ -746,11 +747,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
                 <Animated.View style={[s.responseReceipt, { transform: [{ scale: responseReceiptScale }] }]}>
-                  <Text style={s.responseReceiptText}>
-                    {responseName
-                      ? `${responseEmoji ? responseEmoji + ' ' : ''}${responseName} jest z Tobą`
-                      : 'Jest znak'}
-                  </Text>
+                  <View style={s.responseReceiptRow}>
+                    {responseEmoji ? <Emoji style={s.responseReceiptEmoji}>{responseEmoji}</Emoji> : null}
+                    <Text style={s.responseReceiptText}>
+                      {responseName ? `${responseName} jest z Tobą` : 'Jest znak'}
+                    </Text>
+                  </View>
                 </Animated.View>
               ) : null}
               {!statusPicked ? (
@@ -867,6 +869,8 @@ const s = StyleSheet.create({
     marginTop: 14, backgroundColor: Colors.safeLight, paddingHorizontal: 16, paddingVertical: 8,
     borderRadius: 20, alignSelf: 'center',
   },
+  responseReceiptRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  responseReceiptEmoji: { fontSize: 16 },
   responseReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
   /* warm toast */
   warmToast: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, backgroundColor: Colors.safeLight, marginTop: 8 },
@@ -875,13 +879,13 @@ const s = StyleSheet.create({
   /* status mood picker */
   statusSection: { marginTop: 20, alignItems: 'center' },
   statusPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 10 },
-  statusRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },
+  statusRow: { flexDirection: 'row', gap: 6, justifyContent: 'center' },
   statusChip: {
-    paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14,
-    backgroundColor: Colors.surface, alignItems: 'center', minWidth: 58,
+    paddingHorizontal: 8, paddingVertical: 10, borderRadius: 14,
+    backgroundColor: Colors.surface, alignItems: 'center', flex: 1, maxWidth: 68,
   },
   statusSymbol: { fontSize: 18, marginBottom: 3 },
-  statusLabel: { fontSize: 10, color: Colors.textMuted },
+  statusLabel: { fontSize: 9, color: Colors.textMuted },
   statusPickedPill: {
     flexDirection: 'row', alignItems: 'center', marginTop: 16,
     backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10,

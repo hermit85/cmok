@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator, Alert,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
+import { Typography } from '../constants/typography';
 import { Radius, Spacing } from '../constants/tokens';
 import { useRelationship } from '../hooks/useRelationship';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
-import { shareCircleInvite } from '../utils/invite';
+import { generateAndShareInvite } from '../utils/invite';
 
 function normalizePhone(phone: string) {
   return phone.replace(/[^\d+]/g, '');
@@ -107,7 +108,7 @@ export function TrustedContactsScreen() {
             </View>
 
             <Pressable
-              onPress={() => shareCircleInvite()}
+              onPress={() => generateAndShareInvite()}
               style={({ pressed }) => [styles.shareLink, pressed && { opacity: 0.6 }]}
             >
               <Text style={styles.shareLinkText}>Zaproś kogoś do cmok</Text>
@@ -147,49 +148,50 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: Spacing.screen, paddingTop: 16, paddingBottom: 28 },
   backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginBottom: 18 },
-  backText: { fontSize: 16, fontWeight: '600', color: Colors.accent },
-  title: { fontSize: 26, lineHeight: 32, fontWeight: '700', color: Colors.text },
+  backText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
+  title: { fontSize: 26, lineHeight: 32, fontFamily: Typography.headingFamily, color: Colors.text },
   subtitle: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginTop: 8, marginBottom: 24 },
   infoCard: {
-    backgroundColor: Colors.card, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.border, padding: Spacing.card,
+    backgroundColor: Colors.surfaceWarm, borderRadius: 20,
+    padding: Spacing.card,
   },
-  infoTitle: { fontSize: 18, fontWeight: '700', color: Colors.text, marginBottom: 6 },
+  infoTitle: { fontSize: 18, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 6 },
   infoText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 16 },
   infoCta: {
-    backgroundColor: Colors.accent, minHeight: 48, borderRadius: Radius.sm,
+    backgroundColor: Colors.accent, minHeight: 48, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 3,
   },
-  infoCtaText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  infoCtaText: { fontSize: 15, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   addCard: {
-    backgroundColor: Colors.card, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.border,
-    padding: Spacing.card, marginBottom: 20,
+    backgroundColor: Colors.surface, borderRadius: 20,
+    padding: Spacing.card, marginBottom: 16,
   },
-  sectionLabel: { fontSize: 14, fontWeight: '700', color: Colors.text, marginBottom: 12 },
+  sectionLabel: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 12 },
   input: {
-    height: 52, borderRadius: Radius.sm,
-    backgroundColor: Colors.surface, paddingHorizontal: 16,
+    height: 52, borderRadius: 16,
+    backgroundColor: Colors.cardStrong, paddingHorizontal: 16,
     fontSize: 17, color: Colors.text,
   },
   helperText: { fontSize: 13, color: Colors.textMuted, marginTop: 8, marginBottom: 14 },
   addButton: {
-    height: 52, borderRadius: Radius.sm,
+    height: 52, borderRadius: 16,
     backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 3,
   },
-  addButtonDisabled: { backgroundColor: Colors.disabled },
-  addButtonText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  addButtonDisabled: { backgroundColor: Colors.disabled, shadowOpacity: 0 },
+  addButtonText: { fontSize: 16, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   shareLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-  shareLinkText: { fontSize: 14, fontWeight: '600', color: Colors.accent },
+  shareLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
   listSection: { marginTop: 4 },
-  emptyText: { fontSize: 15, color: Colors.textMuted },
+  emptyText: { fontSize: 15, color: Colors.textMuted, fontStyle: 'italic' },
   contactRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: 14, borderTopWidth: 1, borderTopColor: Colors.border,
   },
   contactMeta: { flex: 1, paddingRight: 12 },
-  contactName: { fontSize: 16, fontWeight: '600', color: Colors.text },
+  contactName: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.text },
   contactPhone: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
   removeButton: { minHeight: 40, justifyContent: 'center' },
-  removeText: { fontSize: 14, fontWeight: '600', color: Colors.alertDark },
+  removeText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.alertDark },
 });

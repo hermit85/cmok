@@ -506,7 +506,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
               <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>
               {sub ? <Text style={st.sub}>{sub}</Text> : null}
-              {streakLabel ? <Text style={st.streakBadge}>{streakLabel}</Text> : null}
+              {/* streak shown in WeekDots below — no duplicate here */}
             </Animated.View>
           ) : (
             <View style={{ alignItems: 'center' }}>
