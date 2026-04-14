@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, Share, Platform, Linking, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import { supabase } from '../services/supabase';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
@@ -9,7 +10,7 @@ import { Radius, Spacing } from '../constants/tokens';
 import { useRelationship } from '../hooks/useRelationship';
 import { useCircle } from '../hooks/useCircle';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
-import { shareInvite, shareCircleInvite } from '../utils/invite';
+import { shareInvite, logInviteEvent } from '../utils/invite';
 import { analytics } from '../services/analytics';
 
 export function SettingsScreen() {
@@ -21,6 +22,8 @@ export function SettingsScreen() {
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [savingName, setSavingName] = useState(false);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   const isRecipient = profile?.role === 'recipient';
   const isSignaler = profile?.role === 'signaler';
@@ -56,30 +59,61 @@ export function SettingsScreen() {
     }
   };
 
-  /* ─── Invite ─── */
-  const handleInviteAnother = async () => {
-    // Generate a fresh invite code for sharing
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  /* ─── Invite: step 1 = generate code, step 2 = show + share ─── */
+  const handleGenerateInvite = async () => {
+    setInviteLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Brak sesji');
-      // Create pending invite
-      await supabase.from('care_pairs').insert({
-        caregiver_id: user.id,
-        invite_code: code,
-        invite_expires_at: expiresAt,
-        status: 'pending',
-        signaler_label: profile?.name || 'Bliska osoba',
-      });
-      await shareInvite({ code, signalerLabel: profile?.name || undefined });
+      if (!user) { Alert.alert('Zaloguj się', 'Połącz telefon z kontem.'); return; }
+
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const col = isRecipient ? 'caregiver_id' : 'senior_id';
+
+      // Check for existing pending pair to reuse
+      const { data: existing } = await supabase
+        .from('care_pairs')
+        .select('id')
+        .eq(col, user.id)
+        .eq('status', 'pending')
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        await supabase.from('care_pairs')
+          .update({ invite_code: code, invite_expires_at: expiresAt })
+          .eq('id', existing.id);
+      } else {
+        await supabase.from('care_pairs').insert({
+          [col]: user.id,
+          invite_code: code,
+          invite_expires_at: expiresAt,
+          status: 'pending',
+          signaler_label: profile?.name || 'Bliska osoba',
+        });
+      }
+
+      logInviteEvent('invite_created', { code });
+      setInviteCode(code);
     } catch {
-      // Fallback: generic invite without code
-      const msg = 'Dołącz do cmok, codzienny znak od bliskiej osoby. Mniej martwienia się, więcej spokoju.\n\nhttps://cmok.app/pobierz';
-      try {
-        await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
-      } catch { /* cancelled */ }
+      Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.');
+    } finally {
+      setInviteLoading(false);
     }
+  };
+
+  const handleCopyInviteCode = async () => {
+    if (!inviteCode) return;
+    try {
+      await Clipboard.setStringAsync(inviteCode);
+      logInviteEvent('invite_code_copied', { code: inviteCode });
+      Alert.alert('Skopiowano', 'Kod jest w schowku.');
+    } catch { /* silent */ }
+  };
+
+  const handleShareInviteCode = async () => {
+    if (!inviteCode) return;
+    await shareInvite({ code: inviteCode, signalerLabel: profile?.name || undefined });
   };
 
   /* ─── Delete account ─── */
@@ -157,13 +191,43 @@ export function SettingsScreen() {
         </Pressable>
 
         {/* ─── Invite another person ─── */}
-        <Pressable
-          onPress={handleInviteAnother}
-          style={({ pressed }) => [styles.card, styles.inviteCard, pressed && { opacity: 0.88 }]}
-        >
-          <Text style={styles.inviteText}>Zaproś kolejną osobę</Text>
-          <Text style={styles.cardDetail}>Znasz kogoś, kto mieszka sam? Wyślij zaproszenie.</Text>
-        </Pressable>
+        {inviteCode ? (
+          <View style={styles.card}>
+            <Text style={styles.inviteText}>Zaproszenie gotowe</Text>
+            <Text style={styles.cardDetail}>Pokaż ten kod lub wyślij go bliskiej osobie.</Text>
+
+            <Pressable onPress={handleCopyInviteCode} style={({ pressed }) => [styles.codeFrame, pressed && { opacity: 0.85 }]}>
+              <Text style={styles.codeValue}>{inviteCode}</Text>
+              <Text style={styles.codeHint}>Stuknij, żeby skopiować</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={handleShareInviteCode}
+              style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            >
+              <Text style={styles.shareBtnText}>Wyślij zaproszenie</Text>
+            </Pressable>
+
+            <Pressable onPress={() => setInviteCode(null)} style={({ pressed }) => [styles.dismissLink, pressed && { opacity: 0.5 }]}>
+              <Text style={styles.dismissLinkText}>Zamknij</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            onPress={handleGenerateInvite}
+            disabled={inviteLoading}
+            style={({ pressed }) => [styles.card, styles.inviteCard, pressed && { opacity: 0.88 }]}
+          >
+            {inviteLoading ? (
+              <ActivityIndicator size="small" color={Colors.accent} />
+            ) : (
+              <>
+                <Text style={styles.inviteText}>Zaproś kolejną osobę</Text>
+                <Text style={styles.cardDetail}>Znasz kogoś, kto mieszka sam? Wyślij zaproszenie.</Text>
+              </>
+            )}
+          </Pressable>
+        )}
 
         {/* ─── Account with editable name ─── */}
         <View style={styles.card}>
@@ -270,6 +334,22 @@ const styles = StyleSheet.create({
   chevron: { fontSize: 18, color: Colors.textMuted },
   inviteCard: { },
   inviteText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.accent, marginBottom: 4 },
+  codeFrame: {
+    backgroundColor: Colors.cardStrong, borderRadius: 16,
+    paddingVertical: 20, paddingHorizontal: 32,
+    marginTop: 14, marginBottom: 14, alignItems: 'center',
+  },
+  codeValue: { fontSize: 32, fontFamily: Typography.headingFamily, color: Colors.text, letterSpacing: 6 },
+  codeHint: { fontSize: 11, color: Colors.textMuted, marginTop: 6 },
+  shareBtn: {
+    backgroundColor: Colors.accent, minHeight: 52, borderRadius: 16,
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 16, elevation: 4,
+  },
+  shareBtnText: { fontSize: 16, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
+  dismissLink: { minHeight: 40, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
+  dismissLinkText: { fontSize: 13, color: Colors.textMuted },
   // Editable name
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   editHint: { fontSize: 13, color: Colors.accent, fontWeight: '500' },
