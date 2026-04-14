@@ -35,7 +35,7 @@ const STATUS_MOODS = [
   { key: 'good', symbol: '\u{2665}', label: 'Dobrze', color: Colors.love },
   { key: 'calm', symbol: '\u{2022}', label: 'Spokojnie', color: Colors.safe },
   { key: 'tired', symbol: '\u{223C}', label: 'Zm\u{0119}czona', color: Colors.delight },
-  { key: 'walk', symbol: '\u{2192}', label: 'Na spacerze', color: Colors.accent },
+  { key: 'walk', symbol: '\u{2192}', label: 'Spacer', color: Colors.accent },
   { key: 'doctor', symbol: '\u{2020}', label: 'U lekarza', color: Colors.alert },
 ] as const;
 
@@ -796,7 +796,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           )}
 
           {/* ─── WEEK DOTS ─── */}
-          {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} showLabel={showChecked} /></View> : null}
+          {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} /></View> : null}
 
           {/* ─── STATS: streak + total ─── */}
           {showChecked && dbTotalCount > 0 ? (
