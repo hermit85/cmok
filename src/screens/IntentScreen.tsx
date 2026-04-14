@@ -48,18 +48,22 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
 
           <Pressable
             onPress={() => { haptics.light(); onSelect('i-am-center'); }}
-            style={({ pressed }) => [styles.optionBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            style={({ pressed }) => [styles.optionBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           >
+            <Text style={styles.optionEmoji}>{'\u{1F44B}'}</Text>
             <Text style={styles.optionBtnTitle}>Będę dawać znak</Text>
-            <Text style={styles.optionBtnHint}>Codziennie stukam raz, a bliscy widzą, że jest OK. Dostałem kod od kogoś bliskiego.</Text>
+            <Text style={styles.optionBtnHint}>Codziennie stukam raz i bliscy widzą, że jest OK.</Text>
+            <View style={styles.optionTag}><Text style={styles.optionTagText}>Mam kod zaproszenia</Text></View>
           </Pressable>
 
           <Pressable
             onPress={() => { haptics.light(); onSelect('join-circle'); }}
-            style={({ pressed }) => [styles.optionBtn, styles.optionBtnOutline, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            style={({ pressed }) => [styles.optionBtn, styles.optionBtnOutline, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           >
+            <Text style={styles.optionEmoji}>{'\u{1F49B}'}</Text>
             <Text style={styles.optionBtnTitle}>Chcę odbierać znak</Text>
-            <Text style={styles.optionBtnHint}>Bliska osoba mieszka osobno. Chcę wiedzieć, że jest OK, bez codziennego dzwonienia.</Text>
+            <Text style={styles.optionBtnHint}>Bliska osoba mieszka osobno. Chcę wiedzieć, że jest OK.</Text>
+            <View style={[styles.optionTag, styles.optionTagAlt]}><Text style={styles.optionTagAltText}>Zaproszę kogoś bliskiego</Text></View>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -142,12 +146,17 @@ const styles = StyleSheet.create({
   secondaryBtn: { minHeight: 52, justifyContent: 'center', alignItems: 'center', marginTop: 12 },
   secondaryBtnText: { fontSize: Typography.body, fontFamily: Typography.headingFamilySemiBold, color: Colors.accent },
   optionBtn: {
-    backgroundColor: Colors.surface, borderRadius: 20, padding: 20, marginBottom: 12,
-    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
+    backgroundColor: Colors.surface, borderRadius: 20, padding: 20, marginBottom: 14,
+    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
   },
-  optionBtnOutline: { backgroundColor: Colors.cardStrong, borderWidth: 1, borderColor: Colors.border },
-  optionBtnTitle: { fontSize: 17, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 6 },
-  optionBtnHint: { fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
+  optionBtnOutline: { backgroundColor: Colors.cardStrong, borderWidth: 1.5, borderColor: Colors.border },
+  optionEmoji: { fontSize: 32, marginBottom: 10 },
+  optionBtnTitle: { fontSize: 18, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 6 },
+  optionBtnHint: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20, marginBottom: 12 },
+  optionTag: { backgroundColor: Colors.safeLight, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, alignSelf: 'flex-start' },
+  optionTagText: { fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+  optionTagAlt: { backgroundColor: Colors.accentWash },
+  optionTagAltText: { fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
   options: { gap: 14 },
   optionCard: { backgroundColor: Colors.cardStrong, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 18, paddingVertical: 18, minHeight: 100, justifyContent: 'center' },
   optionCardSelected: { backgroundColor: Colors.accentWash, borderColor: Colors.accent },
