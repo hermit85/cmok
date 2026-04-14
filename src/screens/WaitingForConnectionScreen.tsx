@@ -58,9 +58,6 @@ export function WaitingForConnectionScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
         <Text style={styles.miniLogo}>cmok</Text>
-        <Pressable onPress={() => router.replace('/onboarding')} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
-          <Text style={styles.backText}>← Wróć</Text>
-        </Pressable>
       </View>
 
       <View style={styles.content}>
@@ -123,10 +120,11 @@ export function WaitingForConnectionScreen() {
                   text: 'Usuń konto', style: 'destructive',
                   onPress: async () => {
                     try {
-                      await supabase.functions.invoke('delete-account', { body: {} });
+                      const { error } = await supabase.functions.invoke('delete-account', { body: {} });
+                      if (error) throw error;
                       await supabase.auth.signOut();
                       router.replace('/onboarding');
-                    } catch { Alert.alert('Błąd', 'Nie udało się usunąć konta.'); }
+                    } catch { Alert.alert('Błąd', 'Nie udało się usunąć konta. Spróbuj ponownie.'); }
                   },
                 },
               ]);
