@@ -13,16 +13,16 @@ interface WelcomeScreenProps {
 
 const SLIDES = [
   {
-    headline: 'Codzienny znak,\nże jest OK',
-    body: 'Bliska osoba mieszka osobno?\nJeden gest dziennie i masz spokój.',
+    headline: 'Mały znak,\ndużo spokoju',
+    body: 'Gdy bliska osoba mieszka osobno, jeden codzienny gest potrafi znaczyć naprawdę dużo.',
   },
   {
-    headline: 'Jeden gest,\ndruga strona wie',
-    body: 'Bez dzwonienia, bez SMS-ów.\nTo Wasz codzienny rytuał bliskości.',
+    headline: 'Stukasz raz\ni druga strona wie',
+    body: 'Bez telefonów, bez SMS-ów, bez zamieszania. Po prostu prosty rytuał, który daje ulgę.',
   },
   {
-    headline: 'A gdy trzeba\npomocy?',
-    body: 'Przytrzymaj dłużej, a krąg\nbliskich od razu dostanie sygnał.',
+    headline: 'Jeśli dzieje się\ncoś ważnego',
+    body: 'Wystarczy przytrzymać dłużej, żeby dać znać bliskim, że trzeba zareagować.',
   },
 ];
 
