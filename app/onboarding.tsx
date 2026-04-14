@@ -39,7 +39,7 @@ export default function OnboardingFlow() {
     getPendingInvite().then((inv) => { if (inv) setPendingInviteCode(inv.code); });
   }, []);
 
-  // Auto-resume: ONLY skip onboarding if user has an active relationship (re-login)
+  // Auto-resume: skip onboarding if user has an existing relationship
   useEffect(() => {
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -55,15 +55,23 @@ export default function OnboardingFlow() {
       // Check for active relationship
       const col = role === 'recipient' ? 'caregiver_id' : 'senior_id';
       const { data: activePair } = await supabase
-        .from('care_pairs').select('id').eq(col, session.user.id).eq('status', 'active').limit(1).maybeSingle();
+        .from('care_pairs').select('id, status').eq(col, session.user.id).in('status', ['active', 'pending']).order('status').limit(1).maybeSingle();
 
-      if (activePair) {
-        // Active relationship → re-login, go straight to home
+      if (activePair?.status === 'active') {
         setSelectedRole(role);
         setDestinationRoute(role === 'signaler' ? '/signaler-home' : '/recipient-home');
         setStep('done');
+      } else if (activePair?.status === 'pending' && role === 'recipient') {
+        // Recipient waiting for signaler to join
+        setSelectedRole(role);
+        setDestinationRoute('/waiting');
+        setStep('done');
+      } else if (activePair?.status === 'pending' && role === 'signaler') {
+        // Signaler has pending pair — go to join screen
+        setSelectedRole(role);
+        setStep('join');
       }
-      // No active relationship → let user go through onboarding normally
+      // No relationship at all → stay on welcome for full onboarding
     })();
   }, []);
 
@@ -192,8 +200,33 @@ export default function OnboardingFlow() {
             setStep('intent');
           }
         }}
-        onLogin={() => {
-          // "Mam już konto" — go straight to phone auth, handleVerified will route
+        onLogin={async () => {
+          // Check if already logged in before asking for phone
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            // Already logged in — run the auto-resume logic via handleVerified path
+            const { data: profile } = await supabase
+              .from('users').select('id, role, name').eq('id', session.user.id).maybeSingle();
+            if (profile) {
+              const role = profile.role === 'signaler' || profile.role === 'recipient' ? profile.role as AppRole : null;
+              if (role) {
+                const col = role === 'recipient' ? 'caregiver_id' : 'senior_id';
+                const { data: pair } = await supabase
+                  .from('care_pairs').select('status').eq(col, session.user.id).in('status', ['active', 'pending']).limit(1).maybeSingle();
+                if (pair?.status === 'active') {
+                  setDestinationRoute(role === 'signaler' ? '/signaler-home' : '/recipient-home');
+                  setStep('done');
+                  return;
+                }
+                if (pair?.status === 'pending' && role === 'recipient') {
+                  setDestinationRoute('/waiting');
+                  setStep('done');
+                  return;
+                }
+              }
+            }
+          }
+          // Not logged in or no relationship — go to phone auth
           setStep('phone');
         }}
       />;
