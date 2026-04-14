@@ -697,12 +697,12 @@ const s = StyleSheet.create({
   /* status mood picker */
   statusSection: { marginTop: 20, alignItems: 'center' },
   statusPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 10 },
-  statusRow: { flexDirection: 'row', gap: 10 },
+  statusRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },
   statusChip: {
-    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14,
-    backgroundColor: Colors.surface, alignItems: 'center', minWidth: 62,
+    paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14,
+    backgroundColor: Colors.surface, alignItems: 'center', minWidth: 58,
   },
-  statusSymbol: { fontSize: 20, marginBottom: 3 },
+  statusSymbol: { fontSize: 18, marginBottom: 3 },
   statusLabel: { fontSize: 10, color: Colors.textMuted },
   statusPicked: { fontSize: 14, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: 16 },
   tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 16 },

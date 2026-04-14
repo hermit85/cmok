@@ -56,7 +56,7 @@ function TodayDot({ checkedIn }: { checkedIn: boolean }) {
 }
 
 /* ─── Cascade bounce for full week ─── */
-function CascadeDots({ days }: { days: DayStatus[] }) {
+function CascadeDots({ days, dayLabels }: { days: DayStatus[]; dayLabels: string[] }) {
   const scales = useRef(days.map(() => new Animated.Value(1))).current;
 
   useEffect(() => {
@@ -72,11 +72,13 @@ function CascadeDots({ days }: { days: DayStatus[] }) {
 
   return (
     <View style={styles.row}>
-      {days.map((status, i) => (
-        <Animated.View
-          key={i}
-          style={[styles.dot, styles.dotOk, { transform: [{ scale: scales[i] }] }]}
-        />
+      {days.map((_, i) => (
+        <View key={i} style={styles.dayColumn}>
+          <Text style={styles.dayLabel}>{dayLabels[i]}</Text>
+          <Animated.View
+            style={[styles.dot, styles.dotOk, { transform: [{ scale: scales[i] }] }]}
+          />
+        </View>
       ))}
     </View>
   );
@@ -84,7 +86,7 @@ function CascadeDots({ days }: { days: DayStatus[] }) {
 
 /* ─── Main ─── */
 export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
-  const { label, streak } = showLabel ? getStreakInfo(days) : { label: null, streak: 0 };
+  const { label } = showLabel ? getStreakInfo(days) : { label: null };
   const fullWeek = days.length === 7 && days.every((d) => d === 'ok');
 
   // Compute day-of-week labels dynamically: last entry = today
@@ -99,36 +101,31 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
 
   return (
     <View style={styles.container}>
-      {/* Day-of-week labels */}
-      {days.length > 1 ? (
-        <View style={styles.row}>
-          {dayLabels.map((lbl, i) => (
-            <Text key={i} style={styles.dayLabel}>{lbl}</Text>
-          ))}
-        </View>
-      ) : null}
-
       {fullWeek ? (
-        <CascadeDots days={days} />
+        <CascadeDots days={days} dayLabels={dayLabels} />
       ) : (
         <View style={styles.row}>
           {days.map((status, i) => {
             const isLast = i === days.length - 1;
             const isToday = status === 'future' || (status === 'ok' && isLast);
 
-            if (isToday) {
-              return <TodayDot key={i} checkedIn={status === 'ok'} />;
-            }
-
             return (
-              <View
-                key={i}
-                style={[
-                  styles.dot,
-                  status === 'ok' && styles.dotOk,
-                  status === 'missing' && styles.dotMissing,
-                ]}
-              />
+              <View key={i} style={styles.dayColumn}>
+                <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]}>
+                  {dayLabels[i]}
+                </Text>
+                {isToday ? (
+                  <TodayDot checkedIn={status === 'ok'} />
+                ) : (
+                  <View
+                    style={[
+                      styles.dot,
+                      status === 'ok' && styles.dotOk,
+                      status === 'missing' && styles.dotMissing,
+                    ]}
+                  />
+                )}
+              </View>
             );
           })}
         </View>
@@ -144,11 +141,20 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
 }
 
 const DOT = 12;
+const COL_WIDTH = 28;
 
 const styles = StyleSheet.create({
   container: { alignItems: 'center' },
-  row: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 4 },
-  dayLabel: { width: DOT, fontSize: 9, color: Colors.textMuted, textAlign: 'center' },
+  row: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  dayColumn: { width: COL_WIDTH, alignItems: 'center' },
+  dayLabel: {
+    fontSize: 10,
+    fontFamily: Typography.fontFamilyMedium,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  dayLabelToday: { color: Colors.text },
   dot: { width: DOT, height: DOT, borderRadius: DOT / 2 },
   dotOk: { backgroundColor: Colors.safe },
   dotMissing: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.border },
@@ -158,10 +164,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: Typography.headingFamilySemiBold,
     color: Colors.safe,
+    marginTop: 6,
   },
   label: {
     fontSize: 13,
     fontFamily: Typography.headingFamilySemiBold,
     color: Colors.safe,
+    marginTop: 6,
   },
 });

@@ -127,6 +127,9 @@ export async function shareCircleInvite(): Promise<boolean> {
  * Generate a fresh 6-digit invite code, persist it in care_pairs, then
  * open the native share sheet with the code + deep link.
  *
+ * Role-aware: detects whether user is signaler (senior_id) or
+ * recipient (caregiver_id) and handles both correctly.
+ *
  * Returns { code, shared } or null if generation failed.
  */
 export async function generateAndShareInvite(): Promise<{ code: string; shared: boolean } | null> {
@@ -137,31 +140,66 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
       return null;
     }
 
+    // Detect role: check if user is a recipient (caregiver) or signaler (senior)
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const isRecipient = profile?.role === 'recipient' || profile?.role === 'caregiver';
+
     const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    // Check for existing pending invite to reuse/update
-    const { data: existing } = await supabase
-      .from('care_pairs')
-      .select('id, signaler_label')
-      .eq('caregiver_id', user.id)
-      .eq('status', 'pending')
-      .limit(1)
-      .maybeSingle();
-
-    if (existing?.id) {
-      await supabase
+    if (isRecipient) {
+      // Recipient creates invite for a new signaler to join
+      const { data: existing } = await supabase
         .from('care_pairs')
-        .update({ invite_code: code, invite_expires_at: expiresAt })
-        .eq('id', existing.id);
+        .select('id')
+        .eq('caregiver_id', user.id)
+        .eq('status', 'pending')
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        await supabase
+          .from('care_pairs')
+          .update({ invite_code: code, invite_expires_at: expiresAt })
+          .eq('id', existing.id);
+      } else {
+        await supabase.from('care_pairs').insert({
+          caregiver_id: user.id,
+          invite_code: code,
+          invite_expires_at: expiresAt,
+          status: 'pending',
+        });
+      }
     } else {
-      // Create new pending pair with code
-      await supabase.from('care_pairs').insert({
-        caregiver_id: user.id,
-        invite_code: code,
-        invite_expires_at: expiresAt,
-        status: 'pending',
-      });
+      // Signaler: reuse existing active pair's invite code slot,
+      // or create a new pending pair with senior_id
+      const { data: existing } = await supabase
+        .from('care_pairs')
+        .select('id')
+        .eq('senior_id', user.id)
+        .in('status', ['pending', 'active'])
+        .order('status', { ascending: true }) // pending first
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        await supabase
+          .from('care_pairs')
+          .update({ invite_code: code, invite_expires_at: expiresAt })
+          .eq('id', existing.id);
+      } else {
+        await supabase.from('care_pairs').insert({
+          senior_id: user.id,
+          invite_code: code,
+          invite_expires_at: expiresAt,
+          status: 'pending',
+        });
+      }
     }
 
     logInviteEvent('invite_created', { code });
