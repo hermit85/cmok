@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, Alert, ScrollView } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Pressable, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -28,6 +28,18 @@ export function WaitingForConnectionScreen() {
   }, [refreshRelationship, status]);
 
   const sigName = relationship?.signalerLabel || 'bliska osoba';
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState('');
+
+  const handleSaveName = async () => {
+    const trimmed = nameValue.trim();
+    if (!trimmed || !profile?.id) return;
+    try {
+      await supabase.from('users').update({ name: trimmed }).eq('id', profile.id);
+      setEditingName(false);
+      refreshRelationship();
+    } catch { Alert.alert('Błąd', 'Nie udało się zapisać.'); }
+  };
 
   const handleCopyCode = async () => {
     if (!inviteCode) return;
@@ -129,27 +141,47 @@ export function WaitingForConnectionScreen() {
           </Pressable>
         </View>
 
-        {/* Card 3: Account */}
+        {/* Card 3: Account with edit + actions */}
         <View style={s.card}>
           <Text style={s.cardLabel}>Twoje konto</Text>
-          <Text style={s.accountName}>{profile?.name || 'Ustaw imię'}</Text>
+          {editingName ? (
+            <View style={s.editRow}>
+              <TextInput
+                style={s.nameInput}
+                value={nameValue}
+                onChangeText={setNameValue}
+                autoFocus
+                maxLength={30}
+                placeholder="Twoje imię"
+                placeholderTextColor={Colors.textMuted}
+                returnKeyType="done"
+                onSubmitEditing={handleSaveName}
+              />
+              <Pressable onPress={handleSaveName} style={({ pressed }) => [s.saveBtn, pressed && { opacity: 0.7 }]}>
+                <Text style={s.saveBtnText}>Zapisz</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable onPress={() => { setNameValue(profile?.name || ''); setEditingName(true); }} style={({ pressed }) => [s.nameRow, pressed && { opacity: 0.7 }]}>
+              <Text style={s.accountName}>{profile?.name || 'Ustaw imię'}</Text>
+              <Text style={s.editHint}>Zmień</Text>
+            </Pressable>
+          )}
           <Text style={s.accountPhone}>
             {profile?.phone ? profile.phone.replace(/^48/, '+48 ').replace(/(\d{3})(?=\d)/g, '$1 ') : ''}
           </Text>
-        </View>
 
-        {/* Bottom actions */}
-        <View style={s.bottomActions}>
-          <Pressable
-            onPress={async () => { await supabase.auth.signOut(); router.replace('/onboarding'); }}
-            style={({ pressed }) => [s.bottomLink, pressed && { opacity: 0.6 }]}
-          >
-            <Text style={s.bottomLinkText}>Wyloguj</Text>
-          </Pressable>
-
-          <Pressable onPress={handleDeleteAccount} style={({ pressed }) => [s.bottomLink, pressed && { opacity: 0.6 }]}>
-            <Text style={s.deleteText}>Usuń konto</Text>
-          </Pressable>
+          <View style={s.accountActions}>
+            <Pressable
+              onPress={async () => { await supabase.auth.signOut(); router.replace('/onboarding'); }}
+              style={({ pressed }) => [s.accountLink, pressed && { opacity: 0.6 }]}
+            >
+              <Text style={s.accountLinkText}>Wyloguj</Text>
+            </Pressable>
+            <Pressable onPress={handleDeleteAccount} style={({ pressed }) => [s.accountLink, pressed && { opacity: 0.6 }]}>
+              <Text style={s.deleteText}>Usuń konto i dane</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -210,12 +242,20 @@ const s = StyleSheet.create({
   checkBtnText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
 
   /* account */
+  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  editHint: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
+  editRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  nameInput: {
+    flex: 1, fontSize: 17, color: Colors.text, fontFamily: Typography.fontFamilyMedium,
+    backgroundColor: Colors.cardStrong, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
+    borderWidth: 1.5, borderColor: Colors.safe,
+  },
+  saveBtn: { backgroundColor: Colors.safe, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
+  saveBtnText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: '#FFFFFF' },
   accountName: { fontSize: 17, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
-  accountPhone: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
-
-  /* bottom */
-  bottomActions: { alignItems: 'center', gap: 12, marginTop: 16 },
-  bottomLink: { minHeight: 40, justifyContent: 'center', alignItems: 'center' },
-  bottomLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
+  accountPhone: { fontSize: 14, color: Colors.textSecondary, marginTop: 4 },
+  accountActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: Colors.border },
+  accountLink: { minHeight: 36, justifyContent: 'center' },
+  accountLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
   deleteText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.alert },
 });
