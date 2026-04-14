@@ -91,8 +91,8 @@ export function WaitingForConnectionScreen() {
 
         <View style={styles.infoBox}>
           <Text style={styles.infoText}>
+            Gdy tylko się połączycie, zaczniecie Wasz codzienny cmok.
             Damy Ci znać, gdy {relationship.signalerLabel || 'bliska osoba'} dołączy.
-            Możesz spokojnie zamknąć aplikację.
           </Text>
         </View>
 

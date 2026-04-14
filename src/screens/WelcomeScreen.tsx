@@ -13,16 +13,16 @@ interface WelcomeScreenProps {
 
 const SLIDES = [
   {
-    headline: 'Codzienny znak,\nże jest OK',
-    body: 'Dla Ciebie i Twoich bliskich.\nBez dzwonienia, bez stresu.',
+    headline: 'Mama daje znak.\nTy widzisz spokój.',
+    body: 'Jeden gest dziennie zamiast\ndzwonienia i martwienia się.',
   },
   {
-    headline: 'Jeden gest dziennie.\nSpokój dla obu stron.',
-    body: 'Ty dajesz znak albo go dostajesz.\nProste jak cmok na dzień dobry.',
+    headline: 'Jedno dotknięcie\ni obie strony wiedzą.',
+    body: 'Proste jak cmok na dzień dobry.\nBez SMS-ów, bez stresu.',
   },
   {
-    headline: 'Stwórz swój krąg\nbliskich osób',
-    body: 'Im więcej osób w kręgu,\ntym większe bezpieczeństwo.',
+    headline: 'Wasz codzienny\nrytuał bliskości',
+    body: 'Dla rodzin, które mieszkają osobno,\nale chcą być blisko.',
   },
 ];
 

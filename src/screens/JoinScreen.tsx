@@ -185,7 +185,10 @@ export function JoinScreen({
 
   return (
     <SafeAreaView style={s.container}>
-      <Text style={s.miniLogo}>cmok</Text>
+      <View style={s.topRow}>
+        <Text style={s.miniLogo}>cmok</Text>
+        <Text style={s.stepHint}>krok 2 z 2</Text>
+      </View>
       <View style={s.content}>
         <Pressable onPress={onBack} style={({ pressed }) => [s.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
           <Text style={s.backText}>← Wróć</Text>
@@ -227,7 +230,9 @@ export function JoinScreen({
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered: { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  miniLogo: { fontSize: 18, fontFamily: Typography.headingFamily, color: Colors.accent, paddingHorizontal: 32, paddingTop: 16 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 32, paddingTop: 16 },
+  stepHint: { fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted },
+  miniLogo: { fontSize: 18, fontFamily: Typography.headingFamily, color: Colors.accent },
   content: { flex: 1, paddingHorizontal: 32, paddingTop: 38 },
   title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 8, lineHeight: 34 },
   subtitle: { fontSize: Typography.body, color: Colors.textSecondary, marginBottom: 24, lineHeight: 23 },

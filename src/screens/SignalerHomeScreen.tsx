@@ -795,8 +795,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   </Text>
                 </Animated.View>
               )}
-              {!isMilestone && currentStreak >= 2 ? (
-                <Text style={s.tomorrowHook}>Jutro dzień {currentStreak + 1}!</Text>
+              {!isMilestone && currentStreak >= 2 && currentStreak < 7 ? (
+                <Text style={s.tomorrowHook}>Jeszcze {7 - currentStreak} {7 - currentStreak === 1 ? 'dzień' : 'dni'} do pełnego tygodnia</Text>
+              ) : !isMilestone && currentStreak >= 7 ? (
+                <Text style={s.tomorrowHook}>Wasz codzienny rytuał trwa</Text>
               ) : null}
             </Animated.View>
           ) : (

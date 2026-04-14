@@ -94,7 +94,10 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.miniLogo}>cmok</Text>
+      <View style={styles.topRow}>
+        <Text style={styles.miniLogo}>cmok</Text>
+        <Text style={styles.stepHint}>krok 2 z 2</Text>
+      </View>
 
       <View style={styles.formContent}>
         <Pressable onPress={onBack} style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
@@ -143,12 +146,12 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 28, paddingTop: 16 },
+  stepHint: { fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted },
   miniLogo: {
     fontSize: 16,
     fontFamily: Typography.headingFamily,
     color: Colors.accent,
-    paddingHorizontal: 28,
-    paddingTop: 16,
   },
   formContent: { flex: 1, paddingHorizontal: 28, paddingTop: 38 },
   eyebrow: {

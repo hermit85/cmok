@@ -477,7 +477,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       ? `Pierwszy znak od ${nameFrom}!`
       : `Znak od ${nameFrom}`
     : hasReceiverGap
-      ? 'Dawno nie było znaku'
+      ? 'Dziś ciszej niż zwykle'
       : effLast
         ? 'Czekamy na dzisiejszy znak'
         : 'Czekamy na pierwszy znak';
@@ -487,7 +487,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       ? `${statusLabel}${effTime ? ` · ${effTime}` : ''}`
       : `Na dziś jest kontakt${effTime ? ` · ${effTime}` : ''}`
     : hasReceiverGap
-      ? 'Może napisz lub zadzwoń?'
+      ? 'Warto się odezwać'
       : effLast
         ? `Ostatnio: ${effLast}`
         : 'Spokojnie, dopiero zaczynacie';

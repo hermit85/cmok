@@ -43,7 +43,7 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
 
           <Text style={styles.title}>Jak zaczynasz?</Text>
           <Text style={styles.simplifiedSubtitle}>
-            cmok łączy dwie bliskie osoby w codzienny rytuał kontaktu.
+            Za chwilę połączysz się z bliską osobą w codzienny rytuał.
           </Text>
 
           <Pressable

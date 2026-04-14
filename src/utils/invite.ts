@@ -74,9 +74,9 @@ export async function shareInvite(params: {
   const deepLink = `cmok://join/${code}`;
 
   const message = [
-    `Dołącz do mojego kręgu w cmok!`,
-    `Twój kod: ${code}`,
+    `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.`,
     ``,
+    `Twój kod: ${code}`,
     `Pobierz apkę: ${APP_URL}`,
     ``,
     `Masz już cmok? Otwórz: ${deepLink}`,
@@ -184,9 +184,9 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
 
     const deepLink = `cmok://join/${code}`;
     const message = [
-      `Dołącz do mojego kręgu w cmok!`,
-      `Twój kod: ${code}`,
+      `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.`,
       ``,
+      `Twój kod: ${code}`,
       `Pobierz apkę: ${APP_URL}`,
       ``,
       `Masz już cmok? Otwórz: ${deepLink}`,

@@ -240,7 +240,10 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
     <SafeAreaView style={s.container}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={0}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" bounces={false}>
-          <Text style={s.miniLogo}>cmok</Text>
+          <View style={s.topRow}>
+            <Text style={s.miniLogo}>cmok</Text>
+            <Text style={s.stepHint}>krok 1 z 2</Text>
+          </View>
 
           <Animated.View style={[s.content, { opacity: fadeAnim }]}>
             <Pressable onPress={handleBack} style={({ pressed }) => [s.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
@@ -351,7 +354,9 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  miniLogo: { fontSize: 16, fontFamily: Typography.headingFamily, color: Colors.accent, paddingHorizontal: 28, paddingTop: 16 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 28, paddingTop: 16 },
+  miniLogo: { fontSize: 16, fontFamily: Typography.headingFamily, color: Colors.accent },
+  stepHint: { fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted },
   content: { flex: 1, paddingHorizontal: 28, paddingTop: 38 },
 
   backButton: { alignSelf: 'flex-start' as const, paddingVertical: 8, paddingHorizontal: 8, minHeight: 44, marginBottom: 18, marginLeft: -8 },
