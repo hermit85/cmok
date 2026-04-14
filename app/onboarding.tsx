@@ -119,14 +119,11 @@ export default function OnboardingFlow() {
 
     // Case 2: Profile exists, pending relationship
     if (profile && relationshipStatus === 'pending') {
-      // User's explicit choice on IntentScreen takes priority over DB role
       const effectiveRole = selectedRole || profile.role;
-      // Update DB if roles differ
       if (selectedRole && selectedRole !== profile.role) {
         await supabase.from('users').update({ role: selectedRole }).eq('id', profile.id);
       }
       if (effectiveRole === 'recipient') {
-        // Check if recipient already completed setup (has an invite code / relationship)
         const { data: pair } = await supabase
           .from('care_pairs').select('id').eq('caregiver_id', profile.id).eq('status', 'pending').limit(1).maybeSingle();
         if (pair) {
@@ -134,18 +131,38 @@ export default function OnboardingFlow() {
         } else {
           setStep('setup');
         }
+      } else {
+        // Signaler: check if they already have an active pair (re-login case)
+        const { data: activePair } = await supabase
+          .from('care_pairs').select('id').eq('senior_id', profile.id).eq('status', 'active').limit(1).maybeSingle();
+        if (activePair) {
+          setDestinationRoute('/signaler-home'); setStep('done');
+        } else {
+          setStep('join');
+        }
       }
-      else { setStep('join'); }
       return;
     }
 
-    // Case 3: Profile exists, no relationship
+    // Case 3: Profile exists, no relationship found by useRelationship
+    // Double-check: user might have an active pair that wasn't found during verify
     if (profile && relationshipStatus === 'none') {
-      // If user explicitly chose a role on IntentScreen, update DB
+      const col = profile.role === 'recipient' ? 'caregiver_id' : 'senior_id';
+      const { data: anyPair } = await supabase
+        .from('care_pairs').select('status').eq(col, profile.id).in('status', ['active', 'pending']).limit(1).maybeSingle();
+      if (anyPair?.status === 'active') {
+        setDestinationRoute(profile.role === 'signaler' ? '/signaler-home' : '/recipient-home');
+        setStep('done');
+        return;
+      }
+      if (anyPair?.status === 'pending' && profile.role === 'recipient') {
+        setDestinationRoute('/waiting'); setStep('done');
+        return;
+      }
+      // Truly no relationship — go to setup/join
       if (selectedRole && selectedRole !== profile.role) {
         await supabase.from('users').update({ role: selectedRole }).eq('id', profile.id);
       }
-      // Route based on: explicit choice > DB role
       const effectiveRole = selectedRole || profile.role;
       setStep(effectiveRole === 'recipient' ? 'setup' : 'join');
       return;
