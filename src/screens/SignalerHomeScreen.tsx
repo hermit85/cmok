@@ -385,48 +385,19 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     if (!canCheckin && !canUrgent) return;
     pressStartRef.current = Date.now();
     chargeTriggeredUrgent.current = false;
-
-    // Immediate feedback
     haptics.light();
 
-    // Stop breathing, start charge
-    if (breatheLoopRef.current) {
-      breatheLoopRef.current.scale.stop();
-      breatheLoopRef.current.shadow.stop();
-    }
-
-    // Charge animations: button swells, glow + ring appear over 1500ms
-    // Native-driven anims (transform, opacity) run on UI thread
-    const nativeAnim = Animated.parallel([
-      Animated.timing(chargeButtonScale, { toValue: 1.06, duration: 1500, useNativeDriver: true }),
-      Animated.timing(chargeGlowOpacity, { toValue: 0.5, duration: 1500, useNativeDriver: true }),
-      Animated.timing(chargeRingScale, { toValue: 1.12, duration: 1500, useNativeDriver: true }),
-    ]);
-    // JS-driven anim (borderWidth can't use native driver)
-    const jsAnim = Animated.timing(chargeRingBorder, { toValue: 5, duration: 1500, useNativeDriver: false });
-    chargeAnimsRef.current = nativeAnim;
-    nativeAnim.start();
-    jsAnim.start();
-
-    // Haptic staircase + urgent threshold
-    let lastMs = 0;
+    // Urgent threshold timer only — charge visuals disabled to prevent native driver crash
     chargeIntervalRef.current = setInterval(() => {
       const elapsed = Date.now() - pressStartRef.current;
-      if (elapsed >= 300 && lastMs < 300) { haptics.light(); lastMs = 300; }
-      if (elapsed >= 600 && lastMs < 600) { haptics.light(); lastMs = 600; }
-      if (elapsed >= 900 && lastMs < 900) { haptics.medium(); lastMs = 900; }
-      if (elapsed >= 1200 && lastMs < 1200) { haptics.medium(); lastMs = 1200; }
       if (elapsed >= 1500) {
-        // Urgent threshold
         if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
         chargeTriggeredUrgent.current = true;
-        resetChargeVisuals();
-        restartBreatheLoop();
         haptics.heavy();
         if (canUrgent) setShowUrgentModal(true);
       }
     }, 16);
-  }, [canCheckin, canUrgent, chargeButtonScale, chargeGlowOpacity, chargeRingScale, chargeRingBorder, resetChargeVisuals, restartBreatheLoop]);
+  }, [canCheckin, canUrgent]);
 
   const handlePressOut = useCallback(() => {
     // Cleanup charge interval + animations
@@ -713,14 +684,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         <View style={s.center}>
           {/* ─── THE BUTTON ─── */}
           <View style={s.buttonArea}>
-            {/* Charge glow — soft halo behind button */}
-            <Animated.View pointerEvents="none" style={[s.chargeGlow, { opacity: chargeGlowOpacity }]} />
-            {/* Charge ring — border grows during hold */}
-            <Animated.View pointerEvents="none" style={[s.chargeRing, {
-              opacity: chargeGlowOpacity,
-              transform: [{ scale: chargeRingScale }],
-              borderWidth: chargeRingBorder,
-            }]} />
             {/* Release ring */}
             <Animated.View pointerEvents="none" style={[s.releaseRing, { opacity: releaseRingOpacity, transform: [{ scale: releaseRingScale }] }]} />
             <Particles key={particleCount} visible={celebrationVisible} count={particleCount} colors={[Colors.safe, Colors.love, Colors.highlight, Colors.delight]} />
@@ -736,7 +699,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   elevation: 8,
                   borderRadius: BTN / 2,
                 } : undefined}>
-                <Animated.View style={{ transform: [{ scale: Animated.multiply(Animated.multiply(buttonScale, breatheScale), chargeButtonScale) }] }}>
+                <Animated.View style={{ transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] }}>
                   <Pressable
                     onPressIn={handlePressIn}
                     onPressOut={handlePressOut}
