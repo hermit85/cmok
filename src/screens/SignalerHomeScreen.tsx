@@ -205,13 +205,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   // Copy slide-up offset for done state
   const copySlide = useRef(new Animated.Value(8)).current;
+  const copyDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (showChecked) {
       afterFade.setValue(0);
       copySlide.setValue(8);
-      // Delay copy appearance for 400ms after button transition
-      setTimeout(() => {
+      copyDelayRef.current = setTimeout(() => {
         Animated.parallel([
           Animated.timing(afterFade, { toValue: 1, duration: 300, useNativeDriver: true }),
           Animated.timing(copySlide, { toValue: 0, duration: 300, useNativeDriver: true }),
@@ -222,6 +222,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       afterFade.setValue(0);
       copySlide.setValue(8);
     }
+    return () => { if (copyDelayRef.current) clearTimeout(copyDelayRef.current); };
   }, [showChecked, afterFade, copySlide]);
 
   /* ─── animations ─── */
@@ -370,7 +371,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     } finally {
       isSubmitting.current = false;
     }
-  }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, refreshWeek, refreshStats]);
+  }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, refreshWeek, refreshStats, currentStreak, realWeekDays]);
 
   /* ─── press handlers: charge & release ─── */
 

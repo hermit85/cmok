@@ -141,17 +141,19 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
   const [showReactionParticles, setShowReactionParticles] = useState(false);
   const sent = alreadySent || !!justSent;
   const scales = useRef(REACTIONS.map(() => new Animated.Value(1))).current;
+  const particleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (alreadySent) logInviteEvent('recipient_response_state_restored');
     else logInviteEvent('recipient_response_cta_seen');
   }, [alreadySent]);
 
+  useEffect(() => () => { if (particleTimerRef.current) clearTimeout(particleTimerRef.current); }, []);
+
   const handleTap = async (emoji: string, index: number) => {
     if (sent) return;
     haptics.medium();
     logInviteEvent('recipient_response_started');
-    // More dramatic spring: scale up bigger, overshoot
     Animated.sequence([
       Animated.spring(scales[index], { toValue: 1.5, useNativeDriver: true, speed: 50, bounciness: 14 }),
       Animated.spring(scales[index], { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 8 }),
@@ -166,7 +168,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
       setShowReactionParticles(true);
       haptics.success();
       logInviteEvent('recipient_response_sent');
-      setTimeout(() => setShowReactionParticles(false), 1200);
+      particleTimerRef.current = setTimeout(() => setShowReactionParticles(false), 1200);
     } catch { /* silent */ }
   };
 
@@ -242,6 +244,9 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const [showWarmToast, setShowWarmToast] = useState(false);
   const hasSeenSign = useRef(false);
   const toastFade = useRef(new Animated.Value(0)).current;
+  const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => { if (celebrationTimerRef.current) clearTimeout(celebrationTimerRef.current); }, []);
   const [todayTime, setTodayTime] = useState<string | null>(null);
   const [lastContact, setLastContact] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -314,7 +319,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         setShowCelebration(true);
         setShowWarmToast(true);
         haptics.success();
-        setTimeout(() => setShowCelebration(false), 1200);
+        celebrationTimerRef.current = setTimeout(() => setShowCelebration(false), 1200);
         // Warm toast: fade in, hold 2.5s, fade out
         toastFade.setValue(0);
         Animated.sequence([
