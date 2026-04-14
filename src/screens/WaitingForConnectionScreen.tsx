@@ -125,7 +125,7 @@ export function WaitingForConnectionScreen() {
             onPress={handleShare}
             style={({ pressed }) => [s.resendLink, pressed && { opacity: 0.6 }]}
           >
-            <Text style={s.resendLinkText}>Wyślij do kogoś jeszcze</Text>
+            <Text style={s.resendLinkText}>Wyślij ponownie</Text>
           </Pressable>
         </View>
 
