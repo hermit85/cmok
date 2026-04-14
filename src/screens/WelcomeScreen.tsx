@@ -13,8 +13,8 @@ interface WelcomeScreenProps {
 
 const SLIDES = [
   {
-    headline: 'Mama daje znak.\nTy widzisz spokój.',
-    body: 'Jeden gest dziennie zamiast\ndzwonienia i martwienia się.',
+    headline: 'Jeden znak dziennie.\nSpokój dla obu stron.',
+    body: 'Bliska osoba daje znać, że jest OK.\nBez dzwonienia, bez martwienia się.',
   },
   {
     headline: 'Jedno dotknięcie\ni obie strony wiedzą.',
