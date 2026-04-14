@@ -387,14 +387,17 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     }
 
     // Charge animations: button swells, glow + ring appear over 1500ms
-    const chargeAnim = Animated.parallel([
+    // Native-driven anims (transform, opacity) run on UI thread
+    const nativeAnim = Animated.parallel([
       Animated.timing(breatheScale, { toValue: 1.06, duration: 1500, useNativeDriver: true }),
       Animated.timing(chargeGlowOpacity, { toValue: 0.5, duration: 1500, useNativeDriver: true }),
       Animated.timing(chargeRingScale, { toValue: 1.12, duration: 1500, useNativeDriver: true }),
-      Animated.timing(chargeRingBorder, { toValue: 5, duration: 1500, useNativeDriver: false }),
     ]);
-    chargeAnimsRef.current = chargeAnim;
-    chargeAnim.start();
+    // JS-driven anim (borderWidth can't use native driver)
+    const jsAnim = Animated.timing(chargeRingBorder, { toValue: 5, duration: 1500, useNativeDriver: false });
+    chargeAnimsRef.current = nativeAnim;
+    nativeAnim.start();
+    jsAnim.start();
 
     // Haptic staircase + urgent threshold
     let lastMs = 0;
