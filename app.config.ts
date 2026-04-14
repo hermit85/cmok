@@ -55,7 +55,7 @@ const config: ExpoConfig = {
       },
     ],
     'expo-font',
-    '@sentry/react-native',
+    ['@sentry/react-native', { organization: 'cybird-consulting', project: 'cmok' }],
   ],
   extra: {
     eas: {
