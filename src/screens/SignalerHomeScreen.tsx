@@ -461,6 +461,15 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     else logInviteEvent('daily_sign_pending_seen');
   }, [showUrgent, showCheckedEarly]);
 
+  // Bounce the response receipt (must be before early return for hook stability)
+  const hasResponseForEffect = todaySignals.filter(s => s.type === 'reaction').length > 0;
+  useEffect(() => {
+    if (hasResponseForEffect && showChecked) {
+      responseReceiptScale.setValue(0);
+      Animated.spring(responseReceiptScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }).start();
+    }
+  }, [hasResponseForEffect, showChecked, responseReceiptScale]);
+
   if (showUrgent) {
     const loc = effectiveAlert?.latitude != null;
     const claimer = effectiveUrgent?.claimerName;
@@ -513,13 +522,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const hasNudge = !showChecked && signals.some(s => s.type === 'nudge');
   const nudgeFrom = hasNudge ? effectiveCircleNames.get(signals.find(s => s.type === 'nudge')!.from_user_id) || primaryName : null;
 
-  // Bounce the response receipt when it first appears
-  useEffect(() => {
-    if (hasResponse && showChecked) {
-      responseReceiptScale.setValue(0);
-      Animated.spring(responseReceiptScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }).start();
-    }
-  }, [hasResponse, showChecked, responseReceiptScale]);
   const rawResponseName = hasResponse ? (effectiveCircleNames.get(signals[0].from_user_id) || primaryName) : null;
   const responseName = rawResponseName && rawResponseName !== 'Bliska osoba' ? relationDisplay(rawResponseName) : null;
   const responseEmoji = hasResponse ? (signals[0].emoji || '\u{1F49B}') : null;
