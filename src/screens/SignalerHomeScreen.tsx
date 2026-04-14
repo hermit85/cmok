@@ -332,32 +332,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   /* ─── press handlers: charge & release ─── */
 
-  const handlePressIn = useCallback(() => {
-    if (!canCheckin && !canUrgent) return;
-    pressStartRef.current = Date.now();
-    chargeTriggeredUrgent.current = false;
+  const handleCheckinPress = useCallback(() => {
+    if (!canCheckin) return;
     haptics.light();
-
-    // Urgent threshold timer only — charge visuals disabled to prevent native driver crash
-    chargeIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - pressStartRef.current;
-      if (elapsed >= 1500) {
-        if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
-        chargeTriggeredUrgent.current = true;
-        haptics.heavy();
-        if (canUrgent) setShowUrgentModal(true);
-      }
-    }, 16);
-  }, [canCheckin, canUrgent]);
-
-  const handlePressOut = useCallback(() => {
-    if (chargeIntervalRef.current) { clearInterval(chargeIntervalRef.current); chargeIntervalRef.current = null; }
-
-    if (chargeTriggeredUrgent.current) return;
-
-    // Any press < 1500ms = check-in
     performCheckinLogic(playSuccess);
-  }, [performCheckinLogic, playSuccess]);
+  }, [canCheckin, performCheckinLogic, playSuccess]);
 
   const moodPickedScale = useRef(new Animated.Value(0)).current;
   const moodPickedOpacity = useRef(new Animated.Value(0)).current;
@@ -634,11 +613,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                 } : undefined}>
                 <Animated.View style={{ transform: [{ scale: Animated.multiply(buttonScale, breatheScale) }] }}>
                   <Pressable
-                    onPressIn={handlePressIn}
-                    onPressOut={handlePressOut}
-                    disabled={!canCheckin && !canUrgent}
-                    style={[
+                    onPress={handleCheckinPress}
+                    disabled={!canCheckin}
+                    style={({ pressed }) => [
                       s.btn, buttonDone && s.btnDone, buttonDisabled && s.btnOff, !buttonDone && !buttonDisabled && s.btnActive,
+                      pressed && canCheckin && { opacity: 0.9, transform: [{ scale: 0.96 }] },
                     ]}
                   >
                     <Text style={[s.btnText, buttonDone && s.btnTextDone, buttonDisabled && s.btnTextOff]} maxFontSizeMultiplier={1.2}>
