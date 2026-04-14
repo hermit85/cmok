@@ -26,7 +26,7 @@ import type { DailyCheckin, SupportParticipant as SParticipant } from '../types'
 import type { RecipientHomePreview } from '../dev/homePreview';
 import { formatClock } from '../utils/date';
 import { todayDateKey } from '../utils/today';
-import { logInviteEvent } from '../utils/invite';
+import { logInviteEvent, generateAndShareInvite } from '../utils/invite';
 import { analytics } from '../services/analytics';
 import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils/relationCopy';
 
@@ -138,6 +138,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
   const { sendSignal, hasSentReactionToday } = useSignals();
   const alreadySent = !preview && hasSentReactionToday(signalerId);
   const [justSent, setJustSent] = useState<string | null>(null);
+  const [showReactionParticles, setShowReactionParticles] = useState(false);
   const sent = alreadySent || !!justSent;
   const scales = useRef(REACTIONS.map(() => new Animated.Value(1))).current;
 
@@ -150,9 +151,10 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
     if (sent) return;
     haptics.medium();
     logInviteEvent('recipient_response_started');
+    // More dramatic spring: scale up bigger, overshoot
     Animated.sequence([
-      Animated.spring(scales[index], { toValue: 1.3, useNativeDriver: true, speed: 50, bounciness: 10 }),
-      Animated.spring(scales[index], { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }),
+      Animated.spring(scales[index], { toValue: 1.5, useNativeDriver: true, speed: 50, bounciness: 14 }),
+      Animated.spring(scales[index], { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 8 }),
     ]).start();
     try {
       if (!preview) {
@@ -161,8 +163,10 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
         analytics.reactionSent(emoji);
       }
       setJustSent(emoji);
+      setShowReactionParticles(true);
       haptics.success();
       logInviteEvent('recipient_response_sent');
+      setTimeout(() => setShowReactionParticles(false), 1200);
     } catch { /* silent */ }
   };
 
@@ -177,6 +181,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
 
   return (
     <View style={st.responseSection}>
+      <Particles visible={showReactionParticles} count={10} colors={[Colors.safe, Colors.love, Colors.highlight, Colors.delight]} />
       {sent ? (
         <>
           <Animated.View style={[st.responseSentPill, justSent ? { transform: [{ scale: sentScale }] } : undefined]}>
@@ -192,7 +197,7 @@ function ResponseTap({ signalerName, signalerId, preview }: { signalerName: stri
               <Animated.View key={r.symbol} style={{ transform: [{ scale: scales[i] }] }}>
                 <Pressable
                   onPress={() => handleTap(r.emoji, i)}
-                  style={({ pressed }) => [st.reactionBtn, pressed && { opacity: 0.7 }]}
+                  style={({ pressed }) => [st.reactionBtn, pressed && { opacity: 0.8, transform: [{ scale: 0.92 }] }]}
                 >
                   <Text style={[st.reactionSymbol, { color: r.color }]}>{r.symbol}</Text>
                   <Text style={st.reactionLabel}>{r.label}</Text>
@@ -558,7 +563,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             </Animated.View>
           ) : null}
           {/* Viral: grow circle — subtle link */}
-          <Pressable onPress={handleShareInvite} style={({ pressed }) => [st.viralLink, pressed && { opacity: 0.5 }]}>
+          <Pressable onPress={() => generateAndShareInvite()} style={({ pressed }) => [st.viralLink, pressed && { opacity: 0.5 }]}>
             <Text style={st.viralLinkText}>Zaproś kogoś do kręgu</Text>
           </Pressable>
 
@@ -628,11 +633,11 @@ const st = StyleSheet.create({
   responsePrompt: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginBottom: 12 },
   reactionsRow: { flexDirection: 'row', gap: 16, justifyContent: 'center' },
   reactionBtn: {
-    width: 64, height: 64, borderRadius: 16,
-    backgroundColor: Colors.cardStrong, borderWidth: 1, borderColor: Colors.border,
+    width: 68, height: 68, borderRadius: 18,
+    backgroundColor: Colors.cardStrong, borderWidth: 1.5, borderColor: Colors.border,
     justifyContent: 'center', alignItems: 'center',
   },
-  reactionSymbol: { fontSize: 22 },
+  reactionSymbol: { fontSize: 24 },
   reactionLabel: { fontSize: 9, color: Colors.textMuted, marginTop: 2 },
   responseSentPill: {
     backgroundColor: Colors.safeLight, minHeight: 44, paddingHorizontal: 24,

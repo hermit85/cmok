@@ -22,7 +22,7 @@ import { useWeekRhythm } from '../hooks/useWeekRhythm';
 import { useCheckinStats } from '../hooks/useCheckinStats';
 import { supabase } from '../services/supabase';
 import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync';
-import { logInviteEvent } from '../utils/invite';
+import { logInviteEvent, generateAndShareInvite } from '../utils/invite';
 import { analytics } from '../services/analytics';
 import type { Signal, SupportParticipant } from '../types';
 import type { SignalerHomePreview } from '../dev/homePreview';
@@ -80,6 +80,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const [milestoneVisible, setMilestoneVisible] = useState(false);
   const [statusPicked, setStatusPicked] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<SignalerHomePreview | null>(preview);
+  const [showWarmToast, setShowWarmToast] = useState(false);
 
   const isSubmitting = useRef(false);
   const breatheScale = useRef(new Animated.Value(1)).current;
@@ -89,6 +90,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const releaseRingOpacity = useRef(new Animated.Value(0)).current;
   const afterFade = useRef(new Animated.Value(0)).current;
   const celebrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toastFade = useRef(new Animated.Value(0)).current;
+  const responseReceiptScale = useRef(new Animated.Value(0)).current;
+  const moodScales = useRef(STATUS_MOODS.map(() => new Animated.Value(1))).current;
 
   const circleNames = useMemo(
     () => new Map(recipients.map((m) => [m.userId, m.name])), [recipients],
@@ -231,6 +235,15 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     // Stop breathing shadow on done
     breatheShadow.setValue(0);
 
+    // Warm toast
+    setShowWarmToast(true);
+    toastFade.setValue(0);
+    Animated.sequence([
+      Animated.timing(toastFade, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.delay(2500),
+      Animated.timing(toastFade, { toValue: 0, duration: 500, useNativeDriver: true }),
+    ]).start(() => setShowWarmToast(false));
+
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
     if (isMilestone) {
       celebrationTimeoutRef.current = setTimeout(() => {
@@ -238,7 +251,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         setMilestoneVisible(true); // show full-screen celebration after particle burst
       }, 1200);
     }
-  }, [buttonScale, releaseRingOpacity, releaseRingScale, breatheShadow, isMilestone]);
+  }, [buttonScale, releaseRingOpacity, releaseRingScale, breatheShadow, isMilestone, toastFade]);
 
   /* ─── handlers ─── */
 
@@ -283,15 +296,20 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     }
   }, [pv, previewMode, authReady, isAuthenticated, showChecked, checkinLoading, isOffline, userId, performCheckin, playSuccess, refreshWeek, refreshStats]);
 
-  const handleStatusPick = useCallback(async (statusKey: string) => {
+  const handleStatusPick = useCallback(async (statusKey: string, index: number) => {
     setStatusPicked(statusKey);
-    haptics.light();
+    haptics.medium();
+    // Spring animation on the tapped chip
+    Animated.sequence([
+      Animated.spring(moodScales[index], { toValue: 1.25, useNativeDriver: true, speed: 50, bounciness: 12 }),
+      Animated.spring(moodScales[index], { toValue: 1, useNativeDriver: true, speed: 40, bounciness: 6 }),
+    ]).start();
     if (pv || !userId) return;
     try {
       const today = new Date().toISOString().slice(0, 10);
       await supabase.from('daily_checkins').update({ status_emoji: statusKey }).eq('senior_id', userId).eq('local_date', today);
     } catch { /* silent — status is optional */ }
-  }, [pv, userId]);
+  }, [pv, userId, moodScales]);
 
   const handleMilestoneShare = useCallback(async () => {
     const streakText = currentStreak === 7 ? 'tydzień' : currentStreak === 14 ? '2 tygodnie' : currentStreak === 21 ? '3 tygodnie' : currentStreak === 30 ? 'miesiąc' : `${currentStreak} dni`;
@@ -412,6 +430,14 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     ? [{ id: 'p1', from_user_id: 'r', to_user_id: 'ps', type: 'reaction' as const, emoji: '\u{1F49B}', message: null, created_at: new Date().toISOString(), seen_at: null }]
     : todaySignals;
   const hasResponse = signals.length > 0;
+
+  // Bounce the response receipt when it first appears
+  useEffect(() => {
+    if (hasResponse && showChecked) {
+      responseReceiptScale.setValue(0);
+      Animated.spring(responseReceiptScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }).start();
+    }
+  }, [hasResponse, showChecked, responseReceiptScale]);
   const rawResponseName = hasResponse ? (effectiveCircleNames.get(signals[0].from_user_id) || primaryName) : null;
   const responseName = rawResponseName && rawResponseName !== 'Bliska osoba' ? relationDisplay(rawResponseName) : null;
   const responseEmoji = hasResponse ? (signals[0].emoji || '\u{1F49B}') : null;
@@ -497,6 +523,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       {isOffline ? <Text style={s.offlineBadge}>Brak internetu</Text> : null}
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} bounces={false}>
+        {/* ─── Warm toast ─── */}
+        {showWarmToast ? (
+          <Animated.View style={[s.warmToast, { opacity: toastFade }]}>
+            <Text style={s.warmToastText}>{hasName ? `${name} już wie` : 'Znak wysłany'}</Text>
+          </Animated.View>
+        ) : null}
+
         <View style={s.center}>
           {/* ─── THE BUTTON ─── */}
           <View style={s.buttonArea}>
@@ -541,27 +574,28 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               <Text style={s.copyLineDone} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
               {timeLine ? <Text style={s.timeLine}>{timeLine}</Text> : null}
               {hasResponse ? (
-                <View style={s.responseReceipt}>
+                <Animated.View style={[s.responseReceipt, { transform: [{ scale: responseReceiptScale }] }]}>
                   <Text style={s.responseReceiptText}>
                     {responseName
                       ? `${responseEmoji ? responseEmoji + ' ' : ''}${responseName} jest z Tobą`
                       : 'Jest znak'}
                   </Text>
-                </View>
+                </Animated.View>
               ) : null}
               {!statusPicked ? (
                 <View style={s.statusSection}>
                   <Text style={s.statusPrompt}>Jak się dziś czujesz?</Text>
                   <View style={s.statusRow}>
-                    {STATUS_MOODS.map((mood) => (
-                      <Pressable
-                        key={mood.key}
-                        onPress={() => handleStatusPick(mood.key)}
-                        style={({ pressed }) => [s.statusChip, pressed && { opacity: 0.7 }]}
-                      >
-                        <Text style={[s.statusSymbol, { color: mood.color }]}>{mood.symbol}</Text>
-                        <Text style={s.statusLabel}>{mood.label}</Text>
-                      </Pressable>
+                    {STATUS_MOODS.map((mood, i) => (
+                      <Animated.View key={mood.key} style={{ transform: [{ scale: moodScales[i] }] }}>
+                        <Pressable
+                          onPress={() => handleStatusPick(mood.key, i)}
+                          style={({ pressed }) => [s.statusChip, pressed && { opacity: 0.7 }]}
+                        >
+                          <Text style={[s.statusSymbol, { color: mood.color }]}>{mood.symbol}</Text>
+                          <Text style={s.statusLabel}>{mood.label}</Text>
+                        </Pressable>
+                      </Animated.View>
                     ))}
                   </View>
                 </View>
@@ -600,7 +634,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
           {/* ─── VIRAL: subtle invite link ─── */}
           {showChecked && currentStreak >= 3 ? (
-            <Pressable onPress={handleMilestoneShare} style={({ pressed }) => [s.viralLink, pressed && { opacity: 0.5 }]}>
+            <Pressable onPress={() => generateAndShareInvite()} style={({ pressed }) => [s.viralLink, pressed && { opacity: 0.5 }]}>
               <Text style={s.viralLinkText}>Zaproś kogoś do kręgu</Text>
             </Pressable>
           ) : null}
@@ -656,16 +690,20 @@ const s = StyleSheet.create({
     borderRadius: 20, alignSelf: 'center',
   },
   responseReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+  /* warm toast */
+  warmToast: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, backgroundColor: Colors.safeLight, marginTop: 8 },
+  warmToastText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
+
   /* status mood picker */
   statusSection: { marginTop: 20, alignItems: 'center' },
   statusPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 10 },
-  statusRow: { flexDirection: 'row', gap: 8 },
+  statusRow: { flexDirection: 'row', gap: 10 },
   statusChip: {
-    paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12,
-    backgroundColor: Colors.surface, alignItems: 'center', minWidth: 56,
+    paddingHorizontal: 12, paddingVertical: 10, borderRadius: 14,
+    backgroundColor: Colors.surface, alignItems: 'center', minWidth: 62,
   },
-  statusSymbol: { fontSize: 16, marginBottom: 2 },
-  statusLabel: { fontSize: 9, color: Colors.textMuted },
+  statusSymbol: { fontSize: 20, marginBottom: 3 },
+  statusLabel: { fontSize: 10, color: Colors.textMuted },
   statusPicked: { fontSize: 14, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: 16 },
   tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 16 },
   shareBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.surface },

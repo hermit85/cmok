@@ -1,4 +1,5 @@
-import { Share, Platform } from 'react-native';
+import { Share, Platform, Alert } from 'react-native';
+import { supabase } from '../services/supabase';
 
 const APP_URL = 'https://cmok.app/pobierz';
 
@@ -97,6 +98,7 @@ export async function shareInvite(params: {
 
 /**
  * Share invite for adding someone to the trusted circle.
+ * @deprecated Use generateAndShareInvite() which generates a code first.
  */
 export async function shareCircleInvite(): Promise<boolean> {
   const message = [
@@ -118,5 +120,74 @@ export async function shareCircleInvite(): Promise<boolean> {
     return shared;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Generate a fresh 6-digit invite code, persist it in care_pairs, then
+ * open the native share sheet with the code + deep link.
+ *
+ * Returns { code, shared } or null if generation failed.
+ */
+export async function generateAndShareInvite(): Promise<{ code: string; shared: boolean } | null> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      Alert.alert('Zaloguj się', 'Żeby zaprosić kogoś, połącz telefon z kontem.');
+      return null;
+    }
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    // Check for existing pending invite to reuse/update
+    const { data: existing } = await supabase
+      .from('care_pairs')
+      .select('id, signaler_label')
+      .eq('caregiver_id', user.id)
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle();
+
+    if (existing?.id) {
+      await supabase
+        .from('care_pairs')
+        .update({ invite_code: code, invite_expires_at: expiresAt })
+        .eq('id', existing.id);
+    } else {
+      // Create new pending pair with code
+      await supabase.from('care_pairs').insert({
+        caregiver_id: user.id,
+        invite_code: code,
+        invite_expires_at: expiresAt,
+        status: 'pending',
+      });
+    }
+
+    logInviteEvent('invite_created', { code });
+
+    const deepLink = `cmok://join/${code}`;
+    const message = [
+      `Dołącz do mojego kręgu w cmok!`,
+      `Twój kod: ${code}`,
+      ``,
+      `Pobierz apkę: ${APP_URL}`,
+      ``,
+      `Masz już cmok? Otwórz: ${deepLink}`,
+    ].join('\n');
+
+    const result = await Share.share(
+      Platform.OS === 'ios'
+        ? { message }
+        : { message, title: 'Zaproszenie do cmok' },
+    );
+
+    const shared = result.action === Share.sharedAction;
+    if (shared) logInviteEvent('invite_shared', { code });
+    return { code, shared };
+  } catch (err) {
+    console.warn('[invite] generateAndShareInvite error:', err);
+    Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.');
+    return null;
   }
 }

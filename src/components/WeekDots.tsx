@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 
 type DayStatus = 'ok' | 'missing' | 'future';
+
+const DAY_LABELS_PL = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'] as const;
 
 interface WeekDotsProps {
   days: DayStatus[];
@@ -85,8 +87,27 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
   const { label, streak } = showLabel ? getStreakInfo(days) : { label: null, streak: 0 };
   const fullWeek = days.length === 7 && days.every((d) => d === 'ok');
 
+  // Compute day-of-week labels dynamically: last entry = today
+  const dayLabels = useMemo(() => {
+    const today = new Date().getDay(); // 0=Sun
+    return days.map((_, i) => {
+      const offset = days.length - 1 - i; // how many days before today
+      const dow = (today - offset + 7) % 7;
+      return DAY_LABELS_PL[dow];
+    });
+  }, [days.length]);
+
   return (
     <View style={styles.container}>
+      {/* Day-of-week labels */}
+      {days.length > 1 ? (
+        <View style={styles.row}>
+          {dayLabels.map((lbl, i) => (
+            <Text key={i} style={styles.dayLabel}>{lbl}</Text>
+          ))}
+        </View>
+      ) : null}
+
       {fullWeek ? (
         <CascadeDots days={days} />
       ) : (
@@ -127,6 +148,7 @@ const DOT = 12;
 const styles = StyleSheet.create({
   container: { alignItems: 'center' },
   row: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 4 },
+  dayLabel: { width: DOT, fontSize: 9, color: Colors.textMuted, textAlign: 'center' },
   dot: { width: DOT, height: DOT, borderRadius: DOT / 2 },
   dotOk: { backgroundColor: Colors.safe },
   dotMissing: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.border },

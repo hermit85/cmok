@@ -7,7 +7,7 @@ import { Radius, Spacing } from '../constants/tokens';
 import { useRelationship } from '../hooks/useRelationship';
 import { useCircle } from '../hooks/useCircle';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
-import { shareCircleInvite } from '../utils/invite';
+import { generateAndShareInvite } from '../utils/invite';
 
 function StatusBadge({ joined }: { joined: boolean }) {
   return (
@@ -101,7 +101,7 @@ export function CircleScreen() {
               </Pressable>
 
               <Pressable
-                onPress={() => shareCircleInvite()}
+                onPress={() => generateAndShareInvite()}
                 style={({ pressed }) => [st.inviteLink, pressed && { opacity: 0.6 }]}
               >
                 <Text style={st.inviteLinkText}>Zaproś do kręgu</Text>
