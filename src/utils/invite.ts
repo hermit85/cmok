@@ -96,7 +96,7 @@ export async function shareCircleInvite(): Promise<boolean> {
   const message = [
     `Dołącz do kręgu bliskich w cmok.`,
     ``,
-    `cmok to prywatna aplikacja — ktoś bliski chce dodać Cię do swojego kręgu.`,
+    `cmok to prywatna aplikacja, ktoś bliski chce dodać Cię do swojego kręgu.`,
     `Pobierz: ${APP_URL}`,
   ].join('\n');
 

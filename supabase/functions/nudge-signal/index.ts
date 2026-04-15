@@ -78,9 +78,9 @@ serve(async (req) => {
       return jsonResponse({ ok: true, skipped: 'no_active_relationship' });
     }
 
-    // 3. Dedup: max 1 nudge per day per sender
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
+    // 3. Dedup: max 1 nudge per day per sender (Europe/Warsaw local day)
+    const todayStart = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
+    todayStart.setHours(0, 0, 0, 0);
     const { data: existingNudge } = await serviceSupabase
       .from('signals')
       .select('id')

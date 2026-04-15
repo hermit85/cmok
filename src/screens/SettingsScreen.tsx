@@ -71,6 +71,20 @@ export function SettingsScreen() {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
       const col = isRecipient ? 'caregiver_id' : 'senior_id';
 
+      // Guard: don't create pending if active relationship exists
+      const { data: activePair } = await supabase
+        .from('care_pairs')
+        .select('id')
+        .eq(col, user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+
+      if (activePair) {
+        Alert.alert('Już masz połączenie', 'Masz już aktywną relację w cmok. Żeby dodać kogoś do kręgu bliskich, użyj opcji w ustawieniach.');
+        return;
+      }
+
       // Check for existing pending pair to reuse
       const { data: existing } = await supabase
         .from('care_pairs')
