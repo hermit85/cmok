@@ -748,8 +748,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           {/* ─── WEEK DOTS ─── */}
           {weekDots.length > 0 ? <View style={s.dotsWrap}><WeekDots days={weekDots as Array<'ok' | 'missing' | 'future'>} /></View> : null}
 
-          {/* ─── STATS: streak + total ─── */}
-          {showChecked && dbTotalCount > 0 ? (
+          {/* ─── STATS: streak + total (show only when streak is meaningful) ─── */}
+          {showChecked && currentStreak >= 3 ? (
             <View style={s.statsRow}>
               <View style={s.statItem}>
                 <Text style={s.statNumber}>{currentStreak}</Text>
@@ -835,7 +835,7 @@ const s = StyleSheet.create({
   warmToastText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
 
   /* status mood picker */
-  statusSection: { marginTop: 20, alignItems: 'center' },
+  statusSection: { marginTop: 14, alignItems: 'center' },
   statusPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
   statusRow: { flexDirection: 'row', gap: 14, justifyContent: 'center' },
   statusChip: {
@@ -853,12 +853,12 @@ const s = StyleSheet.create({
   statusPickedSymbol: { fontSize: 18 },
   statusPickedText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
   statusSentHint: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
-  tomorrowHook: { fontSize: 14, color: Colors.textSecondary, marginTop: 20 },
+  tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 16 },
   streakHook: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
   shareBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.surface },
   shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },
 
-  dotsWrap: { marginTop: 24 },
+  dotsWrap: { marginTop: 16 },
   statsRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, gap: 24,
     backgroundColor: Colors.safeWash, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 24,
