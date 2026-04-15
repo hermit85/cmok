@@ -88,7 +88,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const statusLoadedFromDb = useRef(false);
   const [previewMode, setPreviewMode] = useState<SignalerHomePreview | null>(preview);
   const [showWarmToast, setShowWarmToast] = useState(false);
-  const [pokePicked, setPokePicked] = useState<string | null>(null);
 
   const isSubmitting = useRef(false);
   const breatheScale = useRef(new Animated.Value(1)).current;
@@ -404,19 +403,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     } catch { /* cancelled */ }
   }, [currentStreak, primaryName]);
 
-  // Poke handler — standalone gesture, independent from check-in
-  const handlePokePick = useCallback(async (emoji: string) => {
-    if (pokePicked || pokeAlreadySent || !primaryRecipientId) return;
-    haptics.light();
-    setPokePicked(emoji);
-    haptics.success();
-    if (pv || !userId) return;
-    try {
-      const ok = await sendSignal(primaryRecipientId, emoji, undefined, 'poke');
-      if (ok) analytics.pokeSent(emoji);
-    } catch { /* silent */ }
-  }, [pokePicked, pokeAlreadySent, primaryRecipientId, pv, userId, sendSignal]);
-
   // Restore status from DB when screen loads (so picked pill persists across visits)
   useEffect(() => {
     if (pv || statusLoadedFromDb.current) return;
@@ -729,14 +715,17 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   </View>
                 </Animated.View>
               ) : (
-                <Animated.View style={[s.statusPickedPill, { opacity: moodPickedOpacity, transform: [{ scale: moodPickedScale }] }]}>
-                  <Emoji style={s.statusPickedSymbol}>
-                    {STATUS_MOODS.find((m) => m.key === statusPicked)?.emoji ?? ''}
-                  </Emoji>
-                  <Text style={s.statusPickedText}>
-                    {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
-                  </Text>
-                </Animated.View>
+                <>
+                  <Animated.View style={[s.statusPickedPill, { opacity: moodPickedOpacity, transform: [{ scale: moodPickedScale }] }]}>
+                    <Emoji style={s.statusPickedSymbol}>
+                      {STATUS_MOODS.find((m) => m.key === statusPicked)?.emoji ?? ''}
+                    </Emoji>
+                    <Text style={s.statusPickedText}>
+                      {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
+                    </Text>
+                  </Animated.View>
+                  <Text style={s.statusSentHint}>{primaryName ? `${primaryName} zobaczy` : 'Wysłano'}</Text>
+                </>
               )}
               {!isReallyFirstEver ? <Text style={s.tomorrowHook}>Gotowe na dziś. Jutro Ci przypomnimy.</Text> : null}
               {!isMilestone && currentStreak >= 2 && currentStreak < 7 ? (
@@ -781,34 +770,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             </Pressable>
           ) : null}
         </View>
-
-        {/* ─── POKE: standalone gesture, only before check-in (after check-in mood chips serve this role) ─── */}
-        {primaryRecipientId && !showChecked ? (
-          <View style={s.pokeSection}>
-            {pokePicked || pokeAlreadySent ? (
-              <View style={s.pokeSentPill}>
-                <Emoji style={s.pokeEmoji}>{pokePicked || '\u{1F49A}'}</Emoji>
-                <Text style={s.pokeSentText}>{primaryName ? `${primaryName} zobaczy Twój gest` : 'Gest wysłany'}</Text>
-              </View>
-            ) : (
-              <>
-                <Text style={s.pokePrompt}>Wyślij gest</Text>
-                <View style={s.pokeRow}>
-                  {STATUS_MOODS.map((mood) => (
-                    <Pressable
-                      key={mood.key}
-                      onPress={() => handlePokePick(mood.emoji)}
-                      style={({ pressed }) => [s.pokeChip, pressed && { opacity: 0.7, transform: [{ scale: 0.92 }] }]}
-                    >
-                      <Emoji style={s.pokeChipEmoji}>{mood.emoji}</Emoji>
-                      <Text style={s.pokeChipLabel}>{mood.label}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </>
-            )}
-          </View>
-        ) : null}
 
         {/* ─── URGENT BUTTON ─── */}
         <Pressable
@@ -897,6 +858,7 @@ const s = StyleSheet.create({
   },
   statusPickedSymbol: { fontSize: 18 },
   statusPickedText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
+  statusSentHint: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
   tomorrowHook: { fontSize: 14, color: Colors.textSecondary, marginTop: 20 },
   streakHook: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
   shareBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.surface },
