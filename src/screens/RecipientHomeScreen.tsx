@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Animated,
-  ActivityIndicator, ScrollView, Alert, Linking,
+  ActivityIndicator, ScrollView, Alert, Linking, Share, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -26,7 +26,7 @@ import type { DailyCheckin, SupportParticipant as SParticipant } from '../types'
 import type { RecipientHomePreview } from '../dev/homePreview';
 import { formatClock } from '../utils/date';
 import { todayDateKey } from '../utils/today';
-import { logInviteEvent, generateAndShareInvite } from '../utils/invite';
+import { logInviteEvent } from '../utils/invite';
 import { analytics } from '../services/analytics';
 import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils/relationCopy';
 
@@ -578,9 +578,13 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               <ResponseTap signalerName={name} signalerId={sigId} preview={pv} sendSignal={sendSignal} hasSentReactionToday={hasSentReactionToday} />
             </Animated.View>
           ) : null}
-          {/* Viral: grow circle — subtle link */}
-          <Pressable onPress={() => generateAndShareInvite()} style={({ pressed }) => [st.viralLink, pressed && { opacity: 0.5 }]}>
-            <Text style={st.viralLinkText}>Zaproś kogoś do kręgu</Text>
+          {/* Viral: share app with others */}
+          <Pressable onPress={() => {
+            Share.share(Platform.OS === 'ios'
+              ? { message: 'Ktoś bliski mieszka osobno? cmok to codzienny znak, że jest OK. Jeden gest, zero stresu.\n\nhttps://cmok.app/pobierz' }
+              : { message: 'Ktoś bliski mieszka osobno? cmok to codzienny znak, że jest OK.\n\nhttps://cmok.app/pobierz', title: 'cmok' });
+          }} style={({ pressed }) => [st.viralLink, pressed && { opacity: 0.5 }]}>
+            <Text style={st.viralLinkText}>Powiedz komuś o cmok</Text>
           </Pressable>
 
           <Pressable

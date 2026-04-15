@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, ActivityIndicator,
-  Pressable, Animated,
+  Pressable, Animated, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
@@ -189,6 +189,8 @@ export function JoinScreen({
         <Text style={s.miniLogo}>cmok</Text>
         <Text style={s.stepHint}>krok 2 z 2</Text>
       </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" bounces={false}>
       <View style={s.content}>
         <Pressable onPress={onBack} style={({ pressed }) => [s.backButton, pressed && { opacity: 0.6 }]} hitSlop={16}>
           <Text style={s.backText}>← Wróć</Text>
@@ -228,6 +230,8 @@ export function JoinScreen({
           <Text style={s.noCodeBody}>Poproś bliską osobę, żeby zainstalowała cmok i wybrała "Chcę zaprosić". Dostaniesz od niej kod do wpisania tutaj.</Text>
         </View>
       </View>
+      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
