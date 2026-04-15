@@ -786,12 +786,12 @@ const st = StyleSheet.create({
 
   /* viral — subtle link */
   /* poke — standalone gesture */
-  pokeSection: { alignItems: 'center', paddingVertical: 16 },
+  pokeSection: { alignItems: 'center', paddingVertical: 20 },
   pokePrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
-  pokeRow: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
-  pokeChip: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14, alignItems: 'center' as const, width: 66 },
-  pokeChipEmoji: { fontSize: 24, marginBottom: 3 },
-  pokeChipLabel: { fontSize: 9, color: Colors.textMuted, fontFamily: Typography.fontFamilyMedium },
+  pokeRow: { flexDirection: 'row', gap: 14, justifyContent: 'center' },
+  pokeChip: { width: 64, paddingVertical: 12, borderRadius: 16, alignItems: 'center' as const, shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
+  pokeChipEmoji: { fontSize: 28, marginBottom: 4 },
+  pokeChipLabel: { fontSize: 9, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
   pokeSentPill: { flexDirection: 'row', alignItems: 'center' as const, backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, gap: 8, marginBottom: 8 },
   pokeEmoji: { fontSize: 18 },
   pokeSentText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },

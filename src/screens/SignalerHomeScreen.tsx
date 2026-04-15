@@ -853,9 +853,9 @@ const s = StyleSheet.create({
   btnCheck: { fontSize: 14, color: Colors.safeStrong, marginTop: 2 },
 
   /* copy */
-  copyLine: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, textAlign: 'center', marginTop: 20, maxWidth: 280 },
+  copyLine: { fontSize: 16, lineHeight: 24, color: Colors.textSecondary, textAlign: 'center', marginTop: 20, maxWidth: 280 },
   copySubLine: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
-  copyLineDone: { fontSize: 17, lineHeight: 24, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, textAlign: 'center', marginTop: 20, maxWidth: 280 },
+  copyLineDone: { fontSize: 20, lineHeight: 28, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, textAlign: 'center', marginTop: 20, maxWidth: 300 },
   timeLine: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
   responseReceipt: {
     marginTop: 14, backgroundColor: Colors.safeLight, paddingHorizontal: 16, paddingVertical: 8,
@@ -877,14 +877,15 @@ const s = StyleSheet.create({
 
   /* status mood picker */
   statusSection: { marginTop: 20, alignItems: 'center' },
-  statusPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 10 },
-  statusRow: { flexDirection: 'row', gap: 6, justifyContent: 'center' },
+  statusPrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
+  statusRow: { flexDirection: 'row', gap: 14, justifyContent: 'center' },
   statusChip: {
-    paddingHorizontal: 8, paddingVertical: 10, borderRadius: 14,
-    backgroundColor: Colors.surface, alignItems: 'center', flex: 1, maxWidth: 68,
+    width: 64, paddingVertical: 12, borderRadius: 16,
+    backgroundColor: Colors.surface, alignItems: 'center',
+    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2,
   },
-  statusEmoji: { fontSize: 22, marginBottom: 3 },
-  statusLabel: { fontSize: 9, color: Colors.textMuted },
+  statusEmoji: { fontSize: 28, marginBottom: 4 },
+  statusLabel: { fontSize: 9, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
   statusPickedPill: {
     flexDirection: 'row', alignItems: 'center', marginTop: 16,
     backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10,
@@ -922,12 +923,12 @@ const s = StyleSheet.create({
 
   /* urgent full state */
   /* poke — standalone gesture */
-  pokeSection: { alignItems: 'center', paddingVertical: 16, marginTop: 8, paddingHorizontal: 24 },
+  pokeSection: { alignItems: 'center', paddingVertical: 20, marginTop: 8, paddingHorizontal: 24 },
   pokePrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
-  pokeRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
-  pokeChip: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14, backgroundColor: Colors.surface, alignItems: 'center' as const, width: 66 },
-  pokeChipEmoji: { fontSize: 22, marginBottom: 3 },
-  pokeChipLabel: { fontSize: 9, color: Colors.textMuted, fontFamily: Typography.fontFamilyMedium },
+  pokeRow: { flexDirection: 'row', gap: 14, justifyContent: 'center' },
+  pokeChip: { width: 64, paddingVertical: 12, borderRadius: 16, backgroundColor: Colors.surface, alignItems: 'center' as const, shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
+  pokeChipEmoji: { fontSize: 28, marginBottom: 4 },
+  pokeChipLabel: { fontSize: 9, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
   pokeSentPill: { flexDirection: 'row', alignItems: 'center' as const, backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, gap: 8 },
   pokeEmoji: { fontSize: 18 },
   pokeSentText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
