@@ -133,12 +133,11 @@ export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
           <Text style={s.primaryBtnText}>{isLast ? 'Zacznij' : 'Dalej'}</Text>
         </Pressable>
 
-        {/* Always reserve space — visible only on slide 0 */}
         <Pressable
           onPress={onLogin || onStart}
-          style={({ pressed }) => [s.skipLink, pressed && { opacity: 0.5 }, slide !== 0 && s.hidden]}
+          style={({ pressed }) => [s.loginLink, pressed && { opacity: 0.6 }]}
         >
-          <Text style={s.skipText}>Mam już konto</Text>
+          <Text style={s.loginText}>Mam już konto</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -183,7 +182,6 @@ const s = StyleSheet.create({
     shadowOpacity: 0.35, shadowRadius: 20, elevation: 5,
   },
   primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
-  skipLink: { marginTop: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
-  skipText: { fontSize: 12, color: Colors.textMuted },
-  hidden: { opacity: 0 },
+  loginLink: { marginTop: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+  loginText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
 });

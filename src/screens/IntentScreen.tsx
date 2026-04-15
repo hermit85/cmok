@@ -41,19 +41,18 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
             <Text style={styles.backText}>← Wróć</Text>
           </Pressable>
 
-          <Text style={styles.title}>Kim jesteś?</Text>
+          <Text style={styles.title}>Co chcesz zrobić?</Text>
           <Text style={styles.simplifiedSubtitle}>
-            cmok łączy dwie osoby: jedną, która codziennie daje znak, i drugą, która go odbiera.
+            Wybierz co pasuje do Twojej sytuacji.
           </Text>
 
           <Pressable
             onPress={() => { haptics.light(); onSelect('i-am-center'); }}
             style={({ pressed }) => [styles.optionBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           >
-            <Text style={styles.optionEmoji}>{'\u{1F44B}'}</Text>
-            <Text style={styles.optionBtnTitle}>Będę dawać znak</Text>
-            <Text style={styles.optionBtnHint}>Codziennie stukam raz i bliscy widzą, że jest OK.</Text>
-            <View style={styles.optionTag}><Text style={styles.optionTagText}>Mam kod zaproszenia</Text></View>
+            <Text style={styles.optionEmoji}>{'\u{1F4E9}'}</Text>
+            <Text style={styles.optionBtnTitle}>Mam kod zaproszenia</Text>
+            <Text style={styles.optionBtnHint}>Ktoś bliski wysłał mi kod. Chcę dołączyć i codziennie dawać znak.</Text>
           </Pressable>
 
           <Pressable
@@ -61,9 +60,8 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
             style={({ pressed }) => [styles.optionBtn, styles.optionBtnOutline, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
           >
             <Text style={styles.optionEmoji}>{'\u{1F49B}'}</Text>
-            <Text style={styles.optionBtnTitle}>Chcę odbierać znak</Text>
-            <Text style={styles.optionBtnHint}>Bliska osoba mieszka osobno. Chcę wiedzieć, że jest OK.</Text>
-            <View style={[styles.optionTag, styles.optionTagAlt]}><Text style={styles.optionTagAltText}>Zaproszę kogoś bliskiego</Text></View>
+            <Text style={styles.optionBtnTitle}>Chcę zaprosić bliską osobę</Text>
+            <Text style={styles.optionBtnHint}>Bliska osoba mieszka osobno. Chcę wiedzieć, że u niej jest OK.</Text>
           </Pressable>
         </View>
       </SafeAreaView>

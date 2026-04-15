@@ -218,10 +218,13 @@ export default function OnboardingFlow() {
           }
         }}
         onLogin={async () => {
-          // Check if already logged in before asking for phone
+          // If there's a pending invite code, set signaler role before auth
+          if (pendingInviteCode) {
+            setSelectedRole('signaler');
+          }
+          // Check if already logged in
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
-            // Already logged in — run the auto-resume logic via handleVerified path
             const { data: profile } = await supabase
               .from('users').select('id, role, name').eq('id', session.user.id).maybeSingle();
             if (profile) {
@@ -243,7 +246,6 @@ export default function OnboardingFlow() {
               }
             }
           }
-          // Not logged in or no relationship — go to phone auth
           setStep('phone');
         }}
       />;
