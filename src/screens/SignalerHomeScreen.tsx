@@ -385,8 +385,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       const today = todayDateKey();
       const { error } = await supabase.from('daily_checkins').update({ status_emoji: statusKey }).eq('senior_id', userId).eq('local_date', today);
       if (error) console.warn('[status] update failed:', error.message);
+      // Also send as poke so recipient gets push (if not already sent today)
+      if (primaryRecipientId && !pokeAlreadySent) {
+        const mood = STATUS_MOODS.find(m => m.key === statusKey);
+        sendSignal(primaryRecipientId, mood?.emoji || statusKey, undefined, 'poke').catch(() => {});
+      }
     } catch (err) { console.warn('[status] update error:', err); }
-  }, [pv, userId, moodScales, moodFadeOut, moodPickedScale, moodPickedOpacity]);
+  }, [pv, userId, primaryRecipientId, pokeAlreadySent, sendSignal, moodScales, moodFadeOut, moodPickedScale, moodPickedOpacity]);
 
   const handleMilestoneShare = useCallback(async () => {
     const streakText = currentStreak === 7 ? 'tydzień' : currentStreak === 14 ? '2 tygodnie' : currentStreak === 21 ? '3 tygodnie' : currentStreak === 30 ? 'miesiąc' : `${currentStreak} dni`;
@@ -779,8 +784,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           ) : null}
         </View>
 
-        {/* ─── POKE: standalone gesture, always visible ─── */}
-        {primaryRecipientId ? (
+        {/* ─── POKE: standalone gesture, only before check-in (after check-in mood chips serve this role) ─── */}
+        {primaryRecipientId && !showChecked ? (
           <View style={s.pokeSection}>
             {pokePicked || pokeAlreadySent ? (
               <View style={s.pokeSentPill}>
