@@ -144,7 +144,7 @@ cmok to codzienny rytuał bliskości między osobami, które mieszkają osobno. 
 - Push: Expo Push Notifications
 - Auth: SMS OTP (Supabase Auth, legacy JWT anon key)
 - RLS: enabled na wszystkich 8 tabelach
-- Edge functions: 9 (checkin-notify, urgent-signal, nudge-signal, morning-reminder, weekly-summary, missed-sign-alert, delete-account, register-device, checkin-monitor)
+- Edge functions: 12 (checkin-notify, urgent-signal, nudge-signal, morning-reminder, weekly-summary, missed-sign-alert, delete-account, register-device, checkin-monitor, reaction-notify, poke-notify, reset-test-data)
 
 ## URL-e
 - App Store: https://apps.apple.com/pl/app/cmok/id6762090888
@@ -155,6 +155,24 @@ cmok to codzienny rytuał bliskości między osobami, które mieszkają osobno. 
 - Deep link: cmok://join/{code}
 
 ## Numery testowe
-- +48 100 000 001 (signaler) — kod SMS: 123456
-- +48 100 000 002 (recipient) — kod SMS: 123456
+- +48 100 000 001 (signaler, "Mama") — kod SMS: 123456
+- +48 100 000 002 (recipient, "Darek") — kod SMS: 123456
 - Invite code: tworzy recipient w SetupScreen
+
+## Reset danych testowych
+Edge function `reset-test-data` (no JWT required):
+
+```bash
+# Wyczyść dane, zostaw konta + relację (do testowania home screens):
+curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
+  -H "Content-Type: application/json" \
+  -d '{"mode": "keep_pair"}'
+
+# Full reset — usuń wszystko, testuj onboarding od zera:
+curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
+  -H "Content-Type: application/json" \
+  -d '{"mode": "full_reset"}'
+```
+
+Po `keep_pair`: zaloguj się na obu telefonach, app pokaże home screen (czyste dane, relacja aktywna).
+Po `full_reset`: oba konta usunięte, zaloguj się → onboarding od zera.
