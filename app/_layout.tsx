@@ -48,24 +48,41 @@ function RootLayout() {
     });
   }, []);
 
-  // Handle push notification tap — navigate based on notification type
+  // Handle push notification tap — navigate based on role + trusted access
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
       const data = response.notification.request.content.data;
-      // Determine correct screen from user's actual role
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) { router.replace('/onboarding'); return; }
-      const { data: profile } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
-      const role = profile?.role;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) { router.replace('/onboarding'); return; }
 
-      if (data?.type === 'sos' || data?.type === 'missed_checkin') {
-        router.replace(role === 'signaler' ? '/signaler-home' : '/recipient-home');
-      } else if (data?.type === 'daily_checkin') {
-        router.replace('/recipient-home');
-      } else if (data?.type === 'nudge') {
-        router.replace('/signaler-home');
-      } else {
+        const { data: profile } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
+        const role = profile?.role;
+
+        // Check trusted-contact access for SOS routing
+        if (data?.type === 'sos' || data?.type === 'missed_checkin') {
+          if (role === 'signaler') { router.replace('/signaler-home'); return; }
+          if (role === 'recipient') { router.replace('/recipient-home'); return; }
+          // Trusted contact — check if they have trusted access
+          const { data: trusted } = await supabase
+            .from('trusted_contacts')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .eq('status', 'active')
+            .limit(1)
+            .maybeSingle();
+          router.replace(trusted ? '/trusted-support' : '/onboarding');
+          return;
+        }
+
+        if (data?.type === 'daily_checkin') { router.replace('/recipient-home'); return; }
+        if (data?.type === 'nudge') { router.replace('/signaler-home'); return; }
+
+        // Default: route by role
         router.replace(role === 'signaler' ? '/signaler-home' : role === 'recipient' ? '/recipient-home' : '/onboarding');
+      } catch {
+        // Network error during push handling — just go to index which will route correctly
+        router.replace('/');
       }
     });
     return () => sub.remove();
