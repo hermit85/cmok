@@ -126,11 +126,11 @@ export function JoinScreen({
           <View style={s.successCheck}>
             <Text style={s.successCheckText}><Text style={{ fontFamily: undefined, fontSize: 36 }}>✓</Text></Text>
           </View>
-          <Text style={s.successTitle}>Jesteście połączeni</Text>
+          <Text style={s.successTitle}>Gotowe, jesteście razem</Text>
           <Text style={s.successSub}>
             {inviterName
-              ? `${inviterName} zobaczy Twój codzienny znak.`
-              : 'Codzienny kontakt jest ustawiony.'}
+              ? `Od teraz ${inviterName} będzie widzieć, że u Ciebie jest OK. Codziennie, jednym gestem.`
+              : 'Wasz codzienny rytuał bliskości właśnie się zaczął.'}
           </Text>
           <BigButton
             title="Wyślij pierwszy znak"
@@ -175,13 +175,13 @@ export function JoinScreen({
 
   /* ─── MAIN JOIN ─── */
   const contextTitle = inviterName
-    ? `${inviterName} zaprasza Cię do kręgu`
-    : hasPrefill ? 'Dołączasz do kręgu' : 'Wpisz kod zaproszenia';
+    ? `${inviterName} czeka na Ciebie`
+    : hasPrefill ? 'Prawie gotowe' : 'Wpisz kod zaproszenia';
   const contextSub = inviterName
-    ? `Wpisz kod i połącz się z ${inviterName}.`
+    ? `Wpisz kod i za chwilę będziecie w kontakcie. Codziennie, bez wysiłku.`
     : hasPrefill
-      ? 'Kod jest gotowy. Stuknij „Dołącz".'
-      : 'Dostałeś kod od bliskiej osoby? Wpisz go tutaj.';
+      ? 'Kod jest gotowy. Jedno stuknięcie i jesteście połączeni.'
+      : 'Bliska osoba wysłała Ci kod. Wpisz go, żeby się połączyć.';
 
   return (
     <SafeAreaView style={s.container}>
@@ -223,7 +223,10 @@ export function JoinScreen({
           />
         )}
 
-        <Text style={s.noCodeHint}>Nie masz kodu? Poproś bliską osobę,{'\n'}żeby najpierw utworzyła zaproszenie w cmok.</Text>
+        <View style={s.noCodeBox}>
+          <Text style={s.noCodeTitle}>Nie masz kodu?</Text>
+          <Text style={s.noCodeBody}>Poproś bliską osobę, żeby zainstalowała cmok i wybrała "Chcę zaprosić". Dostaniesz od niej kod do wpisania tutaj.</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -250,7 +253,9 @@ const s = StyleSheet.create({
   error: { fontSize: 15, color: Colors.alert, textAlign: 'center', marginTop: 12 },
   joinBtn: { width: '100%', marginTop: 24 },
   joinBtnDisabled: { opacity: 0.4 },
-  noCodeHint: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 24, lineHeight: 20 },
+  noCodeBox: { marginTop: 28, backgroundColor: Colors.surface, borderRadius: 16, padding: 18 },
+  noCodeTitle: { fontSize: 15, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 6 },
+  noCodeBody: { fontSize: 13, color: Colors.textSecondary, lineHeight: 20 },
   authBtn: { width: '100%' },
   backButton: { alignSelf: 'flex-start', paddingVertical: 10, paddingHorizontal: 4, minHeight: 44, marginBottom: 16 },
   backText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },

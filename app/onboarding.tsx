@@ -34,9 +34,13 @@ export default function OnboardingFlow() {
   const [recipientName, setRecipientName] = useState('');
   const [destinationRoute, setDestinationRoute] = useState<DestinationRoute>(null);
   const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
+  const [pendingChecked, setPendingChecked] = useState(false);
 
   useEffect(() => {
-    getPendingInvite().then((inv) => { if (inv) setPendingInviteCode(inv.code); });
+    getPendingInvite().then((inv) => {
+      if (inv) setPendingInviteCode(inv.code);
+      setPendingChecked(true);
+    });
   }, []);
 
   // Auto-resume: skip onboarding if user has an existing relationship
@@ -212,6 +216,11 @@ export default function OnboardingFlow() {
       case 'setup': case 'join': setStep('phone'); break;
     }
   };
+
+  // Wait for pending invite check before rendering welcome
+  if (step === 'welcome' && !pendingChecked) {
+    return <LoadingScreen />;
+  }
 
   switch (step) {
     case 'welcome':
