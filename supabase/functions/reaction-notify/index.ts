@@ -1,7 +1,6 @@
 // ============================================================
-// cmok, nudge-signal Edge Function
-// Recipient wysyła delikatne przypomnienie do signalera.
-// "[Imię recipienta] czeka na Twój znak 💚"
+// cmok · reaction-notify Edge Function
+// Wysyła push do signalera gdy recipient odpowie gestem (reakcją).
 // ============================================================
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -19,6 +18,13 @@ function isExpoPushToken(value: string | null | undefined): value is string {
   return value.startsWith('ExponentPushToken[') || value.startsWith('ExpoPushToken[');
 }
 
+const EMOJI_LABELS: Record<string, string> = {
+  '\u{2764}\u{FE0F}': 'Kocham',
+  '\u{1F31B}': 'Dobranoc',
+  '\u{1F44D}': 'OK!',
+  '\u{1F31E}': 'Super!',
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS });
@@ -31,6 +37,16 @@ serve(async (req) => {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
     return jsonResponse({ error: 'Missing authorization header' }, 401);
+  }
+
+  let toUserId: string | undefined;
+  let emoji: string | undefined;
+  try {
+    const body = await req.json();
+    toUserId = body.to_user_id;
+    emoji = body.emoji;
+  } catch {
+    // body is optional for backwards compat, will look up from relationship
   }
 
   const userSupabase = createClient(
@@ -54,61 +70,40 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Recipient's name (the person nudging)
+    // 1. Sender's (recipient's) name
     const { data: profile } = await serviceSupabase
       .from('users')
-      .select('id, name')
+      .select('name')
       .eq('id', user.id)
       .maybeSingle();
 
-    if (!profile) {
-      return jsonResponse({ ok: true, skipped: 'no_profile' });
+    const senderName = profile?.name || 'Bliska osoba';
+
+    // 2. Resolve the signaler to notify
+    // If toUserId was passed, use it. Otherwise find from care_pairs.
+    let signalerIds: string[] = [];
+    if (toUserId) {
+      signalerIds = [toUserId];
+    } else {
+      const { data: pair } = await serviceSupabase
+        .from('care_pairs')
+        .select('senior_id')
+        .eq('caregiver_id', user.id)
+        .eq('status', 'active')
+        .limit(1)
+        .maybeSingle();
+      if (pair?.senior_id) signalerIds = [pair.senior_id];
     }
 
-    // 2. Active relationship → signaler
-    const { data: pair } = await serviceSupabase
-      .from('care_pairs')
-      .select('id, senior_id')
-      .eq('caregiver_id', user.id)
-      .eq('status', 'active')
-      .limit(1)
-      .maybeSingle();
-
-    if (!pair || !pair.senior_id) {
-      return jsonResponse({ ok: true, skipped: 'no_active_relationship' });
+    if (signalerIds.length === 0) {
+      return jsonResponse({ ok: true, skipped: 'no_signaler' });
     }
 
-    // 3. Dedup: max 1 nudge per day per sender
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const { data: existingNudge } = await serviceSupabase
-      .from('signals')
-      .select('id')
-      .eq('from_user_id', user.id)
-      .eq('to_user_id', pair.senior_id)
-      .eq('type', 'nudge')
-      .gte('created_at', todayStart.toISOString())
-      .limit(1)
-      .maybeSingle();
-
-    if (existingNudge) {
-      return jsonResponse({ ok: true, skipped: 'already_nudged_today' });
-    }
-
-    // 4. Persist nudge as a signal row (so signaler sees it in-app via realtime)
-    await serviceSupabase.from('signals').insert({
-      from_user_id: user.id,
-      to_user_id: pair.senior_id,
-      type: 'nudge',
-      emoji: null,
-      message: null,
-    });
-
-    // 5. Signaler push tokens
+    // 3. Get push tokens for the signaler(s)
     const { data: devices } = await serviceSupabase
       .from('device_installations')
       .select('push_token')
-      .eq('user_id', pair.senior_id)
+      .in('user_id', signalerIds)
       .eq('notifications_enabled', true)
       .not('push_token', 'is', null);
 
@@ -120,14 +115,18 @@ serve(async (req) => {
       return jsonResponse({ ok: true, skipped: 'no_push_tokens' });
     }
 
-    // 6. Send push
-    const recipientName = profile.name || 'Bliska osoba';
+    // 4. Build warm push message
+    const emojiLabel = emoji ? EMOJI_LABELS[emoji] || '' : '';
+    const body = emojiLabel
+      ? `${senderName} odpowiada: ${emojiLabel}`
+      : `${senderName} jest z Tobą`;
+
     const messages = tokens.map((token) => ({
       to: token,
       sound: 'default',
       title: 'cmok',
-      body: `${recipientName} czeka na Twój znak`,
-      data: { type: 'nudge', from_user_id: user.id },
+      body,
+      data: { type: 'reaction', from_user_id: user.id },
       priority: 'normal' as const,
       channelId: 'default',
     }));
@@ -142,7 +141,7 @@ serve(async (req) => {
       body: JSON.stringify(messages),
     });
 
-    return jsonResponse({ ok: true, sent: response.ok });
+    return jsonResponse({ ok: true, sent: response.ok, body });
   } catch (error) {
     return jsonResponse({ error: String(error) }, 500);
   }

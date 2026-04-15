@@ -6,6 +6,7 @@ export function useCheckin() {
   const [checkedInToday, setCheckedInToday] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lastCheckin, setLastCheckin] = useState<{ checked_at: string; source: string } | null>(null);
+  const [statusEmoji, setStatusEmoji] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -38,7 +39,7 @@ export function useCheckin() {
 
       const { data, error } = await supabase
         .from('daily_checkins')
-        .select('checked_at, source, local_date')
+        .select('checked_at, source, local_date, status_emoji')
         .eq('senior_id', userId)
         .eq('local_date', today)
         .limit(1)
@@ -47,9 +48,11 @@ export function useCheckin() {
       if (data && !error && data.local_date === today) {
         setCheckedInToday(true);
         setLastCheckin({ checked_at: data.checked_at, source: data.source });
+        setStatusEmoji((data as Record<string, unknown>).status_emoji as string | null ?? null);
       } else {
         setCheckedInToday(false);
         setLastCheckin(null);
+        setStatusEmoji(null);
       }
     } catch (err) {
       console.error('refreshCheckin error:', err);
@@ -82,6 +85,7 @@ export function useCheckin() {
 
       setCheckedInToday(true);
       setLastCheckin({ checked_at: new Date().toISOString(), source: 'app' });
+      setStatusEmoji(null); // fresh checkin, no status yet
       lastRefreshTime.current = Date.now(); // Prevent immediate re-fetch
     } catch (err) {
       console.error('performCheckin error:', err);
@@ -122,6 +126,7 @@ export function useCheckin() {
     checkedInToday,
     loading,
     lastCheckin,
+    statusEmoji,
     performCheckin,
     refreshCheckin,
   };

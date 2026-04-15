@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, Animated,
+  View, Text, StyleSheet, Pressable, Animated, Modal,
   ActivityIndicator, ScrollView, Alert, Linking, Share, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +27,8 @@ import type { RecipientHomePreview } from '../dev/homePreview';
 import { formatClock } from '../utils/date';
 import { todayDateKey } from '../utils/today';
 import { logInviteEvent } from '../utils/invite';
+import { useTrustedContacts } from '../hooks/useTrustedContacts';
+import * as SecureStore from 'expo-secure-store';
 import { analytics } from '../services/analytics';
 import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils/relationCopy';
 
@@ -232,6 +234,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const { urgentCase, currentAlert, claim, resolve, loading: urgentLoading } = useUrgentSignal();
 
   const signaler = signalers[0] || null;
+  const { contacts: trustedContacts } = useTrustedContacts(signaler?.relationshipId || null);
+  const circleSmall = trustedContacts.length < 2;
   const [previewMode, setPreviewMode] = useState<RecipientHomePreview | null>(preview);
   const pv = __DEV__ && !!previewMode;
   const sigName = pv ? 'Mama' : signaler?.name || null;
@@ -245,6 +249,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const [signerStatus, setSignerStatus] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showWarmToast, setShowWarmToast] = useState(false);
+  const [showCirclePrompt, setShowCirclePrompt] = useState(false);
   const hasSeenSign = useRef(false);
   const toastFade = useRef(new Animated.Value(0)).current;
   const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -389,6 +394,27 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     if (isFirstEver && effOk) logInviteEvent('first_sign_received_viewed');
   }, [isFirstEver, effOk]);
 
+  // One-time circle prompt after first sign
+  const CIRCLE_PROMPT_KEY = 'cmok_circle_prompt_shown';
+  useEffect(() => {
+    if (!isFirstEver || !effOk || !circleSmall || pv) return;
+    (async () => {
+      const shown = Platform.OS === 'web'
+        ? localStorage.getItem(CIRCLE_PROMPT_KEY)
+        : await SecureStore.getItemAsync(CIRCLE_PROMPT_KEY);
+      if (!shown) {
+        // Delay so the first-sign celebration lands first
+        setTimeout(() => setShowCirclePrompt(true), 2500);
+      }
+    })();
+  }, [isFirstEver, effOk, circleSmall, pv]);
+
+  const dismissCirclePrompt = useCallback(async () => {
+    setShowCirclePrompt(false);
+    if (Platform.OS === 'web') localStorage.setItem(CIRCLE_PROMPT_KEY, '1');
+    else await SecureStore.setItemAsync(CIRCLE_PROMPT_KEY, '1');
+  }, []);
+
   /* ─── handlers ─── */
   const handleClaim = async () => {
     if (!currentAlert) { Alert.alert('Ładowanie...', 'Poczekaj chwilę i spróbuj ponownie.'); return; }
@@ -508,6 +534,26 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   return (
     <SafeAreaView style={[st.container, effOk && st.containerAfter]}>
+      {/* ─── Circle prompt (one-time after first sign) ─── */}
+      <Modal visible={showCirclePrompt} transparent animationType="fade" onRequestClose={dismissCirclePrompt}>
+        <View style={st.promptOverlay}>
+          <View style={st.promptCard}>
+            <Text style={st.promptTitle}>Kto jeszcze powinien wiedzieć?</Text>
+            <Text style={st.promptBody}>
+              {name} daje Ci znak. Dodaj sąsiada, brata, kogoś zaufanego, dostaną wiadomość, jeśli {name.toLowerCase()} poprosi o pomoc.
+            </Text>
+            <Pressable
+              onPress={() => { dismissCirclePrompt(); router.push('/trusted-contacts'); }}
+              style={({ pressed }) => [st.promptCta, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            >
+              <Text style={st.promptCtaText}>Dodaj osobę</Text>
+            </Pressable>
+            <Pressable onPress={dismissCirclePrompt} style={({ pressed }) => [st.promptDismiss, pressed && { opacity: 0.5 }]}>
+              <Text style={st.promptDismissText}>Później</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <ScreenHeader subtitle={`od ${nameFrom}`} />
       <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false} bounces={false}>
         {/* ─── Warm toast on first view ─── */}
@@ -582,6 +628,12 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               <ResponseTap signalerName={name} signalerId={sigId} preview={pv} sendSignal={sendSignal} hasSentReactionToday={hasSentReactionToday} />
             </Animated.View>
           ) : null}
+          {/* Circle nudge: show when circle has < 2 trusted contacts */}
+          {effOk && circleSmall ? (
+            <Pressable onPress={() => router.push('/trusted-contacts')} style={({ pressed }) => [st.circleNudge, pressed && { opacity: 0.6 }]}>
+              <Text style={st.circleNudgeText}>Dodaj kogoś do kręgu bliskich</Text>
+            </Pressable>
+          ) : null}
           {/* Viral: share app with others */}
           <Pressable onPress={() => {
             Share.share(Platform.OS === 'ios'
@@ -591,12 +643,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             <Text style={st.viralLinkText}>Powiedz komuś o cmok</Text>
           </Pressable>
 
-          <Pressable
-            onPress={() => openPhoneCall(callPhone, 'Nie można połączyć.')}
-            style={({ pressed }) => [st.bottomLink, pressed && { opacity: 0.6 }]}
-          >
-            <Text style={st.bottomLinkText}>Zadzwoń bezpośrednio</Text>
-          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -679,6 +725,8 @@ const st = StyleSheet.create({
   tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 12, textAlign: 'center' },
 
   /* viral — subtle link */
+  circleNudge: { marginTop: 16, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
+  circleNudgeText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safe },
   viralLink: { marginTop: 20, marginBottom: 4, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   viralLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
 
@@ -708,4 +756,14 @@ const st = StyleSheet.create({
   resolveBtnText: { fontSize: 15, fontFamily: Typography.fontFamilyBold, color: Colors.textSecondary },
   textLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
   textLinkText: { fontSize: 14, color: Colors.textMuted },
+
+  /* circle prompt modal */
+  promptOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
+  promptCard: { backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 28, paddingTop: 28, paddingBottom: 40 },
+  promptTitle: { fontSize: 22, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 10 },
+  promptBody: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 24 },
+  promptCta: { height: 56, borderRadius: 18, backgroundColor: Colors.safe, alignItems: 'center' as const, justifyContent: 'center' as const, shadowColor: '#2EC4B6', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 6 },
+  promptCtaText: { fontSize: 17, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
+  promptDismiss: { minHeight: 44, alignItems: 'center' as const, justifyContent: 'center' as const, marginTop: 8 },
+  promptDismissText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted },
 });

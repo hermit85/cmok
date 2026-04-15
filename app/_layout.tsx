@@ -60,10 +60,26 @@ function RootLayout() {
         const role = profile?.role;
 
         // Check trusted-contact access for SOS routing
+        // A user can be both a regular signaler/recipient AND a trusted contact,
+        // so check trusted access FIRST using alert_id from push data.
         if (data?.type === 'sos' || data?.type === 'missed_checkin') {
+          // If push contains alert_id, check if user is a trusted contact for that alert's relationship
+          if (data?.alert_id) {
+            const { data: delivery } = await supabase
+              .from('alert_deliveries')
+              .select('recipient_role')
+              .eq('alert_id', data.alert_id)
+              .eq('recipient_id', session.user.id)
+              .limit(1)
+              .maybeSingle();
+            if (delivery?.recipient_role === 'trusted') {
+              router.replace('/trusted-support'); return;
+            }
+          }
+          // Not a trusted contact for this alert — route by role
           if (role === 'signaler') { router.replace('/signaler-home'); return; }
           if (role === 'recipient') { router.replace('/recipient-home'); return; }
-          // Trusted contact — check if they have trusted access
+          // Fallback: check trusted_contacts table directly
           const { data: trusted } = await supabase
             .from('trusted_contacts')
             .select('id')

@@ -153,7 +153,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       if (verifyError) throw verifyError;
 
       const user = data.user;
-      if (!user?.id) throw new Error('Brak ID użytkownika');
+      if (!user?.id) throw new Error('Nie udało się zweryfikować konta');
 
       // Record terms acceptance with versioning — must succeed before proceeding
       if (termsAccepted) {
@@ -189,7 +189,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       let relationshipStatus: RelationshipStatus = 'none';
       if (profile) {
         const role = normalizeAppRole(profile.role);
-        if (!role) throw new Error('Nieznana rola użytkownika');
+        if (!role) throw new Error('Coś poszło nie tak, spróbuj ponownie');
         const col = role === 'recipient' ? 'caregiver_id' : 'senior_id';
         const statuses = ['active', 'pending'];
         const { data: rels } = await supabase

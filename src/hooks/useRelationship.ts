@@ -106,6 +106,7 @@ export function useRelationship(): RelationshipState {
   const [hasTrustedAccess, setHasTrustedAccess] = useState(false);
   const hasEverLoaded = useRef(false);
   const retryCount = useRef(0);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refreshRelationship = useCallback(async () => {
     setLoading(true);
@@ -125,7 +126,7 @@ export function useRelationship(): RelationshipState {
       } else if (retryCount.current < 3) {
         // First load failed — retry up to 3 times
         retryCount.current += 1;
-        setTimeout(() => refreshRelationship(), 3000);
+        retryTimer.current = setTimeout(() => refreshRelationship(), 3000);
       } else {
         // Give up — show app with null state (will route to onboarding)
         setSessionReady(true);
@@ -144,7 +145,10 @@ export function useRelationship(): RelationshipState {
       refreshRelationship();
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+    };
   }, [refreshRelationship]);
 
   return {

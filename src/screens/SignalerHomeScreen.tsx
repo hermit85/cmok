@@ -24,6 +24,7 @@ import { useCheckinStats } from '../hooks/useCheckinStats';
 import { supabase } from '../services/supabase';
 import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync';
 import { logInviteEvent, generateAndShareInvite } from '../utils/invite';
+import { todayDateKey } from '../utils/today';
 import { analytics } from '../services/analytics';
 import type { Signal, SupportParticipant } from '../types';
 import type { SignalerHomePreview } from '../dev/homePreview';
@@ -60,13 +61,15 @@ const DEV_PARTICIPANTS: SupportParticipant[] = [
 export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomePreview | null }) {
   const {
     authReady, isAuthenticated, userId, checkedInToday,
-    loading: checkinLoading, lastCheckin, performCheckin, refreshCheckin,
+    loading: checkinLoading, lastCheckin, statusEmoji: dbStatusEmoji,
+    performCheckin, refreshCheckin,
   } = useCheckin();
   const { recipients } = useCircle();
   const { todaySignals, refresh: refreshSignals } = useSignals();
   const {
     isActive: urgentActive, currentAlert, urgentCase,
-    loading: urgentLoading, preflight: urgentPreflight, sendUrgentSignal, retrySend, cancel: cancelUrgent,
+    loading: urgentLoading, preflight: urgentPreflight, sendUrgentSignal, retrySend,
+    resolve: resolveUrgent, cancel: cancelUrgent,
   } = useUrgentSignal();
   const { days: realWeekDays, refresh: refreshWeek } = useWeekRhythm(userId);
   const { streak: dbStreak, totalCount: dbTotalCount, refresh: refreshStats } = useCheckinStats(userId);
@@ -80,6 +83,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const [celebrationVisible, setCelebrationVisible] = useState(false);
   const [milestoneVisible, setMilestoneVisible] = useState(false);
   const [statusPicked, setStatusPicked] = useState<string | null>(null);
+  const statusLoadedFromDb = useRef(false);
   const [previewMode, setPreviewMode] = useState<SignalerHomePreview | null>(preview);
   const [showWarmToast, setShowWarmToast] = useState(false);
 
@@ -365,9 +369,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
     if (pv || !userId) return;
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      await supabase.from('daily_checkins').update({ status_emoji: statusKey }).eq('senior_id', userId).eq('local_date', today);
-    } catch { /* silent — status is optional */ }
+      const today = todayDateKey();
+      const { error } = await supabase.from('daily_checkins').update({ status_emoji: statusKey }).eq('senior_id', userId).eq('local_date', today);
+      if (error) console.warn('[status] update failed:', error.message);
+    } catch (err) { console.warn('[status] update error:', err); }
   }, [pv, userId, moodScales, moodFadeOut, moodPickedScale, moodPickedOpacity]);
 
   const handleMilestoneShare = useCallback(async () => {
@@ -380,6 +385,18 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
     } catch { /* cancelled */ }
   }, [currentStreak, primaryName]);
+
+  // Restore status from DB when screen loads (so picked pill persists across visits)
+  useEffect(() => {
+    if (pv || statusLoadedFromDb.current) return;
+    if (dbStatusEmoji && !statusPicked) {
+      setStatusPicked(dbStatusEmoji);
+      moodPickedOpacity.setValue(1);
+      moodPickedScale.setValue(1);
+      moodFadeOut.setValue(0);
+      statusLoadedFromDb.current = true;
+    }
+  }, [pv, dbStatusEmoji, statusPicked, moodPickedOpacity, moodPickedScale, moodFadeOut]);
 
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
@@ -472,6 +489,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             </View>
           ) : null}
           {effectiveUrgent ? <SupportParticipants participants={effectiveUrgent.participants} /> : null}
+          <Pressable onPress={() => { if (currentAlert) resolveUrgent(currentAlert.id).catch(() => {}); }}
+            disabled={urgentLoading || localUrgentOffline || !currentAlert}
+            style={({ pressed }) => [s.urgentResolveBtn, (urgentLoading || localUrgentOffline) && { opacity: 0.4 }, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
+            <Text style={s.urgentResolveBtnText}>Już jest dobrze</Text>
+          </Pressable>
           <Pressable onPress={() => retrySend().catch(() => {})} disabled={urgentLoading || localUrgentOffline}
             style={({ pressed }) => [s.urgentRetryBtn, (urgentLoading || localUrgentOffline) && s.urgentRetryBtnOff, pressed && { opacity: 0.9 }]}>
             <Text style={s.urgentRetryBtnText}>Wyślij ponownie</Text>
@@ -502,9 +524,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const hasNudge = !showChecked && signals.some(s => s.type === 'nudge');
   const nudgeFrom = hasNudge ? effectiveCircleNames.get(signals.find(s => s.type === 'nudge')!.from_user_id) || primaryName : null;
 
-  const rawResponseName = hasResponse ? (effectiveCircleNames.get(signals[0].from_user_id) || primaryName) : null;
+  const firstReaction = hasResponse ? signals.find(s => s.type === 'reaction') : null;
+  const rawResponseName = firstReaction ? (effectiveCircleNames.get(firstReaction.from_user_id) || primaryName) : null;
   const responseName = rawResponseName && rawResponseName !== 'Bliska osoba' ? relationDisplay(rawResponseName) : null;
-  const responseEmoji = hasResponse ? (signals[0].emoji || '\u{1F49B}') : null;
+  const responseEmoji = firstReaction ? (firstReaction.emoji || '\u{1F49B}') : null;
 
   // Gap detection
   const hasGap = !pv && !showChecked && !isFirstEver && realWeekDays.length >= 2 && (() => {
@@ -673,10 +696,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   </Text>
                 </Animated.View>
               )}
+              <Text style={s.tomorrowHook}>Gotowe na dziś. Jutro Ci przypomnimy.</Text>
               {!isMilestone && currentStreak >= 2 && currentStreak < 7 ? (
-                <Text style={s.tomorrowHook}>Jeszcze {7 - currentStreak} {7 - currentStreak === 1 ? 'dzień' : 'dni'} do pełnego tygodnia</Text>
+                <Text style={s.streakHook}>Jeszcze {7 - currentStreak} {7 - currentStreak === 1 ? 'dzień' : 'dni'} do pełnego tygodnia</Text>
               ) : !isMilestone && currentStreak >= 7 ? (
-                <Text style={s.tomorrowHook}>Wasz codzienny rytuał trwa</Text>
+                <Text style={s.streakHook}>Wasz codzienny rytuał trwa</Text>
               ) : null}
             </Animated.View>
           ) : (
@@ -796,7 +820,8 @@ const s = StyleSheet.create({
   },
   statusPickedSymbol: { fontSize: 18 },
   statusPickedText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
-  tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 16 },
+  tomorrowHook: { fontSize: 14, color: Colors.textSecondary, marginTop: 20 },
+  streakHook: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
   shareBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.surface },
   shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },
 
@@ -830,6 +855,8 @@ const s = StyleSheet.create({
   urgentBody: { fontSize: 16, lineHeight: 24, color: Colors.textSecondary, marginTop: 8, marginBottom: 18 },
   urgentDetail: { backgroundColor: Colors.card, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, padding: 18, marginBottom: 14 },
   urgentDetailText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 2 },
+  urgentResolveBtn: { height: 56, borderRadius: 18, backgroundColor: Colors.safe, alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 12, shadowColor: '#2EC4B6', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 6 },
+  urgentResolveBtnText: { fontSize: 17, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
   urgentRetryBtn: { height: 56, borderRadius: 16, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
   urgentRetryBtnOff: { backgroundColor: Colors.disabled },
   urgentRetryBtnText: { fontSize: 16, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },

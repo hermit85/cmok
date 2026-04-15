@@ -63,7 +63,6 @@ export function logInviteEvent(
 
 /**
  * Opens native share sheet with invite for the main connection.
- * Includes deep link: cmok://join/{code}
  */
 export async function shareInvite(params: {
   code: string;
@@ -71,15 +70,14 @@ export async function shareInvite(params: {
 }): Promise<boolean> {
   const { code, signalerLabel } = params;
   const name = signalerLabel || 'bliskiej osoby';
-  const deepLink = `cmok://join/${code}`;
 
-  const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz: ${APP_URL}\nAlbo otwórz: ${deepLink}`;
+  const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz apkę i wpisz kod:\n${APP_URL}`;
 
   try {
     const result = await Share.share(
       Platform.OS === 'ios'
         ? { message }
-        : { message, title: 'Zaproszenie do cmok' },
+        : { message, title: 'cmok' },
     );
 
     const shared = result.action === Share.sharedAction;
@@ -148,6 +146,20 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
 
     const col = isRecipient ? 'caregiver_id' : 'senior_id';
 
+    // Guard: don't create a new pending invite if an active relationship already exists
+    const { data: activePair } = await supabase
+      .from('care_pairs')
+      .select('id')
+      .eq(col, user.id)
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
+
+    if (activePair) {
+      Alert.alert('Już masz połączenie', 'Masz już aktywną relację w cmok. Żeby dodać kogoś do kręgu bliskich, użyj opcji w ustawieniach.');
+      return null;
+    }
+
     // Reuse existing pending pair or create new one
     const { data: existing } = await supabase
       .from('care_pairs')
@@ -175,8 +187,7 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
 
     logInviteEvent('invite_created', { code });
 
-    const deepLink = `cmok://join/${code}`;
-    const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz: ${APP_URL}\nAlbo otwórz: ${deepLink}`;
+    const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz apkę i wpisz kod:\n${APP_URL}`;
 
     const result = await Share.share(
       Platform.OS === 'ios'

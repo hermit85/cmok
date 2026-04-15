@@ -90,7 +90,7 @@ export function useSignals() {
   /** Send a signal. type defaults to 'reaction'. Returns false if duplicate reaction for today was blocked. */
   const sendSignal = useCallback(async (toUserId: string, emoji: string, message?: string, signalType: string = 'reaction'): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Brak zalogowanego użytkownika');
+    if (!user) throw new Error('Zaloguj się, żeby wysłać znak');
 
     // Dedup: only block duplicate reactions (not morning thoughts etc.)
     if (signalType === 'reaction') {
@@ -116,6 +116,13 @@ export function useSignals() {
     });
 
     if (error) throw error;
+
+    // Push notification to signaler (fire-and-forget, never blocks reaction)
+    if (signalType === 'reaction') {
+      supabase.functions.invoke('reaction-notify', {
+        body: { to_user_id: toUserId, emoji },
+      }).catch(() => {});
+    }
 
     // Optimistic update (only track reactions for hasSentReactionToday)
     if (signalType === 'reaction') {

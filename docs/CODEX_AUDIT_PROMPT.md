@@ -16,8 +16,9 @@ Project path:
 - `/Users/darekptaszek/Projects/cmok`
 
 Current local context:
-- date: `2026-04-13`
+- date: `2026-04-15`
 - timezone: `Europe/Warsaw`
+- build: pre-build 15 audit
 
 Test accounts:
 - recipient: `+48100000002`, app input `100000002`
@@ -149,6 +150,7 @@ Pay special attention to:
 - `claim_support_alert`
 - `resolve_support_alert`
 - `checkin-notify`
+- `reaction-notify` (NEW — push to signaler when recipient sends reaction)
 - `urgent-signal`
 - `nudge-signal`
 - `delete-account`
@@ -222,6 +224,76 @@ End with:
 - total count of `blocker`, `major`, and `minor`
 - whether the app looks ready for App Store review
 - the top 3 issues to fix first
+
+## Step 9: Verify Build 15 changes
+
+These changes were made since Build 13. Verify each one works correctly:
+
+### 9a. WhatsApp share message
+- File: `src/utils/invite.ts`
+- Change: removed `cmok://join/{code}` deep link from share messages, single URL only
+- Verify: `shareInvite()` and `generateAndShareInvite()` produce clean messages with one URL
+
+### 9b. Status mood persistence (signaler)
+- Files: `src/hooks/useCheckin.ts`, `src/screens/SignalerHomeScreen.tsx`
+- Change: `useCheckin` now returns `statusEmoji` from DB; SignalerHomeScreen restores `statusPicked` on mount
+- Verify: after picking a status (e.g. "U lekarza"), leaving and returning to screen still shows the picked status pill
+- Verify: `handleStatusPick` uses `todayDateKey()` (local timezone), not `new Date().toISOString().slice(0,10)` (UTC)
+
+### 9c. Reaction push notification
+- Files: `src/hooks/useSignals.ts`, `supabase/functions/reaction-notify/index.ts`
+- Change: `sendSignal` now calls `reaction-notify` edge function after successful reaction insert
+- Verify: edge function is deployed and active on Supabase
+- Verify: EMOJI_LABELS map matches the 4 reaction emojis in RecipientHomeScreen REACTIONS array
+
+### 9d. SOS screen resolve button
+- File: `src/screens/SignalerHomeScreen.tsx`
+- Change: added "Już jest dobrze" teal button to resolve urgent alert (uses `resolveUrgent`)
+- Verify: button appears on urgent screen, calls `resolve_support_alert` RPC
+- Verify: button order is: resolve (teal) → retry (terracotta) → cancel (text link)
+
+### 9e. Signaler daily closure copy
+- File: `src/screens/SignalerHomeScreen.tsx`
+- Change: added "Gotowe na dziś. Jutro Ci przypomnimy." after status section
+- Verify: text appears after check-in, streak hook text appears below it in smaller font
+
+### 9f. Circle prompt on RecipientHome
+- File: `src/screens/RecipientHomeScreen.tsx`
+- Change: one-time Modal prompt after first sign when circle < 2 people; persistent "Dodaj kogoś do kręgu" link
+- Verify: prompt shows once (stored in SecureStore `cmok_circle_prompt_shown`), CTA navigates to `/trusted-contacts`
+- Verify: "Dodaj kogoś do kręgu bliskich" link appears when `trustedContacts.length < 2` and disappears when >= 2
+
+### 9g. Removed "Zadzwoń bezpośrednio" from RecipientHome
+- File: `src/screens/RecipientHomeScreen.tsx`
+- Change: removed direct call link from normal screen; kept on SOS screen only
+- Verify: no "Zadzwoń bezpośrednio" on daily recipient view; "Zadzwoń [name]" still present on urgent/support screen
+
+## Step 10: Performance audit
+
+Check for performance issues that could make the app feel slow:
+
+### 10a. Unnecessary re-renders
+- Check if `useSignals`, `useCircle`, `useTrustedContacts` cause excessive re-renders on home screens
+- Check if realtime subscriptions are properly cleaned up (return () => removeChannel)
+- Look for missing `useCallback`/`useMemo` on frequently-called functions
+
+### 10b. Network waterfall
+- Check if home screens fire sequential queries that could be parallelized
+- Check `RecipientHomeScreen.fetchData` — does it parallelize its 3 queries?
+- Check if `useTrustedContacts` adds a redundant query on RecipientHome (was just added)
+
+### 10c. Edge function latency
+- Check if any edge function call blocks UI (should all be fire-and-forget)
+- Verify `checkin-notify` and `reaction-notify` are called with `.catch(() => {})` pattern
+
+### 10d. Animation performance
+- Check if `useNativeDriver: true` is set on all animations
+- Check for JS-thread animations that should use native driver
+- Look for heavy inline style computations in render
+
+### 10e. Bundle size
+- Check for large unused imports
+- Check if `expo-location` is imported at top level (should be lazy for non-location screens)
 
 ## Important quality bar
 
