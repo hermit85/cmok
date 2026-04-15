@@ -789,7 +789,7 @@ const st = StyleSheet.create({
   pokeSection: { alignItems: 'center', paddingVertical: 16 },
   pokePrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
   pokeRow: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
-  pokeChip: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14, alignItems: 'center' as const, width: 68 },
+  pokeChip: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14, alignItems: 'center' as const, width: 66 },
   pokeChipEmoji: { fontSize: 24, marginBottom: 3 },
   pokeChipLabel: { fontSize: 9, color: Colors.textMuted, fontFamily: Typography.fontFamilyMedium },
   pokeSentPill: { flexDirection: 'row', alignItems: 'center' as const, backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, gap: 8, marginBottom: 8 },

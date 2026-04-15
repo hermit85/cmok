@@ -37,7 +37,7 @@ const STATUS_MOODS = [
   { key: 'good', emoji: '\u{1F60A}', label: 'Dobrze' },
   { key: 'calm', emoji: '\u{1F60C}', label: 'Spokojnie' },
   { key: 'tired', emoji: '\u{1F634}', label: 'Zm\u{0119}czona' },
-  { key: 'walk', emoji: '\u{1F6B6}', label: 'Spacer' },
+  { key: 'walk', emoji: '\u{1F6B6}', label: 'Na spacerze' },
   { key: 'doctor', emoji: '\u{1FA7A}', label: 'U lekarza' },
 ] as const;
 
@@ -920,7 +920,7 @@ const s = StyleSheet.create({
   pokeSection: { alignItems: 'center', paddingVertical: 16, marginTop: 8, paddingHorizontal: 24 },
   pokePrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
   pokeRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
-  pokeChip: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14, backgroundColor: Colors.surface, alignItems: 'center' as const, width: 62 },
+  pokeChip: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14, backgroundColor: Colors.surface, alignItems: 'center' as const, width: 66 },
   pokeChipEmoji: { fontSize: 22, marginBottom: 3 },
   pokeChipLabel: { fontSize: 9, color: Colors.textMuted, fontFamily: Typography.fontFamilyMedium },
   pokeSentPill: { flexDirection: 'row', alignItems: 'center' as const, backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, gap: 8 },

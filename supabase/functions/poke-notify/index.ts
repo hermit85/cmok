@@ -23,7 +23,7 @@ const POKE_LABELS: Record<string, string> = {
   '\u{1F60A}': 'Dobrze',
   '\u{1F60C}': 'Spokojnie',
   '\u{1F634}': 'Zm\u{0119}czona',
-  '\u{1F6B6}': 'Spacer',
+  '\u{1F6B6}': 'Na spacerze',
   '\u{1FA7A}': 'U lekarza',
   // Reactions (recipient sends)
   '\u{2764}\u{FE0F}': 'Kocham',
