@@ -390,7 +390,10 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   }, [isFirstEver, effOk]);
 
   /* ─── handlers ─── */
-  const handleClaim = async () => { if (!currentAlert) return; try { await claim(currentAlert.id); analytics.urgentClaimed(); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
+  const handleClaim = async () => {
+    if (!currentAlert) { Alert.alert('Ładowanie...', 'Poczekaj chwilę i spróbuj ponownie.'); return; }
+    try { await claim(currentAlert.id); analytics.urgentClaimed(); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); }
+  };
   const handleResolve = async () => { if (!currentAlert) return; try { await resolve(currentAlert.id); analytics.urgentResolved(); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
   const handleNudge = async () => {
     if (nudgeSent || nudgeSending) return;
