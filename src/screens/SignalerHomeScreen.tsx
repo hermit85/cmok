@@ -4,6 +4,7 @@ import {
   Alert, Animated, ScrollView, Share, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import NetInfo from '@react-native-community/netinfo';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
@@ -59,13 +60,14 @@ const DEV_PARTICIPANTS: SupportParticipant[] = [
 /* ─── main ─── */
 
 export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomePreview | null }) {
+  const router = useRouter();
   const {
     authReady, isAuthenticated, userId, checkedInToday,
     loading: checkinLoading, lastCheckin, statusEmoji: dbStatusEmoji,
     performCheckin, refreshCheckin,
   } = useCheckin();
-  const { recipients } = useCircle();
-  const { todaySignals, refresh: refreshSignals } = useSignals();
+  const { recipients, loading: circleLoading } = useCircle();
+  const { todaySignals, sendSignal, hasSentPokeToday, refresh: refreshSignals } = useSignals();
   const {
     isActive: urgentActive, currentAlert, urgentCase,
     loading: urgentLoading, preflight: urgentPreflight, sendUrgentSignal, retrySend,
@@ -86,6 +88,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const statusLoadedFromDb = useRef(false);
   const [previewMode, setPreviewMode] = useState<SignalerHomePreview | null>(preview);
   const [showWarmToast, setShowWarmToast] = useState(false);
+  const [pokePicked, setPokePicked] = useState<string | null>(null);
 
   const isSubmitting = useRef(false);
   const breatheScale = useRef(new Animated.Value(1)).current;
@@ -114,12 +117,22 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const pvChecked = previewMode === 'after';
   const pvSupport = previewMode === 'support';
   const primaryName = pv ? 'Mama' : recipients[0]?.name || null;
+  const primaryRecipientId = pv ? 'r' : recipients[0]?.userId || null;
+  const pokeAlreadySent = !pv && primaryRecipientId ? hasSentPokeToday(primaryRecipientId) : false;
   const effectiveCircleNames = useMemo(() => {
     if (!pv) return circleNames;
     return new Map<string, string>([['r', primaryName || 'Mama'], ...circleNames.entries()]);
   }, [pv, circleNames, primaryName]);
 
   /* ─── effects ─── */
+
+  // Guard: redirect to root if relationship was deleted (e.g. other user removed account)
+  useEffect(() => {
+    if (pv || circleLoading) return;
+    if (authReady && isAuthenticated && recipients.length === 0) {
+      router.replace('/');
+    }
+  }, [pv, circleLoading, authReady, isAuthenticated, recipients.length, router]);
 
   useEffect(() => { setPreviewMode(preview); }, [preview]);
 
@@ -386,6 +399,19 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     } catch { /* cancelled */ }
   }, [currentStreak, primaryName]);
 
+  // Poke handler — standalone gesture, independent from check-in
+  const handlePokePick = useCallback(async (emoji: string) => {
+    if (pokePicked || pokeAlreadySent || !primaryRecipientId) return;
+    haptics.light();
+    setPokePicked(emoji);
+    haptics.success();
+    if (pv || !userId) return;
+    try {
+      const ok = await sendSignal(primaryRecipientId, emoji, undefined, 'poke');
+      if (ok) analytics.pokeSent(emoji);
+    } catch { /* silent */ }
+  }, [pokePicked, pokeAlreadySent, primaryRecipientId, pv, userId, sendSignal]);
+
   // Restore status from DB when screen loads (so picked pill persists across visits)
   useEffect(() => {
     if (pv || statusLoadedFromDb.current) return;
@@ -529,6 +555,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const responseName = rawResponseName && rawResponseName !== 'Bliska osoba' ? relationDisplay(rawResponseName) : null;
   const responseEmoji = firstReaction ? (firstReaction.emoji || '\u{1F49B}') : null;
 
+  const incomingPoke = signals.find(s => s.type === 'poke');
+  const pokeFromName = incomingPoke ? (effectiveCircleNames.get(incomingPoke.from_user_id) || primaryName) : null;
+
   // Gap detection
   const hasGap = !pv && !showChecked && !isFirstEver && realWeekDays.length >= 2 && (() => {
     const pastDays = realWeekDays.filter((d) => d !== 'future');
@@ -669,6 +698,16 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   </View>
                 </Animated.View>
               ) : null}
+              {incomingPoke ? (
+                <View style={s.responseReceipt}>
+                  <View style={s.responseReceiptRow}>
+                    <Emoji style={s.responseReceiptEmoji}>{incomingPoke.emoji || '\u{1F49A}'}</Emoji>
+                    <Text style={s.responseReceiptText}>
+                      {pokeFromName ? `${pokeFromName} myśli o Tobie` : 'Ktoś myśli o Tobie'}
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
               {!statusPicked ? (
                 <Animated.View style={[s.statusSection, { opacity: moodFadeOut }]}>
                   <Text style={s.statusPrompt}>Jak się dziś czujesz?</Text>
@@ -739,6 +778,34 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             </Pressable>
           ) : null}
         </View>
+
+        {/* ─── POKE: standalone gesture, always visible ─── */}
+        {primaryRecipientId ? (
+          <View style={s.pokeSection}>
+            {pokePicked || pokeAlreadySent ? (
+              <View style={s.pokeSentPill}>
+                <Emoji style={s.pokeEmoji}>{pokePicked || '\u{1F49A}'}</Emoji>
+                <Text style={s.pokeSentText}>{primaryName ? `${primaryName} zobaczy Twój gest` : 'Gest wysłany'}</Text>
+              </View>
+            ) : (
+              <>
+                <Text style={s.pokePrompt}>Wyślij gest</Text>
+                <View style={s.pokeRow}>
+                  {STATUS_MOODS.map((mood) => (
+                    <Pressable
+                      key={mood.key}
+                      onPress={() => handlePokePick(mood.emoji)}
+                      style={({ pressed }) => [s.pokeChip, pressed && { opacity: 0.7, transform: [{ scale: 0.92 }] }]}
+                    >
+                      <Emoji style={s.pokeChipEmoji}>{mood.emoji}</Emoji>
+                      <Text style={s.pokeChipLabel}>{mood.label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            )}
+          </View>
+        ) : null}
 
         {/* ─── URGENT BUTTON ─── */}
         <Pressable
@@ -849,6 +916,17 @@ const s = StyleSheet.create({
   urgentBtnSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
   /* urgent full state */
+  /* poke — standalone gesture */
+  pokeSection: { alignItems: 'center', paddingVertical: 16, marginTop: 8, paddingHorizontal: 24 },
+  pokePrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
+  pokeRow: { flexDirection: 'row', gap: 8, justifyContent: 'center' },
+  pokeChip: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14, backgroundColor: Colors.surface, alignItems: 'center' as const, width: 62 },
+  pokeChipEmoji: { fontSize: 22, marginBottom: 3 },
+  pokeChipLabel: { fontSize: 9, color: Colors.textMuted, fontFamily: Typography.fontFamilyMedium },
+  pokeSentPill: { flexDirection: 'row', alignItems: 'center' as const, backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, gap: 8 },
+  pokeEmoji: { fontSize: 18 },
+  pokeSentText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+
   urgentScroll: { paddingHorizontal: 24, paddingTop: 26, paddingBottom: 28 },
   urgentLabel: { fontSize: 13, fontFamily: Typography.fontFamilyBold, color: Colors.alert, marginBottom: 10 },
   urgentTitle: { fontSize: 28, lineHeight: 34, fontFamily: Typography.headingFamily, color: Colors.text },

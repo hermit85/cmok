@@ -39,6 +39,9 @@ export const analytics = {
   morningThoughtSent: (emoji: string) =>
     posthog.capture('morning_thought_sent', { emoji }),
 
+  pokeSent: (emoji: string) =>
+    posthog.capture('poke_sent', { emoji }),
+
   nudgeSent: () =>
     posthog.capture('nudge_sent'),
 

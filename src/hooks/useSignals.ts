@@ -27,12 +27,12 @@ export function useSignals() {
 
       setTodaySignals(incoming || []);
 
-      // Outgoing signals (from me today) — to check if I already responded
+      // Outgoing signals (from me today) — reactions + pokes
       const { data: outgoing } = await supabase
         .from('signals')
         .select('*')
         .eq('from_user_id', user.id)
-        .eq('type', 'reaction')
+        .in('type', ['reaction', 'poke'])
         .gte('created_at', todayStart)
         .order('created_at', { ascending: false });
 
@@ -74,9 +74,8 @@ export function useSignals() {
         filter: `from_user_id=eq.${userId}`,
       }, (payload) => {
         const sig = payload.new as Signal;
-        if (sig.type === 'reaction' && sig.created_at >= todayMidnightISO()) {
+        if ((sig.type === 'reaction' || sig.type === 'poke') && sig.created_at >= todayMidnightISO()) {
           setTodaySentSignals(prev => {
-            // Replace optimistic entry or skip if real ID already exists
             const withoutOptimistic = prev.filter(s => !s.id.startsWith('optimistic-'));
             if (withoutOptimistic.some(s => s.id === sig.id)) return prev;
             return [sig, ...withoutOptimistic];
@@ -87,19 +86,19 @@ export function useSignals() {
     return () => { supabase.removeChannel(channel); };
   }, [userId]);
 
-  /** Send a signal. type defaults to 'reaction'. Returns false if duplicate reaction for today was blocked. */
+  /** Send a signal. type defaults to 'reaction'. Returns false if duplicate for today was blocked. */
   const sendSignal = useCallback(async (toUserId: string, emoji: string, message?: string, signalType: string = 'reaction'): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Zaloguj się, żeby wysłać znak');
 
-    // Dedup: only block duplicate reactions (not morning thoughts etc.)
-    if (signalType === 'reaction') {
+    // Dedup: block duplicate reactions and pokes per day
+    if (signalType === 'reaction' || signalType === 'poke') {
       const { data: existing } = await supabase
         .from('signals')
         .select('id')
         .eq('from_user_id', user.id)
         .eq('to_user_id', toUserId)
-        .eq('type', 'reaction')
+        .eq('type', signalType)
         .gte('created_at', todayMidnightISO())
         .limit(1)
         .maybeSingle();
@@ -117,21 +116,25 @@ export function useSignals() {
 
     if (error) throw error;
 
-    // Push notification to signaler (fire-and-forget, never blocks reaction)
+    // Push notifications (fire-and-forget)
     if (signalType === 'reaction') {
       supabase.functions.invoke('reaction-notify', {
         body: { to_user_id: toUserId, emoji },
       }).catch(() => {});
+    } else if (signalType === 'poke') {
+      supabase.functions.invoke('poke-notify', {
+        body: { to_user_id: toUserId, emoji },
+      }).catch(() => {});
     }
 
-    // Optimistic update (only track reactions for hasSentReactionToday)
-    if (signalType === 'reaction') {
-      const optimisticId = `optimistic-${toUserId}-${Date.now()}`;
+    // Optimistic update for reactions and pokes
+    if (signalType === 'reaction' || signalType === 'poke') {
+      const optimisticId = `optimistic-${signalType}-${toUserId}-${Date.now()}`;
       setTodaySentSignals(prev => [{
         id: optimisticId,
         from_user_id: user.id,
         to_user_id: toUserId,
-        type: 'reaction',
+        type: signalType as Signal['type'],
         emoji,
         message: message || null,
         created_at: new Date().toISOString(),
@@ -144,7 +147,12 @@ export function useSignals() {
 
   /** Check if current user already sent a reaction to someone today */
   const hasSentReactionToday = useCallback((toUserId: string): boolean => {
-    return todaySentSignals.some((s) => s.to_user_id === toUserId);
+    return todaySentSignals.some((s) => s.to_user_id === toUserId && s.type === 'reaction');
+  }, [todaySentSignals]);
+
+  /** Check if current user already sent a poke to someone today */
+  const hasSentPokeToday = useCallback((toUserId: string): boolean => {
+    return todaySentSignals.some((s) => s.to_user_id === toUserId && s.type === 'poke');
   }, [todaySentSignals]);
 
   return {
@@ -152,6 +160,7 @@ export function useSignals() {
     todaySentSignals,
     sendSignal,
     hasSentReactionToday,
+    hasSentPokeToday,
     loading,
     refresh: fetchSignals,
   };

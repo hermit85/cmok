@@ -81,7 +81,7 @@ export interface Signal {
   id: string;
   from_user_id: string;
   to_user_id: string;
-  type: 'reaction' | 'nudge' | 'morning_thought';
+  type: 'reaction' | 'nudge' | 'morning_thought' | 'poke';
   emoji: string | null;
   message: string | null;
   created_at: string;

@@ -230,7 +230,7 @@ const PV_PARTICIPANTS: SParticipant[] = [
 export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHomePreview | null }) {
   const router = useRouter();
   const { signalers, loading: circleLoading } = useCircle();
-  const { sendSignal, hasSentReactionToday } = useSignals();
+  const { sendSignal, todaySignals, hasSentReactionToday, hasSentPokeToday } = useSignals();
   const { urgentCase, currentAlert, claim, resolve, loading: urgentLoading } = useUrgentSignal();
 
   const signaler = signalers[0] || null;
@@ -250,6 +250,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const [showCelebration, setShowCelebration] = useState(false);
   const [showWarmToast, setShowWarmToast] = useState(false);
   const [showCirclePrompt, setShowCirclePrompt] = useState(false);
+  const [pokePicked, setPokePicked] = useState<string | null>(null);
+  const pokeAlreadySent = !pv && sigId ? hasSentPokeToday(sigId) : false;
   const hasSeenSign = useRef(false);
   const toastFade = useRef(new Animated.Value(0)).current;
   const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -265,6 +267,14 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const afterFade = useRef(new Animated.Value(0)).current;
 
   useEffect(() => { setPreviewMode(preview); }, [preview]);
+
+  // Guard: redirect to root if relationship was deleted (e.g. other user removed account)
+  useEffect(() => {
+    if (pv || circleLoading) return;
+    if (signalers.length === 0) {
+      router.replace('/');
+    }
+  }, [pv, circleLoading, signalers.length, router]);
 
   /* ─── data ─── */
 
@@ -414,6 +424,22 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     if (Platform.OS === 'web') localStorage.setItem(CIRCLE_PROMPT_KEY, '1');
     else await SecureStore.setItemAsync(CIRCLE_PROMPT_KEY, '1');
   }, []);
+
+  // Poke handler — standalone gesture
+  const handlePokePick = useCallback(async (emoji: string) => {
+    if (pokePicked || pokeAlreadySent || !sigId) return;
+    haptics.light();
+    setPokePicked(emoji);
+    haptics.success();
+    if (pv) return;
+    try {
+      const ok = await sendSignal(sigId, emoji, undefined, 'poke');
+      if (ok) analytics.pokeSent(emoji);
+    } catch { /* silent */ }
+  }, [pokePicked, pokeAlreadySent, sigId, pv, sendSignal]);
+
+  // Incoming poke from signaler
+  const signalerPoke = !pv ? todaySignals.find(s => s.type === 'poke' && s.from_user_id === sigId) : null;
 
   /* ─── handlers ─── */
   const handleClaim = async () => {
@@ -623,10 +649,44 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
         {/* ─── SECTION 3: Actions ─── */}
         <View style={st.actionsSection}>
+          {/* Incoming poke from signaler */}
+          {signalerPoke ? (
+            <View style={st.pokeSentPill}>
+              <Emoji style={st.pokeEmoji}>{signalerPoke.emoji || '\u{1F49A}'}</Emoji>
+              <Text style={st.pokeSentText}>{name} myśli o Tobie</Text>
+            </View>
+          ) : null}
           {effOk && sigId ? (
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
               <ResponseTap signalerName={name} signalerId={sigId} preview={pv} sendSignal={sendSignal} hasSentReactionToday={hasSentReactionToday} />
             </Animated.View>
+          ) : null}
+          {/* Poke — standalone gesture, always visible */}
+          {sigId ? (
+            <View style={st.pokeSection}>
+              {pokePicked || pokeAlreadySent ? (
+                <View style={st.pokeSentPill}>
+                  <Emoji style={st.pokeEmoji}>{pokePicked || '\u{1F49A}'}</Emoji>
+                  <Text style={st.pokeSentText}>{name} zobaczy Twój gest</Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={st.pokePrompt}>Wyślij gest</Text>
+                  <View style={st.pokeRow}>
+                    {REACTIONS.map((r) => (
+                      <Pressable
+                        key={r.emoji}
+                        onPress={() => handlePokePick(r.emoji)}
+                        style={({ pressed }) => [st.pokeChip, { backgroundColor: r.bg }, pressed && { opacity: 0.7, transform: [{ scale: 0.92 }] }]}
+                      >
+                        <Emoji style={st.pokeChipEmoji}>{r.emoji}</Emoji>
+                        <Text style={st.pokeChipLabel}>{r.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </>
+              )}
+            </View>
           ) : null}
           {/* Circle nudge: show when circle has < 2 trusted contacts */}
           {effOk && circleSmall ? (
@@ -725,6 +785,17 @@ const st = StyleSheet.create({
   tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 12, textAlign: 'center' },
 
   /* viral — subtle link */
+  /* poke — standalone gesture */
+  pokeSection: { alignItems: 'center', paddingVertical: 16 },
+  pokePrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
+  pokeRow: { flexDirection: 'row', gap: 10, justifyContent: 'center' },
+  pokeChip: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 14, alignItems: 'center' as const, width: 68 },
+  pokeChipEmoji: { fontSize: 24, marginBottom: 3 },
+  pokeChipLabel: { fontSize: 9, color: Colors.textMuted, fontFamily: Typography.fontFamilyMedium },
+  pokeSentPill: { flexDirection: 'row', alignItems: 'center' as const, backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, gap: 8, marginBottom: 8 },
+  pokeEmoji: { fontSize: 18 },
+  pokeSentText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+
   circleNudge: { marginTop: 16, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   circleNudgeText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safe },
   viralLink: { marginTop: 20, marginBottom: 4, minHeight: 44, justifyContent: 'center', alignItems: 'center' },

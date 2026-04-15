@@ -8,5 +8,14 @@
       "distribution": "internal"
     },
     "production": {}
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "darek@hermit85.com",
+        "ascAppId": "6762090888",
+        "appleTeamId": "JLBR5N4FB3"
+      }
+    }
   }
 }
