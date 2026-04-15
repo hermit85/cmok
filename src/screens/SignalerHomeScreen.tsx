@@ -520,16 +520,16 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             </View>
           ) : null}
           {effectiveUrgent ? <SupportParticipants participants={effectiveUrgent.participants} /> : null}
-          <Pressable onPress={() => { if (currentAlert) resolveUrgent(currentAlert.id).catch(() => {}); }}
+          <Pressable onPress={() => { if (currentAlert) resolveUrgent(currentAlert.id).catch(() => Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.')); }}
             disabled={urgentLoading || localUrgentOffline || !currentAlert}
-            style={({ pressed }) => [s.urgentResolveBtn, (urgentLoading || localUrgentOffline) && { opacity: 0.4 }, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
+            style={({ pressed }) => [s.urgentResolveBtn, (urgentLoading || localUrgentOffline || !currentAlert) && { opacity: 0.4 }, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
             <Text style={s.urgentResolveBtnText}>Już jest dobrze</Text>
           </Pressable>
-          <Pressable onPress={() => retrySend().catch(() => {})} disabled={urgentLoading || localUrgentOffline}
+          <Pressable onPress={() => retrySend().catch(() => Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.'))} disabled={urgentLoading || localUrgentOffline}
             style={({ pressed }) => [s.urgentRetryBtn, (urgentLoading || localUrgentOffline) && s.urgentRetryBtnOff, pressed && { opacity: 0.9 }]}>
             <Text style={s.urgentRetryBtnText}>Wyślij ponownie</Text>
           </Pressable>
-          <Pressable onPress={() => { if (currentAlert) cancelUrgent(currentAlert.id).catch(() => {}); else setLocalUrgentOffline(false); }}
+          <Pressable onPress={() => { if (currentAlert) cancelUrgent(currentAlert.id).catch(() => Alert.alert('Nie udało się', 'Spróbuj ponownie.')); else setLocalUrgentOffline(false); }}
             style={({ pressed }) => [s.cancelLink, pressed && { opacity: 0.65 }]}>
             <Text style={s.cancelLinkText}>To pomyłka, anuluj</Text>
           </Pressable>
