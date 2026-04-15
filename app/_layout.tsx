@@ -11,6 +11,8 @@ Sentry.init({
   enableNativeCrashHandling: true,
   enableAutoSessionTracking: true,
 });
+import * as Notifications from 'expo-notifications';
+import { useRouter } from 'expo-router';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { PostHogProvider } from 'posthog-react-native';
@@ -20,6 +22,7 @@ import { posthog } from '../src/services/posthog';
 import { Colors } from '../src/constants/colors';
 
 function RootLayout() {
+  const router = useRouter();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -41,6 +44,22 @@ function RootLayout() {
       prevHandler?.(error, isFatal);
     });
   }, []);
+
+  // Handle push notification tap — navigate to the right screen
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data;
+      if (data?.type === 'sos' || data?.type === 'missed_checkin') {
+        // Urgent notification → recipient should see urgent view (it auto-shows via useUrgentSignal)
+        router.replace('/recipient-home');
+      } else if (data?.type === 'daily_checkin') {
+        router.replace('/recipient-home');
+      } else if (data?.type === 'nudge') {
+        router.replace('/signaler-home');
+      }
+    });
+    return () => sub.remove();
+  }, [router]);
 
   // Rejestruj push token przy uruchomieniu + po zalogowaniu
   // Identify user in PostHog after auth
