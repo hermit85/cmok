@@ -48,9 +48,14 @@ export default function JoinByCode() {
     <JoinScreen
       initialCode={cleanCode}
       onBack={() => { clearPendingInvite(); router.replace('/'); }}
-      onDone={() => {
+      onDone={async () => {
         clearPendingInvite();
         logInviteEvent('join_completed', { code: cleanCode, source: 'deep-link' });
+        // Ensure role is signaler after join (accept_relationship_invite sets senior_id)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('users').update({ role: 'signaler' }).eq('id', user.id);
+        }
         router.replace('/signaler-home');
       }}
       relationLabel="bliską osobą"

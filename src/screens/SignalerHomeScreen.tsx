@@ -223,7 +223,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   /* ─── animations ─── */
 
   // Streak including today's check-in (computed early for animation use)
-  const currentStreak = showChecked && !pv ? Math.max(dbStreak + 1, 1) : dbStreak;
+  // Only add +1 during transitional state (justChecked but DB hasn't confirmed yet)
+  const currentStreak = (justChecked && !checkedInToday && !pv) ? Math.max(dbStreak + 1, 1) : dbStreak;
   const isMilestone = currentStreak === 7 || currentStreak === 14 || currentStreak === 21 || currentStreak === 30;
 
   /* ─── success animations ─── */
@@ -290,8 +291,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   const performCheckinLogic = useCallback(async (successFn: () => void) => {
     if (isSubmitting.current) return;
-    // Safety: auto-reset after 15s to prevent permanent lock on network hang
-    const safetyTimer = setTimeout(() => { isSubmitting.current = false; }, 15000);
     if (pv) {
       if (previewMode === 'before') { setPreviewMode('after'); setJustChecked(true); successFn(); }
       return;
@@ -300,6 +299,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     if (!isAuthenticated) { Alert.alert('Zaloguj się', 'Ten telefon musi być połączony z kontem.'); return; }
     if (showChecked || checkinLoading) return;
     isSubmitting.current = true;
+    // Safety timer starts only after entering real submit path
+    const safetyTimer = setTimeout(() => { isSubmitting.current = false; }, 15000);
     const now = new Date();
     const t = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     if (isOffline) {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../services/supabase';
 import type { AppProfile, AppRole, Relationship, RelationshipStatus } from '../types';
 import { normalizeAppRole } from '../utils/roles';
@@ -104,6 +104,7 @@ export function useRelationship(): RelationshipState {
   const [relationship, setRelationship] = useState<Relationship | null>(null);
   const [status, setStatus] = useState<RelationshipStatus>('none');
   const [hasTrustedAccess, setHasTrustedAccess] = useState(false);
+  const hasEverLoaded = useRef(false);
 
   const refreshRelationship = useCallback(async () => {
     setLoading(true);
@@ -113,11 +114,18 @@ export function useRelationship(): RelationshipState {
       setRelationship(next.relationship);
       setStatus(next.status);
       setHasTrustedAccess(next.hasTrustedAccess);
+      hasEverLoaded.current = true;
       setSessionReady(true);
     } catch (err) {
       console.error('[useRelationship] refresh error:', err);
-      // Keep existing state on error — don't wipe data on network glitch
-      setSessionReady(true);
+      // On first load failure: don't set sessionReady — keep showing loader
+      // On subsequent refreshes: keep existing state
+      if (hasEverLoaded.current) {
+        // Already loaded once — keep stale data, don't wipe
+      } else {
+        // First load failed — retry in 3s
+        setTimeout(() => refreshRelationship(), 3000);
+      }
     } finally {
       setLoading(false);
     }

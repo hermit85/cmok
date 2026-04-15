@@ -36,26 +36,36 @@ function RootLayout() {
   useEffect(() => {
     const prevHandler = ErrorUtils.getGlobalHandler();
     ErrorUtils.setGlobalHandler((error, isFatal) => {
-      posthog.capture('$exception', {
-        $exception_message: error?.message || String(error),
-        $exception_stack_trace_raw: error?.stack || '',
-        $exception_is_fatal: isFatal ?? false,
-      });
-      prevHandler?.(error, isFatal);
+      try {
+        posthog.capture('$exception', {
+          $exception_message: error?.message || String(error),
+          $exception_stack_trace_raw: error?.stack || '',
+          $exception_is_fatal: isFatal ?? false,
+        });
+      } finally {
+        prevHandler?.(error, isFatal);
+      }
     });
   }, []);
 
-  // Handle push notification tap — navigate to the right screen
+  // Handle push notification tap — navigate based on notification type
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+    const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
       const data = response.notification.request.content.data;
+      // Determine correct screen from user's actual role
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) { router.replace('/onboarding'); return; }
+      const { data: profile } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
+      const role = profile?.role;
+
       if (data?.type === 'sos' || data?.type === 'missed_checkin') {
-        // Urgent notification → recipient should see urgent view (it auto-shows via useUrgentSignal)
-        router.replace('/recipient-home');
+        router.replace(role === 'signaler' ? '/signaler-home' : '/recipient-home');
       } else if (data?.type === 'daily_checkin') {
         router.replace('/recipient-home');
       } else if (data?.type === 'nudge') {
         router.replace('/signaler-home');
+      } else {
+        router.replace(role === 'signaler' ? '/signaler-home' : role === 'recipient' ? '/recipient-home' : '/onboarding');
       }
     });
     return () => sub.remove();

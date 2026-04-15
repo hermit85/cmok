@@ -22,7 +22,7 @@ const SLIDES = [
   },
   {
     headline: 'Jeśli dzieje się\ncoś ważnego',
-    body: 'Wystarczy przytrzymać dłużej, żeby dać znać bliskim, że trzeba zareagować.',
+    body: 'Jeden przycisk i cały krąg bliskich od razu dostanie sygnał.',
   },
 ];
 

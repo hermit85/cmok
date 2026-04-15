@@ -64,7 +64,7 @@ export function MilestoneCelebration({ visible, streak, recipientName, onDismiss
         <Text style={s.body}>{body}</Text>
 
         <Pressable onPress={handleShare} style={({ pressed }) => [s.shareBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
-          <Text style={s.shareBtnText}>Podziel sie z kims bliskim</Text>
+          <Text style={s.shareBtnText}>Podziel się z kimś bliskim</Text>
         </Pressable>
 
         <Pressable onPress={onDismiss} style={({ pressed }) => [s.dismissBtn, pressed && { opacity: 0.5 }]}>

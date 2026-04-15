@@ -202,8 +202,13 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
         profile: profile ? { id: profile.id, role: normalizeAppRole(profile.role) as AppRole, name: profile.name } : null,
         relationshipStatus,
       });
-    } catch {
-      setCodeError('Nieprawidłowy kod. Spróbuj ponownie.');
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('invalid') || msg.includes('expired') || msg.includes('otp')) {
+        setCodeError('Nieprawidłowy kod. Sprawdź i spróbuj ponownie.');
+      } else {
+        setCodeError('Błąd połączenia. Sprawdź internet i spróbuj ponownie.');
+      }
       setCode('');
       codeInputRef.current?.focus();
     } finally {

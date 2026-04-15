@@ -399,10 +399,11 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     if (nudgeSent || nudgeSending) return;
     setNudgeSending(true);
     try {
-      await supabase.functions.invoke('nudge-signal', { body: {} });
+      const { error: nudgeErr } = await supabase.functions.invoke('nudge-signal', { body: {} });
+      if (nudgeErr) throw nudgeErr;
       analytics.nudgeSent();
       setNudgeSent(true);
-    } catch { /* silent */ }
+    } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.'); }
     finally { setNudgeSending(false); }
   };
 

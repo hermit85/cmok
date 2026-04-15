@@ -131,15 +131,16 @@ export function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const { data: result } = await supabase.functions.invoke('delete-account', { body: {} });
-              // Function returns { ok: true } on success — proceed even if Supabase client reports "error"
+              const { data: result, error: invokeErr } = await supabase.functions.invoke('delete-account', { body: {} });
+              if (invokeErr && !result?.ok) {
+                Alert.alert('Błąd', 'Nie udało się usunąć konta. Spróbuj ponownie.');
+                return;
+              }
               analytics.accountDeleted();
               await supabase.auth.signOut();
               router.replace('/onboarding');
             } catch {
-              // Even if invoke throws, account may be deleted — sign out anyway
-              await supabase.auth.signOut().catch(() => {});
-              router.replace('/onboarding');
+              Alert.alert('Błąd', 'Nie udało się usunąć konta. Sprawdź połączenie.');
             }
           },
         },
