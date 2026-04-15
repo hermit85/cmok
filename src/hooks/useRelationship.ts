@@ -105,6 +105,7 @@ export function useRelationship(): RelationshipState {
   const [status, setStatus] = useState<RelationshipStatus>('none');
   const [hasTrustedAccess, setHasTrustedAccess] = useState(false);
   const hasEverLoaded = useRef(false);
+  const retryCount = useRef(0);
 
   const refreshRelationship = useCallback(async () => {
     setLoading(true);
@@ -115,16 +116,19 @@ export function useRelationship(): RelationshipState {
       setStatus(next.status);
       setHasTrustedAccess(next.hasTrustedAccess);
       hasEverLoaded.current = true;
+      retryCount.current = 0;
       setSessionReady(true);
     } catch (err) {
       console.error('[useRelationship] refresh error:', err);
-      // On first load failure: don't set sessionReady — keep showing loader
-      // On subsequent refreshes: keep existing state
       if (hasEverLoaded.current) {
-        // Already loaded once — keep stale data, don't wipe
-      } else {
-        // First load failed — retry in 3s
+        // Already loaded once — keep stale data
+      } else if (retryCount.current < 3) {
+        // First load failed — retry up to 3 times
+        retryCount.current += 1;
         setTimeout(() => refreshRelationship(), 3000);
+      } else {
+        // Give up — show app with null state (will route to onboarding)
+        setSessionReady(true);
       }
     } finally {
       setLoading(false);

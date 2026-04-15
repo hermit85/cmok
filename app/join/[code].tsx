@@ -51,11 +51,13 @@ export default function JoinByCode() {
       onDone={async () => {
         clearPendingInvite();
         logInviteEvent('join_completed', { code: cleanCode, source: 'deep-link' });
-        // Ensure role is signaler after join (accept_relationship_invite sets senior_id)
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('users').update({ role: 'signaler' }).eq('id', user.id);
-        }
+        // Ensure role is signaler after join
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase.from('users').update({ role: 'signaler' }).eq('id', user.id);
+          }
+        } catch { /* best-effort role sync */ }
         router.replace('/signaler-home');
       }}
       relationLabel="bliską osobą"

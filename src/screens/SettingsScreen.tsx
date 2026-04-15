@@ -132,7 +132,7 @@ export function SettingsScreen() {
           onPress: async () => {
             try {
               const { data: result, error: invokeErr } = await supabase.functions.invoke('delete-account', { body: {} });
-              if (invokeErr && !result?.ok) {
+              if (invokeErr || !result?.ok) {
                 Alert.alert('Błąd', 'Nie udało się usunąć konta. Spróbuj ponownie.');
                 return;
               }
