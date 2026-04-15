@@ -222,6 +222,8 @@ export function JoinScreen({
             style={isValid ? s.joinBtn : [s.joinBtn, s.joinBtnDisabled]}
           />
         )}
+
+        <Text style={s.noCodeHint}>Nie masz kodu? Poproś bliską osobę,{'\n'}żeby najpierw utworzyła zaproszenie w cmok.</Text>
       </View>
     </SafeAreaView>
   );
@@ -248,6 +250,7 @@ const s = StyleSheet.create({
   error: { fontSize: 15, color: Colors.alert, textAlign: 'center', marginTop: 12 },
   joinBtn: { width: '100%', marginTop: 24 },
   joinBtnDisabled: { opacity: 0.4 },
+  noCodeHint: { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 24, lineHeight: 20 },
   authBtn: { width: '100%' },
   backButton: { alignSelf: 'flex-start', paddingVertical: 10, paddingHorizontal: 4, minHeight: 44, marginBottom: 16 },
   backText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },

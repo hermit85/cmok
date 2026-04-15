@@ -186,7 +186,16 @@ export default function OnboardingFlow() {
     setStep('intent');
   };
 
-  const handleConnectionCreated = () => { analytics.onboardingCompleted('recipient'); setDestinationRoute('/waiting'); setStep('done'); };
+  const handleConnectionCreated = async () => {
+    analytics.onboardingCompleted('recipient');
+    // Check if pair is already active (e.g. setup screen detected existing pair)
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: pair } = await supabase.from('care_pairs').select('status').eq('caregiver_id', user.id).eq('status', 'active').limit(1).maybeSingle();
+      if (pair) { setDestinationRoute('/recipient-home'); setStep('done'); return; }
+    }
+    setDestinationRoute('/waiting'); setStep('done');
+  };
   const handleJoined = () => { analytics.onboardingCompleted('signaler'); setDestinationRoute('/signaler-home'); setStep('done'); };
 
   const goBack = () => {

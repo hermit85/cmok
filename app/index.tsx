@@ -37,19 +37,19 @@ export default function Index() {
     return <LoadingScreen />;
   }
 
-  // Pending invite code → resume join flow (highest priority)
-  if (pendingCode && profile) {
-    return <Redirect href={`/join/${pendingCode}`} />;
-  }
-
   // No profile → full onboarding
   if (!profile) {
     return <Redirect href="/onboarding" />;
   }
 
-  // Active relationship → home
+  // Active relationship → home (takes priority over stale pending invite)
   if (status === 'active') {
     return <Redirect href={profile.role === 'signaler' ? '/signaler-home' : '/recipient-home'} />;
+  }
+
+  // Pending invite code → resume join flow (only if no active relationship)
+  if (pendingCode) {
+    return <Redirect href={`/join/${pendingCode}`} />;
   }
 
   // Pending relationship (recipient created invite, waiting for signaler to join)
