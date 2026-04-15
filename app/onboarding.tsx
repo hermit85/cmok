@@ -182,7 +182,7 @@ export default function OnboardingFlow() {
     }
 
     // Case 5: No profile AND no selectedRole (came from "Mam już konto" but no profile)
-    // This user needs to go through full onboarding
+    Alert.alert('Nie znaleźliśmy konta', 'Ten numer nie ma jeszcze konta w cmok. Zacznij od nowa.');
     setStep('intent');
   };
 
