@@ -1,6 +1,10 @@
 -- Allow signaler (senior_id) to resolve their own SOS alert, not just the claimer.
 -- Previously only acknowledged_by could resolve, but signaler triggers "Już jest dobrze".
 
+-- Allow signaler (senior_id) to resolve their own SOS alert.
+-- Qualify all column references with table alias to avoid ambiguity
+-- with RETURNS TABLE output columns.
+
 DROP FUNCTION IF EXISTS public.resolve_support_alert(uuid);
 
 CREATE FUNCTION public.resolve_support_alert(
@@ -22,13 +26,13 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
-  UPDATE public.alert_cases
+  UPDATE public.alert_cases ac
   SET state = 'resolved',
       resolved_at = now()
-  WHERE id = p_alert_id
-    AND type = 'sos'
-    AND state IN ('open', 'acknowledged')
-    AND (senior_id = auth.uid() OR acknowledged_by = auth.uid())
+  WHERE ac.id = p_alert_id
+    AND ac.type = 'sos'
+    AND ac.state IN ('open', 'acknowledged')
+    AND (ac.senior_id = auth.uid() OR ac.acknowledged_by = auth.uid())
   RETURNING *
   INTO v_alert;
 
