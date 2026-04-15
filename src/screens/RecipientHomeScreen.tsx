@@ -661,8 +661,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               <ResponseTap signalerName={name} signalerId={sigId} preview={pv} sendSignal={sendSignal} hasSentReactionToday={hasSentReactionToday} />
             </Animated.View>
           ) : null}
-          {/* Poke — standalone gesture, always visible */}
-          {sigId ? (
+          {/* Poke — standalone gesture, only before check-in (ResponseTap serves this role after) */}
+          {sigId && !effOk ? (
             <View style={st.pokeSection}>
               {pokePicked || pokeAlreadySent ? (
                 <View style={st.pokeSentPill}>

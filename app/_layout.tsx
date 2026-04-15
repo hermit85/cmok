@@ -134,7 +134,10 @@ function RootLayout() {
         .catch((err) => console.log('Push token registration failed:', err));
     };
 
-    tryRegister(); // On mount
+    // Only register on mount if there's a valid session (avoids 401 on stale/deleted accounts)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) tryRegister();
+    });
 
     // Re-register after login + identify in PostHog
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {

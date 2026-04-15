@@ -314,7 +314,7 @@ async function sendSupportPushes(params: {
           latitude: params.latitude,
           longitude: params.longitude,
         },
-        priority: 'normal',
+        priority: 'high',
         channelId: 'urgent',
       };
     });

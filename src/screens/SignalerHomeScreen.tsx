@@ -754,7 +754,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   <Text style={s.nudgeReceivedText}>{nudgeFrom ? `${nudgeFrom} czeka na Twój znak` : 'Ktoś bliski czeka na Twój znak'}</Text>
                 </View>
               ) : null}
-              <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{hasName ? `${name} czeka na Twój znak` : copyLine}</Text>
+              <Text style={s.copyLine} maxFontSizeMultiplier={1.3}>{copyLine}</Text>
             </View>
           )}
 
