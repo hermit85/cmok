@@ -704,13 +704,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                 </Animated.View>
               ) : null}
               {incomingPoke ? (
-                <View style={s.responseReceipt}>
-                  <View style={s.responseReceiptRow}>
-                    <Emoji style={s.responseReceiptEmoji}>{incomingPoke.emoji || '\u{1F49A}'}</Emoji>
-                    <Text style={s.responseReceiptText}>
-                      {pokeFromName ? `${pokeFromName} myśli o Tobie` : 'Ktoś myśli o Tobie'}
-                    </Text>
-                  </View>
+                <View style={s.pokeReceipt}>
+                  <Emoji style={s.responseReceiptEmoji}>{incomingPoke.emoji || '\u{1F49A}'}</Emoji>
+                  <Text style={s.pokeReceiptText}>
+                    {pokeFromName ? `${pokeFromName} myśli o Tobie` : 'Ktoś myśli o Tobie'}
+                  </Text>
                 </View>
               ) : null}
               {!statusPicked ? (
@@ -740,7 +738,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   </Text>
                 </Animated.View>
               )}
-              <Text style={s.tomorrowHook}>Gotowe na dziś. Jutro Ci przypomnimy.</Text>
+              {!isReallyFirstEver ? <Text style={s.tomorrowHook}>Gotowe na dziś. Jutro Ci przypomnimy.</Text> : null}
               {!isMilestone && currentStreak >= 2 && currentStreak < 7 ? (
                 <Text style={s.streakHook}>Jeszcze {7 - currentStreak} {7 - currentStreak === 1 ? 'dzień' : 'dni'} do pełnego tygodnia</Text>
               ) : !isMilestone && currentStreak >= 7 ? (
@@ -864,6 +862,12 @@ const s = StyleSheet.create({
   responseReceiptRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   responseReceiptEmoji: { fontSize: 16 },
   responseReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+  pokeReceipt: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    marginTop: 10, backgroundColor: Colors.loveLight, paddingHorizontal: 16, paddingVertical: 8,
+    borderRadius: 999,
+  },
+  pokeReceiptText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.love },
   /* nudge received */
   nudgeReceived: {
     backgroundColor: Colors.loveLight, paddingHorizontal: 18, paddingVertical: 8,

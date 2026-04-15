@@ -540,8 +540,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const streakLabel = effOk && sigStreak >= 2 ? `${sigStreak} dni z rzędu` : null;
   const title = effOk
     ? isFirstEver
-      ? `Pierwszy znak od ${nameFrom}!`
-      : `Znak od ${nameFrom}`
+      ? `Pierwszy znak!`
+      : `Jest znak`
     : hasReceiverGap
       ? 'Dziś ciszej niż zwykle'
       : effLast
@@ -628,26 +628,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           )}
         </View>
 
-        {/* ─── SECTION 2: Rhythm ─── */}
-        <View style={st.rhythmSection}>
-          {effWeek.length > 0 ? <WeekDots days={effWeek} /> : null}
-          {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
-          {sigId ? <MonthGrid signalerId={sigId} /> : null}
-          {/* Nudge button — only when no sign today */}
-          {!effOk && sigId && !pv ? (
-            <Pressable
-              onPress={handleNudge}
-              disabled={nudgeSent || nudgeSending}
-              style={({ pressed }) => [st.nudgeBtn, pressed && !nudgeSent && { opacity: 0.7 }]}
-            >
-              <Text style={[st.nudgeBtnText, nudgeSent && st.nudgeBtnTextSent]}>
-                {nudgeSent ? <Text>Wysłano <Text style={{ fontFamily: undefined }}>✓</Text></Text> : nudgeSending ? <Text>...</Text> : <Text>Przypomnij delikatnie</Text>}
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-
-        {/* ─── SECTION 3: Actions ─── */}
+        {/* ─── SECTION 2: Actions (above fold) ─── */}
         <View style={st.actionsSection}>
           {/* Incoming poke from signaler */}
           {signalerPoke ? (
@@ -702,7 +683,25 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           }} style={({ pressed }) => [st.viralLink, pressed && { opacity: 0.5 }]}>
             <Text style={st.viralLinkText}>Powiedz komuś o cmok</Text>
           </Pressable>
+        </View>
 
+        {/* ─── SECTION 3: Rhythm (below actions) ─── */}
+        <View style={st.rhythmSection}>
+          {effWeek.length > 0 ? <WeekDots days={effWeek} /> : null}
+          {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
+          {/* Nudge button — only when no sign today */}
+          {!effOk && sigId && !pv ? (
+            <Pressable
+              onPress={handleNudge}
+              disabled={nudgeSent || nudgeSending}
+              style={({ pressed }) => [st.nudgeBtn, pressed && !nudgeSent && { opacity: 0.7 }]}
+            >
+              <Text style={[st.nudgeBtnText, nudgeSent && st.nudgeBtnTextSent]}>
+                {nudgeSent ? <Text>Wysłano <Text style={{ fontFamily: undefined }}>✓</Text></Text> : nudgeSending ? <Text>...</Text> : <Text>Przypomnij delikatnie</Text>}
+              </Text>
+            </Pressable>
+          ) : null}
+          {sigId ? <MonthGrid signalerId={sigId} /> : null}
         </View>
       </ScrollView>
     </SafeAreaView>
