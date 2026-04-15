@@ -20,7 +20,7 @@ export function TrustedContactsScreen() {
   const { contacts, loading, saving, addTrustedContact, removeTrustedContact } = useTrustedContacts(relationship?.id || null);
   const [phone, setPhone] = useState('');
 
-  const canManage = profile?.role === 'recipient' && status === 'active' && !!relationship?.id;
+  const canManage = status === 'active' && !!relationship?.id;
 
   const cleanPhone = phone.replace(/\D/g, '');
   const isPhoneValid = cleanPhone.length === 9 || (cleanPhone.startsWith('48') && cleanPhone.length === 11);

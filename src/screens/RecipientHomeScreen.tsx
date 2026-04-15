@@ -675,14 +675,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               <Text style={st.circleNudgeText}>Dodaj kogoś do kręgu bliskich</Text>
             </Pressable>
           ) : null}
-          {/* Viral: share app with others */}
-          <Pressable onPress={() => {
-            Share.share(Platform.OS === 'ios'
-              ? { message: 'Ktoś bliski mieszka osobno? cmok to codzienny znak, że jest OK. Jeden gest, zero stresu.\n\nhttps://cmok.app/pobierz' }
-              : { message: 'Ktoś bliski mieszka osobno? cmok to codzienny znak, że jest OK.\n\nhttps://cmok.app/pobierz', title: 'cmok' });
-          }} style={({ pressed }) => [st.viralLink, pressed && { opacity: 0.5 }]}>
-            <Text style={st.viralLinkText}>Powiedz komuś o cmok</Text>
-          </Pressable>
         </View>
 
         {/* ─── SECTION 3: Rhythm (below actions) ─── */}

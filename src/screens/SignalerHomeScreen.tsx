@@ -763,12 +763,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             </View>
           ) : null}
 
-          {/* ─── VIRAL: subtle invite link ─── */}
-          {showChecked && currentStreak >= 3 ? (
-            <Pressable onPress={() => generateAndShareInvite()} style={({ pressed }) => [s.viralLink, pressed && { opacity: 0.5 }]}>
-              <Text style={s.viralLinkText}>Zaproś kogoś do kręgu</Text>
-            </Pressable>
-          ) : null}
         </View>
 
         {/* ─── URGENT BUTTON ─── */}

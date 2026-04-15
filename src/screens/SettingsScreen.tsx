@@ -210,44 +210,16 @@ export function SettingsScreen() {
           )}
         </Pressable>
 
-        {/* ─── Invite another person ─── */}
-        {inviteCode ? (
-          <View style={styles.card}>
-            <Text style={styles.inviteText}>Zaproszenie gotowe</Text>
-            <Text style={styles.cardDetail}>Pokaż ten kod lub wyślij go bliskiej osobie.</Text>
-
-            <Pressable onPress={handleCopyInviteCode} style={({ pressed }) => [styles.codeFrame, pressed && { opacity: 0.85 }]}>
-              <Text style={styles.codeValue}>{inviteCode}</Text>
-              <Text style={styles.codeHint}>Stuknij, żeby skopiować</Text>
-            </Pressable>
-
-            <Pressable
-              onPress={handleShareInviteCode}
-              style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
-            >
-              <Text style={styles.shareBtnText}>Wyślij zaproszenie</Text>
-            </Pressable>
-
-            <Pressable onPress={() => setInviteCode(null)} style={({ pressed }) => [styles.dismissLink, pressed && { opacity: 0.5 }]}>
-              <Text style={styles.dismissLinkText}>Zamknij</Text>
-            </Pressable>
-          </View>
-        ) : (
+        {/* ─── Trusted circle ─── */}
+        {status === 'active' ? (
           <Pressable
-            onPress={handleGenerateInvite}
-            disabled={inviteLoading}
-            style={({ pressed }) => [styles.card, styles.inviteCard, pressed && { opacity: 0.88 }]}
+            onPress={() => router.push('/trusted-contacts')}
+            style={({ pressed }) => [styles.card, pressed && { opacity: 0.88 }]}
           >
-            {inviteLoading ? (
-              <ActivityIndicator size="small" color={Colors.accent} />
-            ) : (
-              <>
-                <Text style={styles.inviteText}>Zaproś kolejną osobę</Text>
-                <Text style={styles.cardDetail}>Znasz kogoś, kto mieszka sam? Wyślij zaproszenie.</Text>
-              </>
-            )}
+            <Text style={styles.inviteText}>Twój krąg bliskich</Text>
+            <Text style={styles.cardDetail}>Dodaj sąsiada, koleżankę, kogoś zaufanego. Dostaną wiadomość, jeśli poprosisz o pomoc.</Text>
           </Pressable>
-        )}
+        ) : null}
 
         {/* ─── Account with editable name ─── */}
         <View style={styles.card}>
