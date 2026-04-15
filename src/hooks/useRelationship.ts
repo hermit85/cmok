@@ -116,10 +116,7 @@ export function useRelationship(): RelationshipState {
       setSessionReady(true);
     } catch (err) {
       console.error('[useRelationship] refresh error:', err);
-      setProfile(null);
-      setRelationship(null);
-      setStatus('none');
-      setHasTrustedAccess(false);
+      // Keep existing state on error — don't wipe data on network glitch
       setSessionReady(true);
     } finally {
       setLoading(false);
