@@ -1,42 +1,49 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
-import { Radius, Spacing } from '../constants/tokens';
 import { useRelationship } from '../hooks/useRelationship';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
-import { generateAndShareInvite } from '../utils/invite';
 import { analytics } from '../services/analytics';
 
-function normalizePhone(phone: string) {
-  return phone.replace(/[^\d+]/g, '');
+const AVATAR = 44;
+
+function Avatar({ name }: { name: string }) {
+  const initial = (name || '?').charAt(0).toUpperCase();
+  return (
+    <View style={styles.avatar}>
+      <Text style={styles.avatarText}>{initial}</Text>
+    </View>
+  );
 }
 
 export function TrustedContactsScreen() {
   const router = useRouter();
-  const { relationship, profile, status } = useRelationship();
+  const { relationship, status } = useRelationship();
   const { contacts, loading, saving, addTrustedContact, removeTrustedContact } = useTrustedContacts(relationship?.id || null);
   const [phone, setPhone] = useState('');
+  const phoneInputRef = useRef<TextInput>(null);
 
   const canManage = status === 'active' && !!relationship?.id;
 
   const cleanPhone = phone.replace(/\D/g, '');
-  const isPhoneValid = cleanPhone.length === 9 || (cleanPhone.startsWith('48') && cleanPhone.length === 11);
+  const isValid = cleanPhone.length === 9;
+  const displayNumber = cleanPhone.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
+
+  const activeContacts = contacts.filter((c) => c.status === 'active');
 
   const handleAdd = async () => {
-    if (!isPhoneValid || !canManage || !relationship?.id) return;
-    // Normalize to 48XXXXXXXXX format
-    const normalized = cleanPhone.length === 9 ? `48${cleanPhone}` : cleanPhone;
+    if (!isValid || !canManage || !relationship?.id) return;
     try {
-      await addTrustedContact(normalized);
+      await addTrustedContact(`48${cleanPhone}`);
       analytics.contactAdded();
       setPhone('');
     } catch (error) {
       const msg = error instanceof Error ? error.message : '';
-      if (msg.includes('not found') || msg.includes('nie znaleziono')) {
-        Alert.alert('Nie znaleziono', 'Ta osoba nie ma jeszcze konta w cmok. Wyślij jej zaproszenie.');
+      if (msg.includes('not found') || msg.includes('nie znaleziono') || msg.includes('User not found')) {
+        Alert.alert('Nie znaleziono', 'Ta osoba nie ma jeszcze konta w cmok. Poproś ją, żeby pobrała apkę.');
       } else if (msg.includes('already') || msg.includes('już')) {
         Alert.alert('Już w kręgu', 'Ta osoba jest już w Twoim kręgu.');
       } else {
@@ -45,14 +52,27 @@ export function TrustedContactsScreen() {
     }
   };
 
-  const handleRemove = async (contactId: string, name: string) => {
-    try {
-      await removeTrustedContact(contactId);
-      analytics.contactRemoved();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : `Nie udało się usunąć ${name}.`;
-      Alert.alert('Coś poszło nie tak', message);
-    }
+  const handleRemove = (contactId: string, name: string) => {
+    Alert.alert(
+      'Usunąć z kręgu?',
+      `${name} nie będzie już dostawać wiadomości, gdy poprosisz o pomoc.`,
+      [
+        { text: 'Anuluj', style: 'cancel' },
+        {
+          text: 'Usuń',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeTrustedContact(contactId);
+              analytics.contactRemoved();
+            } catch (error) {
+              const message = error instanceof Error ? error.message : `Nie udało się usunąć ${name}.`;
+              Alert.alert('Coś poszło nie tak', message);
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -66,15 +86,15 @@ export function TrustedContactsScreen() {
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={styles.title}>Osoby w kręgu</Text>
+        <Text style={styles.title}>Krąg bliskich</Text>
         <Text style={styles.subtitle}>
-          Te osoby dostaną wiadomość, jeśli coś się będzie działo, ale nie codzienny znak.
+          Sąsiad, koleżanka, brat. Dostaną wiadomość, gdy poprosisz o pomoc.
         </Text>
 
         {!canManage ? (
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>Najpierw połącz główną relację</Text>
-            <Text style={styles.infoText}>Wróć tutaj, gdy oba telefony będą połączone.</Text>
+            <Text style={styles.infoText}>Wróć tutaj, gdy połączenie będzie aktywne.</Text>
             <Pressable
               onPress={() => router.back()}
               style={({ pressed }) => [styles.infoCta, pressed && { opacity: 0.85 }]}
@@ -84,60 +104,80 @@ export function TrustedContactsScreen() {
           </View>
         ) : (
           <>
-            <View style={styles.addCard}>
-              <Text style={styles.sectionLabel}>Dodaj kogoś bliskiego</Text>
-              <TextInput
-                value={phone}
-                onChangeText={(value) => setPhone(normalizePhone(value))}
-                placeholder="Numer telefonu"
-                placeholderTextColor={Colors.textMuted}
-                keyboardType="phone-pad"
-                style={styles.input}
-              />
-              <Text style={styles.helperText}>
-                {phone.length === 0 ? 'Wpisz numer telefonu osoby z cmok.' : isPhoneValid ? 'Numer wygląda dobrze.' : `Wpisz 9-cyfrowy numer telefonu.`}
+            {/* ─── Add card ─── */}
+            <Text style={styles.sectionLabel}>Dodaj osobę</Text>
+            <Pressable style={styles.inputCard} onPress={() => phoneInputRef.current?.focus()}>
+              <View style={styles.inputWrapper}>
+                <Text style={styles.prefix}>+48</Text>
+                <TextInput
+                  ref={phoneInputRef}
+                  style={styles.input}
+                  value={displayNumber}
+                  onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 9))}
+                  keyboardType="phone-pad"
+                  placeholder="600 100 200"
+                  placeholderTextColor="#D1CBC4"
+                  maxLength={11}
+                />
+              </View>
+              <Text style={[styles.helper, isValid && styles.helperReady]}>
+                {phone.length === 0
+                  ? 'Osoba musi mieć zainstalowane cmok.'
+                  : isValid
+                    ? 'Numer wygląda dobrze.'
+                    : 'Wpisz 9-cyfrowy numer.'}
               </Text>
-              <Pressable
-                onPress={handleAdd}
-                disabled={!isPhoneValid || saving}
-                style={({ pressed }) => [
-                  styles.addButton,
-                  (!isPhoneValid || saving) && styles.addButtonDisabled,
-                  pressed && isPhoneValid && !saving && { opacity: 0.88 },
-                ]}
-              >
-                {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.addButtonText}>Dodaj</Text>}
-              </Pressable>
-            </View>
-
-            <Pressable
-              onPress={() => generateAndShareInvite()}
-              style={({ pressed }) => [styles.shareLink, pressed && { opacity: 0.6 }]}
-            >
-              <Text style={styles.shareLinkText}>Zaproś kogoś do cmok</Text>
             </Pressable>
 
+            <Pressable
+              onPress={handleAdd}
+              disabled={!isValid || saving}
+              style={({ pressed }) => [
+                styles.addButton,
+                (!isValid || saving) && styles.addButtonDisabled,
+                pressed && isValid && !saving && { opacity: 0.88, transform: [{ scale: 0.98 }] },
+              ]}
+            >
+              {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.addButtonText}>Dodaj do kręgu</Text>}
+            </Pressable>
+
+            {/* ─── List ─── */}
             <View style={styles.listSection}>
-              <Text style={styles.sectionLabel}>W kręgu</Text>
+              <View style={styles.listHeader}>
+                <Text style={styles.sectionLabel}>W kręgu</Text>
+                {activeContacts.length > 0 ? (
+                  <Text style={styles.listCount}>
+                    {activeContacts.length} {activeContacts.length === 1 ? 'osoba' : 'osób'}
+                  </Text>
+                ) : null}
+              </View>
+
               {loading ? (
                 <ActivityIndicator size="small" color={Colors.accent} style={{ marginTop: 16 }} />
-              ) : contacts.length === 0 ? (
-                <Text style={styles.emptyText}>Na razie nikogo tu nie ma.</Text>
+              ) : activeContacts.length === 0 ? (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyTitle}>Krąg jest pusty</Text>
+                  <Text style={styles.emptyText}>Dodaj kogoś, kto może zareagować szybko — sąsiada, kogoś z rodziny.</Text>
+                </View>
               ) : (
-                contacts.map((contact) => (
-                  <View key={contact.id} style={styles.contactRow}>
-                    <View style={styles.contactMeta}>
-                      <Text style={styles.contactName}>{contact.name}</Text>
-                      <Text style={styles.contactPhone}>{contact.phone}</Text>
+                <View style={styles.listCard}>
+                  {activeContacts.map((contact, i) => (
+                    <View key={contact.id} style={[styles.contactRow, i > 0 && styles.contactRowDivider]}>
+                      <Avatar name={contact.name} />
+                      <View style={styles.contactMeta}>
+                        <Text style={styles.contactName}>{contact.name}</Text>
+                        {contact.phone ? <Text style={styles.contactPhone}>{contact.phone}</Text> : null}
+                      </View>
+                      <Pressable
+                        onPress={() => handleRemove(contact.id, contact.name)}
+                        style={({ pressed }) => [styles.removeButton, pressed && { opacity: 0.6 }]}
+                        hitSlop={12}
+                      >
+                        <Text style={styles.removeText}>Usuń</Text>
+                      </Pressable>
                     </View>
-                    <Pressable
-                      onPress={() => handleRemove(contact.id, contact.name)}
-                      style={({ pressed }) => [styles.removeButton, pressed && { opacity: 0.7 }]}
-                    >
-                      <Text style={styles.removeText}>Usuń</Text>
-                    </Pressable>
-                  </View>
-                ))
+                  ))}
+                </View>
               )}
             </View>
           </>
@@ -149,52 +189,84 @@ export function TrustedContactsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: Spacing.screen, paddingTop: 16, paddingBottom: 28 },
-  backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginBottom: 18 },
+  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginBottom: 12 },
   backText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
-  title: { fontSize: 26, lineHeight: 32, fontFamily: Typography.headingFamily, color: Colors.text },
-  subtitle: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginTop: 8, marginBottom: 24 },
+  title: { fontSize: 32, fontFamily: Typography.headingFamily, color: Colors.text },
+  subtitle: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginTop: 6, marginBottom: 28 },
+
+  /* info card (not connected) */
   infoCard: {
     backgroundColor: Colors.surfaceWarm, borderRadius: 20,
-    padding: Spacing.card,
+    padding: 20, marginTop: 8,
   },
-  infoTitle: { fontSize: 18, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 6 },
+  infoTitle: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 6 },
   infoText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 16 },
   infoCta: {
-    backgroundColor: Colors.accent, minHeight: 48, borderRadius: 16,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 3,
+    backgroundColor: Colors.accent, height: 48, borderRadius: 16,
+    alignItems: 'center' as const, justifyContent: 'center' as const,
   },
   infoCtaText: { fontSize: 15, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
-  addCard: {
+
+  /* phone input (matches onboarding) */
+  sectionLabel: { fontSize: 13, fontFamily: Typography.headingFamilySemiBold, color: Colors.textSecondary, marginBottom: 10, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  inputCard: {
     backgroundColor: Colors.surface, borderRadius: 20,
-    padding: Spacing.card, marginBottom: 16,
+    paddingHorizontal: 20, paddingVertical: 18,
+    marginBottom: 14,
   },
-  sectionLabel: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 12 },
+  inputWrapper: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
+  prefix: { fontSize: 22, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
   input: {
-    height: 52, borderRadius: 16,
-    backgroundColor: Colors.cardStrong, paddingHorizontal: 16,
-    fontSize: 17, color: Colors.text,
+    flex: 1, fontSize: 22, color: Colors.text,
+    padding: 0, fontFamily: Typography.headingFamilySemiBold,
   },
-  helperText: { fontSize: 13, color: Colors.textMuted, marginTop: 8, marginBottom: 14 },
+  helper: { fontSize: 13, color: Colors.textMuted, marginTop: 8 },
+  helperReady: { color: Colors.safe },
+
+  /* add button */
   addButton: {
-    height: 52, borderRadius: 16,
-    backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center',
-    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 3,
+    height: 56, borderRadius: 18,
+    backgroundColor: Colors.accent, alignItems: 'center' as const, justifyContent: 'center' as const,
+    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 6,
+    marginBottom: 32,
   },
-  addButtonDisabled: { backgroundColor: Colors.disabled, shadowOpacity: 0 },
-  addButtonText: { fontSize: 16, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
-  shareLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-  shareLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
-  listSection: { marginTop: 4 },
-  emptyText: { fontSize: 15, color: Colors.textMuted, fontStyle: 'italic' },
+  addButtonDisabled: { backgroundColor: Colors.disabled, shadowOpacity: 0, elevation: 0 },
+  addButtonText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
+
+  /* list */
+  listSection: {},
+  listHeader: { flexDirection: 'row' as const, alignItems: 'baseline' as const, justifyContent: 'space-between' as const, marginBottom: 10 },
+  listCount: { fontSize: 12, color: Colors.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+
+  emptyCard: {
+    backgroundColor: Colors.surface, borderRadius: 20,
+    padding: 20, alignItems: 'center' as const,
+  },
+  emptyTitle: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 6 },
+  emptyText: { fontSize: 14, lineHeight: 20, color: Colors.textMuted, textAlign: 'center' as const },
+
+  listCard: {
+    backgroundColor: Colors.surface, borderRadius: 20,
+    paddingHorizontal: 16, paddingVertical: 4,
+  },
   contactRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: 14, borderTopWidth: 1, borderTopColor: Colors.border,
+    flexDirection: 'row' as const, alignItems: 'center' as const,
+    paddingVertical: 14,
   },
-  contactMeta: { flex: 1, paddingRight: 12 },
-  contactName: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.text },
-  contactPhone: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
-  removeButton: { minHeight: 40, justifyContent: 'center' },
-  removeText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.alertDark },
+  contactRowDivider: {
+    borderTopWidth: 1, borderTopColor: Colors.border,
+  },
+  avatar: {
+    width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2,
+    backgroundColor: Colors.safeLight,
+    justifyContent: 'center' as const, alignItems: 'center' as const,
+    marginRight: 12,
+  },
+  avatarText: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.safe },
+  contactMeta: { flex: 1 },
+  contactName: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
+  contactPhone: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
+  removeButton: { minHeight: 40, justifyContent: 'center' as const, paddingHorizontal: 8 },
+  removeText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.alertDark },
 });
