@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { BigButton } from '../components/BigButton';
+import { Emoji } from '../components/Emoji';
 import { haptics } from '../utils/haptics';
 
 type UserIntent = 'i-am-center' | 'join-circle';
@@ -49,8 +50,11 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
           <Pressable
             onPress={() => { haptics.light(); onSelect('i-am-center'); }}
             style={({ pressed }) => [styles.optionBtn, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel="Mam kod zaproszenia"
+            accessibilityHint="Wpisz kod i dołącz do kręgu bliskiej osoby"
           >
-            <Text style={styles.optionEmoji}>{'\u{1F4E9}'}</Text>
+            <Emoji style={styles.optionEmoji}>{'\u{1F4E9}'}</Emoji>
             <Text style={styles.optionBtnTitle}>Mam kod zaproszenia</Text>
             <Text style={styles.optionBtnHint}>Ktoś bliski wysłał mi kod. Chcę dołączyć i codziennie dawać znak.</Text>
           </Pressable>
@@ -58,8 +62,11 @@ export function IntentScreen({ onSelect, onBack, simplified = false }: IntentScr
           <Pressable
             onPress={() => { haptics.light(); onSelect('join-circle'); }}
             style={({ pressed }) => [styles.optionBtn, styles.optionBtnOutline, pressed && { opacity: 0.9, transform: [{ scale: 0.97 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel="Chcę zaprosić bliską osobę"
+            accessibilityHint="Utwórz kod i poproś bliską osobę o dołączenie"
           >
-            <Text style={styles.optionEmoji}>{'\u{1F49B}'}</Text>
+            <Emoji style={styles.optionEmoji}>{'\u{1F49B}'}</Emoji>
             <Text style={styles.optionBtnTitle}>Chcę zaprosić bliską osobę</Text>
             <Text style={styles.optionBtnHint}>Bliska osoba mieszka osobno. Chcę wiedzieć, że u niej jest OK.</Text>
           </Pressable>

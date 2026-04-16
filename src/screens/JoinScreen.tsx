@@ -209,6 +209,7 @@ export function JoinScreen({
           ref={inputRef} style={s.hiddenInput} value={code}
           onChangeText={handleCodeChange} keyboardType="number-pad"
           autoFocus={!hasPrefill} maxLength={6} caretHidden
+          editable={!loading}
         />
 
         {!!error && <Text style={s.error}>{error}</Text>}

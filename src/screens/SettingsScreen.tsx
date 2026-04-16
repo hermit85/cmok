@@ -189,9 +189,11 @@ export function SettingsScreen() {
             </Pressable>
           )}
           {displayPhone ? <Text style={styles.cardDetail}>{displayPhone}</Text> : null}
-          <Text style={styles.roleTag}>
-            {isRecipient ? 'Dostajesz codzienny znak' : isSignaler ? 'Dajesz codzienny znak' : ''}
-          </Text>
+          {isRecipient || isSignaler ? (
+            <Text style={styles.roleTag}>
+              {isRecipient ? 'Dostajesz codzienny znak' : 'Dajesz codzienny znak'}
+            </Text>
+          ) : null}
         </View>
 
         {/* Reminder — hidden until backend integration is ready */}

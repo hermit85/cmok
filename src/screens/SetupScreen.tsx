@@ -118,6 +118,9 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
               autoCorrect={false}
               spellCheck={false}
               autoFocus
+              editable={!loading}
+              returnKeyType="done"
+              onSubmitEditing={() => { if (isValid && !loading) handleSubmit(); }}
             />
           </View>
 

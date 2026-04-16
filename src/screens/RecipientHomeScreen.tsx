@@ -498,7 +498,14 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   /* ─── loading ─── */
   if (!pv && (circleLoading || dataLoading)) {
-    return <SafeAreaView style={st.container}><View style={st.loadingWrap}><ActivityIndicator size="large" color={Colors.accent} /></View></SafeAreaView>;
+    return (
+      <SafeAreaView style={st.container}>
+        <View style={st.loadingWrap}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+          <Text style={st.loadingText}>Sprawdzamy dzisiejszy znak…</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   /* ─── empty ─── */
@@ -733,7 +740,8 @@ const st = StyleSheet.create({
   containerAfter: { backgroundColor: Colors.background },
   scroll: { flexGrow: 1, paddingHorizontal: 24 },
   pushBannerWrap: { paddingHorizontal: 24, marginTop: 10 },
-  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 },
+  loadingText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
 
   /* sections */
   heroSection: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 16 },

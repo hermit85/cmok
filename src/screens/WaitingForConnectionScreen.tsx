@@ -59,7 +59,15 @@ export function WaitingForConnectionScreen() {
       Animated.spring(copyScale, { toValue: 1, tension: 140, friction: 6, useNativeDriver: true }).start();
       if (copyResetRef.current) clearTimeout(copyResetRef.current);
       copyResetRef.current = setTimeout(() => setJustCopied(false), 1800);
-    } catch { /* silent */ }
+    } catch {
+      // Clipboard can fail on some Android versions / WebView. Fall back to
+      // share sheet so the code isn't lost.
+      haptics.warning();
+      Alert.alert(
+        'Nie udało się skopiować',
+        'Możesz wysłać kod przez "Wyślij zaproszenie" poniżej.',
+      );
+    }
   };
 
   const handleShare = async () => {

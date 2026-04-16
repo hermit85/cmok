@@ -170,11 +170,11 @@ export function TrustedContactsScreen() {
 
             <Pressable
               onPress={handleAdd}
-              disabled={!isValid || saving}
+              disabled={!isValid || saving || !!justAddedName}
               style={({ pressed }) => [
                 styles.addButton,
-                (!isValid || saving) && styles.addButtonDisabled,
-                pressed && isValid && !saving && { opacity: 0.88, transform: [{ scale: 0.98 }] },
+                (!isValid || saving || !!justAddedName) && styles.addButtonDisabled,
+                pressed && isValid && !saving && !justAddedName && { opacity: 0.88, transform: [{ scale: 0.98 }] },
               ]}
             >
               {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.addButtonText}>Dodaj do kręgu</Text>}
