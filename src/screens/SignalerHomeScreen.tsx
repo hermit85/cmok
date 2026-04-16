@@ -37,7 +37,6 @@ const STATUS_MOODS = [
   { key: 'good', emoji: '\u{1F60A}', label: 'Dobrze' },
   { key: 'calm', emoji: '\u{1F60C}', label: 'Spokojnie' },
   { key: 'tired', emoji: '\u{1F634}', label: 'Zm\u{0119}czona' },
-  { key: 'walk', emoji: '\u{1F6B6}', label: 'Na spacerze' },
   { key: 'doctor', emoji: '\u{1FA7A}', label: 'U lekarza' },
 ] as const;
 
