@@ -114,7 +114,15 @@ export function useSignals() {
       message: message || null,
     });
 
-    if (error) throw error;
+    if (error) {
+      // Postgres unique_violation from the per-day dedup indexes
+      // (migrations 012 + 021). Treat as "already sent" rather than an error.
+      const code = (error as { code?: string }).code;
+      if (code === '23505' && (signalType === 'reaction' || signalType === 'poke')) {
+        return false;
+      }
+      throw error;
+    }
 
     // Push notifications (fire-and-forget)
     if (signalType === 'reaction') {

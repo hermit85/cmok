@@ -51,13 +51,20 @@ export function TrustedContactsScreen() {
       const msg = (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string')
         ? error.message
         : (error instanceof Error ? error.message : '');
+      const low = msg.toLowerCase();
       if (msg.includes('not found') || msg.includes('User not found')) {
         // Inline invite flow — not an error, just means we need to invite them
         setNotFoundPhone(`+48 ${displayNumber}`);
       } else if (msg.includes('already belongs') || msg.includes('already')) {
         Alert.alert('Już w kręgu', 'Ta osoba jest już w Twoim kręgu.');
+      } else if (low.includes('network') || low.includes('failed to fetch') || low.includes('timeout') || low.includes('offline')) {
+        Alert.alert('Brak internetu', 'Sprawdź połączenie i spróbuj ponownie za chwilę.');
+      } else if (low.includes('not authenticated') || low.includes('jwt') || low.includes('unauthor')) {
+        Alert.alert('Sesja wygasła', 'Zaloguj się ponownie i spróbuj jeszcze raz.');
+      } else if (low.includes('permission') || low.includes('forbid')) {
+        Alert.alert('Brak dostępu', 'Tę osobę może dodać ktoś inny z kręgu.');
       } else {
-        Alert.alert('Nie udało się dodać', msg || 'Sprawdź numer i spróbuj ponownie.');
+        Alert.alert('Nie udało się dodać', 'Sprawdź numer i spróbuj ponownie.');
       }
     }
   };

@@ -2,9 +2,11 @@ import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius } from '../constants/tokens';
+import { haptics } from '../utils/haptics';
 
 type ButtonVariant = 'solid' | 'outline' | 'soft';
 type ButtonSize = 'small' | 'medium' | 'large';
+type HapticKind = 'light' | 'medium' | 'heavy' | 'success' | 'none';
 
 interface BigButtonProps {
   title: string;
@@ -16,6 +18,8 @@ interface BigButtonProps {
   elevation?: boolean;
   disabled?: boolean;
   style?: ViewStyle | ViewStyle[];
+  /** Haptic played on press. Defaults to 'light'. Pass 'none' to opt out. */
+  haptic?: HapticKind;
 }
 
 export function BigButton({
@@ -28,7 +32,14 @@ export function BigButton({
   elevation = false,
   disabled,
   style,
+  haptic = 'light',
 }: BigButtonProps) {
+  const handlePress = () => {
+    if (disabled) return;
+    if (haptic !== 'none') haptics[haptic]();
+    onPress();
+  };
+
   const isLarge = size === 'large';
   const isSmall = size === 'small';
 
@@ -65,7 +76,7 @@ export function BigButton({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       disabled={disabled}
       style={({ pressed }) => [
         styles.button,

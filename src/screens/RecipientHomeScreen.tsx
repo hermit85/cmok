@@ -10,6 +10,7 @@ import { WeekDots } from '../components/WeekDots';
 import { Emoji } from '../components/Emoji';
 import { Particles } from '../components/Particles';
 import { SupportParticipants } from '../components/SupportParticipants';
+import { PushPermissionBanner } from '../components/PushPermissionBanner';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius } from '../constants/tokens';
@@ -569,6 +570,11 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         </View>
       </Modal>
       <ScreenHeader subtitle={`od ${nameFrom}`} />
+      {!pv ? (
+        <View style={st.pushBannerWrap}>
+          <PushPermissionBanner role="recipient" />
+        </View>
+      ) : null}
       <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false} bounces={false}>
         {/* ─── Warm toast on first view ─── */}
         {showWarmToast ? (
@@ -681,6 +687,7 @@ const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   containerAfter: { backgroundColor: Colors.background },
   scroll: { flexGrow: 1, paddingHorizontal: 24 },
+  pushBannerWrap: { paddingHorizontal: 24, marginTop: 10 },
   loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   /* sections */

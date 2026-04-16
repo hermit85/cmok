@@ -13,6 +13,7 @@ import { UrgentConfirmation } from '../components/UrgentConfirmation';
 import { MilestoneCelebration } from '../components/MilestoneCelebration';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Emoji } from '../components/Emoji';
+import { PushPermissionBanner } from '../components/PushPermissionBanner';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { haptics } from '../utils/haptics';
@@ -139,9 +140,21 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           if (ok) { setPendingSaved(false); setPendingCheckinTime(null); refreshCheckin(); refreshWeek(); refreshStats(); }
         });
       }
+      // Auto-resend urgent signal the moment the network returns. Without
+      // this, elderly users see "brak internetu" and don't know to retry.
+      if (!off && localUrgentOffline) {
+        sendUrgentSignal()
+          .then(() => {
+            analytics.urgentTriggered(false);
+            setLocalUrgentOffline(false);
+          })
+          .catch(() => {
+            // Keep localUrgentOffline=true so the retry affordance stays visible.
+          });
+      }
     });
     return () => unsub();
-  }, [pendingSaved, refreshCheckin, refreshWeek]);
+  }, [pendingSaved, refreshCheckin, refreshWeek, refreshStats, localUrgentOffline, sendUrgentSignal]);
 
   // Sync offline pending ONCE on mount (not on every callback identity change)
   const hasSyncedPending = useRef(false);
@@ -463,7 +476,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           </Text>
           <Text style={s.urgentBody}>
             {localUrgentOffline
-              ? 'Bez internetu nie możemy wysłać wiadomości. Spróbuj ponownie, gdy wrócisz online.'
+              ? 'Jak tylko internet wróci, wyślemy wiadomość do bliskich. Nie musisz nic robić.'
               : claimer ? `${claimer} już się tym zajmuje.` : 'Czekamy, aż ktoś z kręgu odpowie.'}
           </Text>
           {effectiveAlert ? (
@@ -595,6 +608,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       <ScreenHeader subtitle={hasName ? `dla ${rf.genitive}` : undefined} />
 
       {isOffline ? <Text style={s.offlineBadge}>Brak internetu</Text> : null}
+      {!pv ? (
+        <View style={s.pushBannerWrap}>
+          <PushPermissionBanner role="signaler" />
+        </View>
+      ) : null}
 
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} bounces={false}>
         {/* ─── Warm toast ─── */}
@@ -765,6 +783,7 @@ const s = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8 },
   offlineBadge: { textAlign: 'center', fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, backgroundColor: Colors.surface, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', marginTop: 4 },
+  pushBannerWrap: { paddingHorizontal: 24, marginTop: 10 },
 
   /* button */
   buttonArea: { justifyContent: 'center', alignItems: 'center', height: BTN + 48 },

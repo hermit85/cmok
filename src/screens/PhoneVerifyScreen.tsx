@@ -16,6 +16,7 @@ import { analytics } from '../services/analytics';
 import { normalizeAppRole } from '../utils/roles';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
+import { haptics } from '../utils/haptics';
 import type { AppRole, RelationshipStatus } from '../types';
 
 export interface VerifyResult {
@@ -123,6 +124,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
 
   const handleSend = async () => {
     if (!isValid) return;
+    haptics.medium();
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOtp({ phone: formattedPhone });
@@ -130,8 +132,10 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       analytics.onboardingPhoneSent();
       setFullPhone(formattedPhone);
       setResendCooldown(60);
+      haptics.success();
       transitionToCode();
     } catch (err: any) {
+      haptics.error();
       const errMsg = err?.message || '';
       Alert.alert('Coś poszło nie tak',
         errMsg.includes('sms_send_failed') ? 'Usługa SMS jest tymczasowo niedostępna. Spróbuj za chwilę.'
@@ -202,11 +206,13 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
         if (best) relationshipStatus = best.status as Exclude<RelationshipStatus, 'none'>;
       }
 
+      haptics.success();
       onVerified({
         profile: profile ? { id: profile.id, role: normalizeAppRole(profile.role) as AppRole, name: profile.name } : null,
         relationshipStatus,
       });
     } catch (err: any) {
+      haptics.error();
       const msg = err?.message || '';
       if (msg.includes('invalid') || msg.includes('expired') || msg.includes('otp')) {
         setCodeError('Nieprawidłowy kod. Sprawdź i spróbuj ponownie.');
@@ -224,11 +230,14 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
 
   const handleResend = async () => {
     if (resendCooldown > 0) return;
+    haptics.light();
     try {
       await supabase.auth.signInWithOtp({ phone: fullPhone });
       setResendCooldown(60);
+      haptics.success();
       Alert.alert('Wysłano', 'Nowy kod SMS został wysłany.');
     } catch {
+      haptics.error();
       Alert.alert('Coś poszło nie tak', 'Nie udało się wysłać nowego kodu.');
     }
   };
@@ -271,7 +280,11 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                       ref={phoneInputRef}
                       style={s.input}
                       value={displayNumber}
-                      onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 9))}
+                      onChangeText={(t) => {
+                        const next = t.replace(/\D/g, '').slice(0, 9);
+                        if (next.length !== phone.length) haptics.selection();
+                        setPhone(next);
+                      }}
                       keyboardType="phone-pad"
                       autoFocus
                       placeholder="600 100 200"
@@ -284,7 +297,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
 
                 {/* Terms acceptance */}
                 <Pressable
-                  onPress={() => setTermsAccepted(!termsAccepted)}
+                  onPress={() => { haptics.light(); setTermsAccepted(!termsAccepted); }}
                   style={s.termsRow}
                   hitSlop={8}
                 >
@@ -329,7 +342,11 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                     ref={codeInputRef}
                     style={s.hiddenInput}
                     value={code}
-                    onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))}
+                    onChangeText={(t) => {
+                      const next = t.replace(/\D/g, '').slice(0, 6);
+                      if (next.length !== code.length) haptics.selection();
+                      setCode(next);
+                    }}
                     keyboardType="number-pad"
                     autoFocus
                     maxLength={6}
