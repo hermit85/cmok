@@ -134,10 +134,11 @@ const REACTIONS = [
   { emoji: '\u{1F31E}', label: 'Super!', bg: '#FFF8E1' },
 ] as const;
 
-function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentReactionToday }: {
+function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentReactionToday, streak }: {
   signalerName: string; signalerId: string; preview: boolean;
   sendSignal: (toUserId: string, emoji: string, message?: string, signalType?: string) => Promise<boolean>;
   hasSentReactionToday: (toUserId: string) => boolean;
+  streak?: number;
 }) {
   const alreadySent = !preview && hasSentReactionToday(signalerId);
   const [justSent, setJustSent] = useState<string | null>(null);
@@ -192,6 +193,9 @@ function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentRea
           <Animated.View style={[st.responseSentPill, justSent ? { transform: [{ scale: sentScale }] } : undefined]}>
             <Text style={st.responseSentText}>{signalerName} zobaczy Twój gest</Text>
           </Animated.View>
+          {streak && streak >= 2 ? (
+            <Text style={st.streakText}>{streak} {streak === 7 ? 'dni z rzędu — cały tydzień' : streak >= 14 ? `dni z rzędu — ${Math.floor(streak / 7)} tygodnie` : 'dni z rzędu'}</Text>
+          ) : null}
           <Text style={st.tomorrowHook}>Do zobaczenia jutro</Text>
         </>
       ) : (
@@ -623,7 +627,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           ) : null}
           {effOk && sigId ? (
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
-              <ResponseTap signalerName={name} signalerId={sigId} preview={pv} sendSignal={sendSignal} hasSentReactionToday={hasSentReactionToday} />
+              <ResponseTap signalerName={name} signalerId={sigId} preview={pv} sendSignal={sendSignal} hasSentReactionToday={hasSentReactionToday} streak={sigStreak} />
             </Animated.View>
           ) : null}
           {/* Poke — standalone gesture, only before check-in (ResponseTap serves this role after) */}
@@ -736,6 +740,7 @@ const st = StyleSheet.create({
   },
   responseSentText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
   tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 12, textAlign: 'center' },
+  streakText: { fontSize: 14, color: Colors.safeStrong, marginTop: 10, textAlign: 'center' as const, fontFamily: Typography.fontFamilyMedium },
 
   /* viral — subtle link */
   /* poke — standalone gesture */
