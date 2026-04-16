@@ -70,6 +70,32 @@ export function getRelationForms(label?: string | null) {
     };
   }
 
+  // Masculine names ending in consonant (e.g. Darek, Tomek, Paweł, Janusz)
+  // -ek → stem loses 'e': Darek → Darka, Tomek → Tomka
+  if (value.endsWith('ek') && value.length > 2) {
+    const stem = value.slice(0, -2) + 'k';
+    return {
+      nominative: value,
+      genitive: `${stem}a`,
+      dative: `${stem}owi`,
+      instrumental: `${stem}iem`,
+      isFallback: false,
+    };
+  }
+
+  // General masculine (add -a for genitive, -owi for dative, -em for instrumental)
+  const lastChar = value.charCodeAt(value.length - 1);
+  const isConsonant = lastChar >= 65 && !['a', 'e', 'i', 'o', 'u', 'y'].includes(value.charAt(value.length - 1).toLowerCase());
+  if (isConsonant) {
+    return {
+      nominative: value,
+      genitive: `${value}a`,
+      dative: `${value}owi`,
+      instrumental: `${value}em`,
+      isFallback: false,
+    };
+  }
+
   return {
     nominative: value,
     genitive: value,

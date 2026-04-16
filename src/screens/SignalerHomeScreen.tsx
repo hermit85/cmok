@@ -624,7 +624,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     <SafeAreaView style={[s.container, showChecked && s.containerAfter]}>
       <UrgentConfirmation visible={showUrgentModal} onConfirm={handleUrgentConfirm} onCancel={() => setShowUrgentModal(false)} circleCount={recipients.length} />
       <MilestoneCelebration visible={milestoneVisible} streak={currentStreak} recipientName={primaryName} onDismiss={() => setMilestoneVisible(false)} />
-      <ScreenHeader subtitle={hasName ? name : undefined} />
+      <ScreenHeader subtitle={hasName ? `dla ${rf.genitive}` : undefined} />
 
       {isOffline ? <Text style={s.offlineBadge}>Brak internetu</Text> : null}
 
@@ -762,6 +762,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             </View>
           ) : null}
 
+          {/* ─── Circle CTA: build safety network ─── */}
+          {showChecked ? (
+            <Pressable onPress={() => router.push('/trusted-contacts')} style={({ pressed }) => [s.circleLink, pressed && { opacity: 0.6 }]}>
+              <Text style={s.circleLinkText}>Dodaj kogoś do kręgu bliskich</Text>
+            </Pressable>
+          ) : null}
+
         </View>
 
         {/* ─── URGENT BUTTON ─── */}
@@ -862,6 +869,8 @@ const s = StyleSheet.create({
   statNumber: { fontSize: 24, fontFamily: Typography.headingFamily, color: Colors.safe },
   statLabel: { fontSize: 11, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, marginTop: 2 },
   statDivider: { width: 1, height: 28, backgroundColor: Colors.safe, opacity: 0.2 },
+  circleLink: { marginTop: 18, minHeight: 44, justifyContent: 'center' as const, alignItems: 'center' as const },
+  circleLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safe },
 
   /* urgent button — visible but not alarming */
   urgentBtn: {
