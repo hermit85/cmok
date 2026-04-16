@@ -261,8 +261,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const [lastContact, setLastContact] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [connectionDays, setConnectionDays] = useState<number | null>(null);
-  const [nudgeSent, setNudgeSent] = useState(false);
-  const [nudgeSending, setNudgeSending] = useState(false);
 
   const afterFade = useRef(new Animated.Value(0)).current;
 
@@ -447,17 +445,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     try { await claim(currentAlert.id); analytics.urgentClaimed(); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); }
   };
   const handleResolve = async () => { if (!currentAlert) return; try { await resolve(currentAlert.id); analytics.urgentResolved(); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
-  const handleNudge = async () => {
-    if (nudgeSent || nudgeSending) return;
-    setNudgeSending(true);
-    try {
-      const { error: nudgeErr } = await supabase.functions.invoke('nudge-signal', { body: {} });
-      if (nudgeErr) throw nudgeErr;
-      analytics.nudgeSent();
-      setNudgeSent(true);
-    } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.'); }
-    finally { setNudgeSending(false); }
-  };
 
   const [morningSent, setMorningSent] = useState(false);
   const handleMorningThought = async (emoji: string, toUserId: string) => {
@@ -681,18 +668,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         <View style={st.rhythmSection}>
           {effWeek.length > 0 ? <WeekDots days={effWeek} /> : null}
           {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
-          {/* Nudge button — only when no sign today */}
-          {!effOk && sigId && !pv ? (
-            <Pressable
-              onPress={handleNudge}
-              disabled={nudgeSent || nudgeSending}
-              style={({ pressed }) => [st.nudgeBtn, pressed && !nudgeSent && { opacity: 0.7 }]}
-            >
-              <Text style={[st.nudgeBtnText, nudgeSent && st.nudgeBtnTextSent]}>
-                {nudgeSent ? <Text>Wysłano <Text style={{ fontFamily: undefined }}>✓</Text></Text> : nudgeSending ? <Text>...</Text> : <Text>Przypomnij delikatnie</Text>}
-              </Text>
-            </Pressable>
-          ) : null}
           {sigId ? <MonthGrid signalerId={sigId} /> : null}
         </View>
       </ScrollView>
@@ -744,15 +719,6 @@ const st = StyleSheet.create({
   morningSymbol: { fontSize: 20, marginBottom: 4 },
   morningLabel: { fontSize: 10, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
   morningSent: { fontSize: 14, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: 20 },
-
-  /* nudge */
-  nudgeBtn: {
-    marginTop: 16, paddingVertical: 12, paddingHorizontal: 24,
-    backgroundColor: Colors.surface, borderRadius: 999, borderWidth: 1, borderColor: Colors.border,
-    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 1,
-  },
-  nudgeBtnText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
-  nudgeBtnTextSent: { color: Colors.safe },
 
   /* rhythm */
   connectionLabel: { fontSize: 12, color: Colors.textSecondary, marginTop: 8, textAlign: 'center' },
