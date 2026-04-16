@@ -409,7 +409,11 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       if (msg === 'NO_RELATIONSHIP') {
         Alert.alert('Brak połączenia', 'Nie masz aktywnego połączenia. Zaproś bliską osobę do kręgu.');
       } else if (msg === 'NO_AUTH') {
-        Alert.alert('Zaloguj się', 'Połącz telefon z kontem.');
+        Alert.alert(
+          'Sesja wygasła',
+          'Twoja sesja wygasła, zaloguj się ponownie.',
+          [{ text: 'OK', onPress: () => router.replace('/onboarding') }],
+        );
       } else {
         Alert.alert('Nie udało się', 'Coś poszło nie tak. Spróbuj ponownie za chwilę.');
       }
