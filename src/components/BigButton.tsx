@@ -20,6 +20,9 @@ interface BigButtonProps {
   style?: ViewStyle | ViewStyle[];
   /** Haptic played on press. Defaults to 'light'. Pass 'none' to opt out. */
   haptic?: HapticKind;
+  /** Override accessibility label. Defaults to the button title. */
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 export function BigButton({
@@ -33,6 +36,8 @@ export function BigButton({
   disabled,
   style,
   haptic = 'light',
+  accessibilityLabel,
+  accessibilityHint,
 }: BigButtonProps) {
   const handlePress = () => {
     if (disabled) return;
@@ -78,6 +83,10 @@ export function BigButton({
     <Pressable
       onPress={handlePress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: !!disabled }}
       style={({ pressed }) => [
         styles.button,
         isLarge ? styles.large : isSmall ? styles.small : styles.medium,

@@ -658,7 +658,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               <View style={s.loadingCircle}><ActivityIndicator size="large" color={Colors.safe} /></View>
             ) : (
               <Animated.View style={!buttonDone && !buttonDisabled ? {
-                  shadowColor: '#2EC4B6',
+                  shadowColor: Colors.safe,
                   shadowOffset: { width: 0, height: 8 },
                   shadowOpacity: breatheShadow,
                   shadowRadius: 32,
@@ -911,7 +911,7 @@ const s = StyleSheet.create({
   urgentBody: { fontSize: 16, lineHeight: 24, color: Colors.textSecondary, marginTop: 8, marginBottom: 18 },
   urgentDetail: { backgroundColor: Colors.card, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, padding: 18, marginBottom: 14 },
   urgentDetailText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 2 },
-  urgentResolveBtn: { height: 56, borderRadius: 18, backgroundColor: Colors.safe, alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 12, shadowColor: '#2EC4B6', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 6 },
+  urgentResolveBtn: { height: 56, borderRadius: 18, backgroundColor: Colors.safe, alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 12, shadowColor: Colors.safe, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 6 },
   urgentResolveBtnText: { fontSize: 17, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
   urgentRetryBtn: { height: 56, borderRadius: 16, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
   urgentRetryBtnOff: { backgroundColor: Colors.disabled },

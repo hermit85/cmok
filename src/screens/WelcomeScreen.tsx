@@ -182,7 +182,7 @@ const s = StyleSheet.create({
   primaryBtn: {
     backgroundColor: Colors.accent, minHeight: 56, borderRadius: 18,
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 },
+    shadowColor: Colors.accent, shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35, shadowRadius: 20, elevation: 5,
   },
   primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },

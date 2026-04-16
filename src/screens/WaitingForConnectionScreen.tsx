@@ -259,7 +259,7 @@ const s = StyleSheet.create({
   shareBtn: {
     backgroundColor: Colors.accent, minHeight: 52, borderRadius: 16,
     justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 3,
+    shadowColor: Colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 3,
   },
   shareBtnText: { fontSize: 16, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
 

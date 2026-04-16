@@ -126,35 +126,42 @@ function RootLayout() {
   const lastPushRegisterRef = useRef(0);
   useEffect(() => {
     const PUSH_REGISTER_THROTTLE_MS = 30_000;
-    const tryRegister = (reason: string) => {
+
+    // Server-side validation before registering: getUser() hits the server
+    // and fails if the cached JWT is revoked / account deleted. Without this
+    // a stale session would silently 401 inside register-device.
+    const tryRegister = async (reason: string) => {
       const now = Date.now();
       if (now - lastPushRegisterRef.current < PUSH_REGISTER_THROTTLE_MS) return;
       lastPushRegisterRef.current = now;
-      registerPushToken()
-        .then((result) => {
-          if (result.status !== 'registered') {
-            // Notify observability: silent push failures are a release-blocker
-            Sentry.captureMessage(`push_register_${result.status}`, {
-              level: 'warning',
-              extra: { reason, detail: result.reason || null },
-            });
-          }
-        })
-        .catch((err) => {
-          Sentry.captureException(err, { extra: { context: 'push_register', reason } });
-        });
+      try {
+        const { data: { user }, error: userErr } = await supabase.auth.getUser();
+        if (userErr || !user) {
+          // Session dead or not hydrated yet; we'll be called again on
+          // SIGNED_IN / INITIAL_SESSION / TOKEN_REFRESHED.
+          lastPushRegisterRef.current = 0;
+          return;
+        }
+        const result = await registerPushToken();
+        if (result.status !== 'registered') {
+          Sentry.captureMessage(`push_register_${result.status}`, {
+            level: 'warning',
+            extra: { reason, detail: result.reason || null },
+          });
+        }
+      } catch (err) {
+        Sentry.captureException(err, { extra: { context: 'push_register', reason } });
+      }
     };
 
-    // Only register on mount if there's a valid session (avoids 401 on stale/deleted accounts)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) tryRegister('mount');
-    });
-
-    // Re-register after login + identify in PostHog
+    // Auth state change catches all hydration paths:
+    //   - INITIAL_SESSION: cold start after restart (cached session restored)
+    //   - SIGNED_IN:       fresh login via SMS
+    //   - TOKEN_REFRESHED: long-lived session refresh
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
-        tryRegister('signed_in');
-        if (session?.user?.id) {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+        if (session?.user) {
+          tryRegister(event.toLowerCase());
           posthog.identify(session.user.id, { phone: session.user.phone ?? '' });
         }
       }
@@ -166,9 +173,7 @@ function RootLayout() {
     // Re-register on app foreground (handles permission flips + rotated tokens)
     const appStateSub = AppState.addEventListener('change', (next) => {
       if (next !== 'active') return;
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) tryRegister('foreground');
-      });
+      tryRegister('foreground');
     });
 
     return () => {

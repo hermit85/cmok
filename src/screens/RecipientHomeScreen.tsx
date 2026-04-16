@@ -845,7 +845,7 @@ const st = StyleSheet.create({
   promptCard: { backgroundColor: Colors.background, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 28, paddingTop: 28, paddingBottom: 40 },
   promptTitle: { fontSize: 22, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 10 },
   promptBody: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 24 },
-  promptCta: { height: 56, borderRadius: 18, backgroundColor: Colors.safe, alignItems: 'center' as const, justifyContent: 'center' as const, shadowColor: '#2EC4B6', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 6 },
+  promptCta: { height: 56, borderRadius: 18, backgroundColor: Colors.safe, alignItems: 'center' as const, justifyContent: 'center' as const, shadowColor: Colors.safe, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 20, elevation: 6 },
   promptCtaText: { fontSize: 17, fontFamily: Typography.fontFamilyBold, color: '#FFFFFF' },
   promptDismiss: { minHeight: 44, alignItems: 'center' as const, justifyContent: 'center' as const, marginTop: 8 },
   promptDismissText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted },

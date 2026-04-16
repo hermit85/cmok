@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   addButton: {
     height: 56, borderRadius: 18,
     backgroundColor: Colors.accent, alignItems: 'center' as const, justifyContent: 'center' as const,
-    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 6,
+    shadowColor: Colors.accent, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 6,
     marginBottom: 32,
   },
   addButtonDisabled: { backgroundColor: Colors.disabled, shadowOpacity: 0, elevation: 0 },

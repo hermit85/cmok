@@ -420,7 +420,7 @@ const s = StyleSheet.create({
   termsDisclaimer: { fontSize: 11, color: Colors.textMuted, marginTop: 8, textAlign: 'center' as const },
 
   sendBtn: { minHeight: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 16 },
-  sendBtnActive: { backgroundColor: Colors.accent, shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5 },
+  sendBtnActive: { backgroundColor: Colors.accent, shadowColor: Colors.accent, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5 },
   sendBtnDisabled: { backgroundColor: Colors.accent, opacity: 0.4 },
   sendBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
 

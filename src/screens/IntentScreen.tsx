@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
   simplifiedSubtitle: { fontSize: Typography.body, color: Colors.textSecondary, lineHeight: 23, marginBottom: 32, maxWidth: 300 },
   primaryBtn: {
     backgroundColor: Colors.accent, minHeight: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5,
+    shadowColor: Colors.accent, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5,
   },
   primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   secondaryBtn: { minHeight: 52, justifyContent: 'center', alignItems: 'center', marginTop: 12 },

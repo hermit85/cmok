@@ -210,33 +210,49 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
       return null;
     }
 
-    // Reuse existing pending pair or create new one
-    const { data: existing } = await supabase
-      .from('care_pairs')
-      .select('id')
-      .eq(col, user.id)
-      .eq('status', 'pending')
-      .limit(1)
-      .maybeSingle();
-
     // Retry up to 5 times on invite_code unique_violation (real collisions are
     // rare because of pickUniqueInviteCode pre-check; this is the final guard).
+    // Re-check pending row each iteration because it can disappear between
+    // pre-check and write (e.g. another device cleaning up), which would
+    // otherwise yield a silent 0-row update that looks like success.
     let code = await pickUniqueInviteCode();
+    let success = false;
+    let lastError: unknown = null;
     for (let attempt = 0; attempt < 5; attempt++) {
-      const { error: writeErr } = existing?.id
-        ? await supabase.from('care_pairs')
-            .update({ invite_code: code, invite_expires_at: expiresAt })
-            .eq('id', existing.id)
-        : await supabase.from('care_pairs').insert({
-            [col]: user.id,
-            invite_code: code,
-            invite_expires_at: expiresAt,
-            status: 'pending',
-          });
-      if (!writeErr) break;
-      if (!isInviteCodeCollision(writeErr) || attempt === 4) throw writeErr;
+      const { data: existing } = await supabase
+        .from('care_pairs')
+        .select('id')
+        .eq(col, user.id)
+        .eq('status', 'pending')
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { data: updated, error: writeErr } = await supabase
+          .from('care_pairs')
+          .update({ invite_code: code, invite_expires_at: expiresAt })
+          .eq('id', existing.id)
+          .select('id');
+        if (!writeErr && (updated?.length ?? 0) === 0) continue; // row vanished
+        if (!writeErr) { success = true; break; }
+        lastError = writeErr;
+        if (!isInviteCodeCollision(writeErr)) throw writeErr;
+        code = await pickUniqueInviteCode();
+        continue;
+      }
+
+      const { error: writeErr } = await supabase.from('care_pairs').insert({
+        [col]: user.id,
+        invite_code: code,
+        invite_expires_at: expiresAt,
+        status: 'pending',
+      });
+      if (!writeErr) { success = true; break; }
+      lastError = writeErr;
+      if (!isInviteCodeCollision(writeErr)) throw writeErr;
       code = await pickUniqueInviteCode();
     }
+    if (!success) throw lastError ?? new Error('Nie udało się utworzyć zaproszenia');
 
     logInviteEvent('invite_created', { code });
 

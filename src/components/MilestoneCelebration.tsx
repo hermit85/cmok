@@ -102,7 +102,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.accent, minHeight: 52, borderRadius: 16,
     paddingHorizontal: 32, justifyContent: 'center', alignItems: 'center',
     width: '100%',
-    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 4 },
+    shadowColor: Colors.accent, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 16,
   },
   shareBtnText: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },

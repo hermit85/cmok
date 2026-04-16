@@ -145,10 +145,10 @@ const s = StyleSheet.create({
   toggleText: { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
   grid: { marginTop: 8, alignItems: 'center' },
   row: { flexDirection: 'row', gap: 6, marginBottom: 6 },
-  dot: { width: DOT, height: DOT, borderRadius: DOT / 2, backgroundColor: '#E6DDD4' },
+  dot: { width: DOT, height: DOT, borderRadius: DOT / 2, backgroundColor: Colors.border },
   dotOk: { backgroundColor: Colors.safe },
-  dotMissing: { backgroundColor: '#DDD5CC' },
-  dotToday: { backgroundColor: '#E6DDD4' },
+  dotMissing: { backgroundColor: Colors.borderStrong },
+  dotToday: { backgroundColor: Colors.border },
   dotTodayBorder: { borderWidth: 1.5, borderColor: Colors.accent },
   dotPad: { opacity: 0 },
 });

@@ -84,7 +84,7 @@ const s = StyleSheet.create({
   card: {
     backgroundColor: Colors.background, borderRadius: 28, padding: 24,
     alignItems: 'center', width: '100%', maxWidth: 360,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 30, elevation: 10,
+    shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 30, elevation: 10,
   },
 
   /* hero */
@@ -129,7 +129,7 @@ const s = StyleSheet.create({
     alignSelf: 'stretch',
     justifyContent: 'center' as const, alignItems: 'center' as const,
     marginBottom: 8,
-    shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 },
+    shadowColor: Colors.accent, shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3, shadowRadius: 16, elevation: 6,
   },
   confirmText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },

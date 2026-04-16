@@ -44,43 +44,60 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
 
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-      const { data: existingPending } = await supabase
-        .from('care_pairs')
-        .select('id')
-        .eq('caregiver_id', user.id)
-        .eq('status', 'pending')
-        .limit(1)
-        .maybeSingle();
-
       // Retry on rare invite_code unique_violation. The UNIQUE partial index
       // (migration 020) is the authoritative guard; pickUniqueInviteCode is
-      // an optimistic pre-check that keeps retries to a minimum.
+      // an optimistic pre-check. We also re-check the pending row each
+      // iteration because it can disappear between pre-check and write
+      // (e.g. another device cleaning up), which would otherwise yield a
+      // silent 0-row update that looks like success.
       let code = await pickUniqueInviteCode();
+      let success = false;
       let lastError: unknown = null;
       for (let attempt = 0; attempt < 5; attempt++) {
-        const { error } = existingPending?.id
-          ? await supabase.from('care_pairs')
-              .update({
-                invite_code: code,
-                invite_expires_at: expiresAt,
-                signaler_label: label.trim(),
-                senior_name: label.trim(),
-              })
-              .eq('id', existingPending.id)
-          : await supabase.from('care_pairs').insert({
-              caregiver_id: user.id,
+        const { data: currentPending } = await supabase
+          .from('care_pairs')
+          .select('id')
+          .eq('caregiver_id', user.id)
+          .eq('status', 'pending')
+          .limit(1)
+          .maybeSingle();
+
+        if (currentPending?.id) {
+          const { data: updated, error } = await supabase
+            .from('care_pairs')
+            .update({
               invite_code: code,
               invite_expires_at: expiresAt,
-              status: 'pending',
               signaler_label: label.trim(),
               senior_name: label.trim(),
-            });
-        if (!error) { lastError = null; break; }
+            })
+            .eq('id', currentPending.id)
+            .select('id');
+          if (!error && (updated?.length ?? 0) === 0) {
+            // Row disappeared between select and update — retry (will insert).
+            continue;
+          }
+          if (!error) { success = true; break; }
+          lastError = error;
+          if (!isInviteCodeCollision(error)) throw error;
+          code = await pickUniqueInviteCode();
+          continue;
+        }
+
+        const { error } = await supabase.from('care_pairs').insert({
+          caregiver_id: user.id,
+          invite_code: code,
+          invite_expires_at: expiresAt,
+          status: 'pending',
+          signaler_label: label.trim(),
+          senior_name: label.trim(),
+        });
+        if (!error) { success = true; break; }
         lastError = error;
         if (!isInviteCodeCollision(error)) throw error;
         code = await pickUniqueInviteCode();
       }
-      if (lastError) throw lastError;
+      if (!success) throw lastError ?? new Error('Nie udało się utworzyć zaproszenia');
 
       logInviteEvent('invite_created', { label: label.trim() });
       onDone();
@@ -182,7 +199,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontSize: 18, color: Colors.text },
   helperText: { fontSize: 13, color: Colors.textMuted, marginTop: 12 },
   primaryBtn: { minHeight: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginTop: 24 },
-  btnActive: { backgroundColor: Colors.accent, shadowColor: '#E85D3A', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5 },
+  btnActive: { backgroundColor: Colors.accent, shadowColor: Colors.accent, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 5 },
   btnDisabled: { backgroundColor: Colors.accent, opacity: 0.4 },
   primaryBtnText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   backButton: {

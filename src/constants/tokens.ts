@@ -1,5 +1,7 @@
 /** Shared design tokens — single source of truth for radius, spacing, shadows */
 
+import { Colors } from './colors';
+
 export const Radius = {
   sm: 16,
   md: 24,
@@ -28,31 +30,40 @@ export const Spacing = {
 
 export const Shadows = {
   card: {
-    shadowColor: '#201813',
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 8 } as const,
     shadowOpacity: 0.06,
     shadowRadius: 24,
     elevation: 3,
   },
   elevated: {
-    shadowColor: '#201813',
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 12 } as const,
     shadowOpacity: 0.10,
     shadowRadius: 28,
     elevation: 6,
   },
   button: {
-    shadowColor: '#201813',
+    shadowColor: Colors.shadow,
     shadowOffset: { width: 0, height: 6 } as const,
     shadowOpacity: 0.14,
     shadowRadius: 18,
     elevation: 4,
   },
+  /** Teal glow for safe/confirm CTAs (e.g. Daj znak button shadow). */
   primaryGlow: {
-    shadowColor: '#2EC4B6',
+    shadowColor: Colors.safe,
     shadowOffset: { width: 0, height: 4 } as const,
     shadowOpacity: 0.30,
     shadowRadius: 20,
     elevation: 6,
+  },
+  /** Terracotta glow for primary CTA buttons. */
+  accentGlow: {
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 6 } as const,
+    shadowOpacity: 0.30,
+    shadowRadius: 18,
+    elevation: 5,
   },
 } as const;
