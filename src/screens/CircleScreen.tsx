@@ -125,7 +125,12 @@ export function CircleScreen() {
 
         {/* ─── Viral: peer recommendation ─── */}
         {isActive ? (
-          <Pressable onPress={handleSharePeer} style={({ pressed }) => [st.peerCard, pressed && { opacity: 0.85 }]}>
+          <Pressable
+            onPress={handleSharePeer}
+            style={({ pressed }) => [st.peerCard, pressed && { opacity: 0.85 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Poleć cmok bliskiej osobie"
+          >
             <Text style={st.peerTitle}>Znasz kogoś, kto mieszka sam?</Text>
             <Text style={st.peerBody}>cmok pomaga. Poleć koleżance, sąsiadce, bratu.</Text>
             <Text style={st.peerCta}>Podziel się →</Text>
@@ -139,7 +144,7 @@ export function CircleScreen() {
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
-  back: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginBottom: 12 },
+  back: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginBottom: 20 },
   backText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
   title: { fontSize: 32, fontFamily: Typography.headingFamily, color: Colors.text },
   subtitle: { fontSize: 15, color: Colors.textSecondary, marginTop: 4, marginBottom: 32 },

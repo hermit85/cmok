@@ -129,13 +129,17 @@ export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
         <Pressable
           onPress={goNext}
           style={({ pressed }) => [s.primaryBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+          accessibilityRole="button"
+          accessibilityLabel={isLast ? 'Zacznij używać cmok' : 'Dalej'}
         >
           <Text style={s.primaryBtnText}>{isLast ? 'Zacznij' : 'Dalej'}</Text>
         </Pressable>
 
         <Pressable
-          onPress={onLogin || onStart}
+          onPress={() => { haptics.light(); (onLogin || onStart)(); }}
           style={({ pressed }) => [s.loginLink, pressed && { opacity: 0.6 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Mam już konto, zaloguj"
         >
           <Text style={s.loginText}>Mam już konto</Text>
         </Pressable>

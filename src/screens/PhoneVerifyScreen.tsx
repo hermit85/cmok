@@ -55,6 +55,7 @@ function CodeBoxes({ code }: { code: string }) {
 export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLabel }: Props) {
   const [phase, setPhase] = useState<'phone' | 'code'>('phone');
   const [phone, setPhone] = useState('');
+  const [phoneFocused, setPhoneFocused] = useState(false);
   const [fullPhone, setFullPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -273,7 +274,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                 <Text style={s.title}>Podaj numer Twojego telefonu</Text>
                 <Text style={s.subtitle}>Użyjemy go tylko do wejścia do cmok.</Text>
 
-                <Pressable style={s.inputCard} onPress={() => phoneInputRef.current?.focus()}>
+                <Pressable style={[s.inputCard, phoneFocused && s.inputCardFocused]} onPress={() => phoneInputRef.current?.focus()}>
                   <View style={s.inputWrapper}>
                     <Text style={s.prefix}>+48</Text>
                     <TextInput
@@ -290,6 +291,8 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                       placeholder="600 100 200"
                       placeholderTextColor={Colors.textSoft}
                       maxLength={11}
+                      onFocus={() => setPhoneFocused(true)}
+                      onBlur={() => setPhoneFocused(false)}
                     />
                   </View>
                   <Text style={[s.helper, isValid && s.helperReady]}>{helperText}</Text>
@@ -394,7 +397,9 @@ const s = StyleSheet.create({
   /* phone input */
   inputCard: {
     backgroundColor: Colors.surface, borderRadius: 16, padding: 16,
+    borderWidth: 2, borderColor: 'transparent',
   },
+  inputCardFocused: { borderColor: Colors.safe, backgroundColor: Colors.cardStrong },
   inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 16, paddingHorizontal: 18, minHeight: 56 },
   prefix: { fontSize: 20, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, marginRight: 8 },
   input: { flex: 1, fontSize: 20, color: Colors.text, letterSpacing: 1.5 },

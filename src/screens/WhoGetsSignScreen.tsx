@@ -66,6 +66,9 @@ export function WhoGetsSignScreen({ onContinue, onBack }: WhoGetsSignScreenProps
                   name === suggestion && s.chipActive,
                   pressed && { opacity: 0.88 },
                 ]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: name === suggestion }}
+                accessibilityLabel={`Wybierz ${suggestion}`}
               >
                 <Text style={[s.chipText, name === suggestion && s.chipTextActive]}>{suggestion}</Text>
               </Pressable>

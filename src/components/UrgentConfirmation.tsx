@@ -47,11 +47,21 @@ export function UrgentConfirmation({ visible, onConfirm, onCancel, circleCount =
             <InfoRow icon={'\u{1F91D}'} text="Ktoś z kręgu potwierdzi, że się zajmuje" />
           </View>
 
-          <Pressable onPress={onConfirm} style={({ pressed }) => [s.confirmBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
+          <Pressable
+            onPress={onConfirm}
+            style={({ pressed }) => [s.confirmBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel="Wyślij sygnał do kręgu bliskich"
+          >
             <Text style={s.confirmText}>Wyślij sygnał</Text>
           </Pressable>
 
-          <Pressable onPress={onCancel} style={({ pressed }) => [s.cancelBtn, pressed && { opacity: 0.5 }]}>
+          <Pressable
+            onPress={onCancel}
+            style={({ pressed }) => [s.cancelBtn, pressed && { opacity: 0.5 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Anuluj, wszystko w porządku"
+          >
             <Text style={s.cancelText}>Nie, wszystko OK</Text>
           </Pressable>
 

@@ -45,7 +45,7 @@ export function WaitingForConnectionScreen() {
       if (error) throw error;
       setEditingName(false);
       refreshRelationship();
-    } catch { Alert.alert('Błąd', 'Nie udało się zapisać.'); }
+    } catch { Alert.alert('Coś poszło nie tak', 'Nie udało się zapisać.'); }
   };
 
   const handleCopyCode = async () => {
@@ -89,7 +89,7 @@ export function WaitingForConnectionScreen() {
             if (error) throw error;
             await supabase.auth.signOut();
             router.replace('/onboarding');
-          } catch { Alert.alert('Błąd', 'Nie udało się usunąć konta. Spróbuj ponownie.'); }
+          } catch { Alert.alert('Coś poszło nie tak', 'Nie udało się usunąć konta. Spróbuj ponownie.'); }
         },
       },
     ]);

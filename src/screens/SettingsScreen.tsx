@@ -50,7 +50,7 @@ export function SettingsScreen() {
       analytics.nameChanged();
       refreshRelationship?.();
     } catch {
-      Alert.alert('Błąd', 'Nie udało się zapisać imienia.');
+      Alert.alert('Coś poszło nie tak', 'Nie udało się zapisać imienia.');
     } finally {
       setSavingName(false);
     }
@@ -70,14 +70,14 @@ export function SettingsScreen() {
             try {
               const { data: result, error: invokeErr } = await supabase.functions.invoke('delete-account', { body: {} });
               if (invokeErr || !result?.ok) {
-                Alert.alert('Błąd', 'Nie udało się usunąć konta. Spróbuj ponownie.');
+                Alert.alert('Coś poszło nie tak', 'Nie udało się usunąć konta. Spróbuj ponownie.');
                 return;
               }
               analytics.accountDeleted();
               await supabase.auth.signOut();
               router.replace('/onboarding');
             } catch {
-              Alert.alert('Błąd', 'Nie udało się usunąć konta. Sprawdź połączenie.');
+              Alert.alert('Coś poszło nie tak', 'Nie udało się usunąć konta. Sprawdź połączenie.');
             }
           },
         },
@@ -91,7 +91,7 @@ export function SettingsScreen() {
       await supabase.auth.signOut();
       router.replace('/onboarding');
     } catch {
-      Alert.alert('Błąd', 'Nie udało się wylogować.');
+      Alert.alert('Coś poszło nie tak', 'Nie udało się wylogować.');
     }
   };
 
@@ -123,7 +123,7 @@ export function SettingsScreen() {
               <Text style={styles.chevron}>→</Text>
             </View>
           ) : circleLoading ? (
-            <Text style={styles.cardDetail}>Ładowanie...</Text>
+            <Text style={styles.cardDetail}>Sprawdzamy połączenie…</Text>
           ) : (
             <Text style={styles.cardDetail}>
               {status === 'pending' ? 'Czeka na połączenie' : 'Jeszcze nie połączono'}
