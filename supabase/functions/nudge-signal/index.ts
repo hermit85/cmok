@@ -78,20 +78,29 @@ serve(async (req) => {
       return jsonResponse({ ok: true, skipped: 'no_active_relationship' });
     }
 
-    // 3. Dedup: max 1 nudge per day per sender (Europe/Warsaw local day)
-    const todayStart = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
-    todayStart.setHours(0, 0, 0, 0);
-    const { data: existingNudge } = await serviceSupabase
-      .from('signals')
-      .select('id')
-      .eq('from_user_id', user.id)
-      .eq('to_user_id', pair.senior_id)
-      .eq('type', 'nudge')
-      .gte('created_at', todayStart.toISOString())
-      .limit(1)
-      .maybeSingle();
+    // 3. Dedup: max 1 nudge per day per sender (Europe/Warsaw local day via SQL function)
+    const { data: existingNudge } = await serviceSupabase.rpc('has_nudge_today', {
+      p_from: user.id,
+      p_to: pair.senior_id,
+    });
+    // Fallback: if RPC doesn't exist, use UTC-based query
+    let hasNudgeToday = existingNudge === true;
+    if (existingNudge === null || existingNudge === undefined) {
+      const utcMidnight = new Date();
+      utcMidnight.setUTCHours(0, 0, 0, 0);
+      const { data: fallback } = await serviceSupabase
+        .from('signals')
+        .select('id')
+        .eq('from_user_id', user.id)
+        .eq('to_user_id', pair.senior_id)
+        .eq('type', 'nudge')
+        .gte('created_at', utcMidnight.toISOString())
+        .limit(1)
+        .maybeSingle();
+      hasNudgeToday = !!fallback;
+    }
 
-    if (existingNudge) {
+    if (hasNudgeToday) {
       return jsonResponse({ ok: true, skipped: 'already_nudged_today' });
     }
 

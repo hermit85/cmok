@@ -29,7 +29,7 @@ import { logInviteEvent } from '../utils/invite';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
 import * as SecureStore from 'expo-secure-store';
 import { analytics } from '../services/analytics';
-import { relationDisplay, relationFor, relationFrom, relationTo } from '../utils/relationCopy';
+import { relationDisplay, relationFrom, relationTo } from '../utils/relationCopy';
 
 /* ─── helpers ─── */
 
@@ -62,7 +62,6 @@ const STATUS_MOOD_LABELS: Record<string, string> = {
   good: 'Dobrze',
   calm: 'Spokojnie',
   tired: 'Zm\u{0119}czona',
-  walk: 'Na spacerze',
   doctor: 'U lekarza',
 };
 
@@ -523,7 +522,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   /* ─── daily view ─── */
 
-  const streakLabel = effOk && sigStreak >= 2 ? `${sigStreak} dni z rzędu` : null;
   const title = effOk
     ? isFirstEver
       ? `Pierwszy znak!`
@@ -753,12 +751,6 @@ const st = StyleSheet.create({
 
   circleNudge: { marginTop: 16, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   circleNudgeText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safe },
-  viralLink: { marginTop: 20, marginBottom: 4, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
-  viralLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
-
-  /* bottom — text-only link */
-  bottomLink: { alignItems: 'center', paddingVertical: 14, marginBottom: 32 },
-  bottomLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
 
   /* empty */
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },

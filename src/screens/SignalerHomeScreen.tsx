@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ActivityIndicator,
-  Alert, Animated, ScrollView, Share, Platform,
+  Alert, Animated, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -27,7 +27,7 @@ import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync'
 import { logInviteEvent } from '../utils/invite';
 import { todayDateKey } from '../utils/today';
 import { analytics } from '../services/analytics';
-import type { Signal, SupportParticipant } from '../types';
+import type { SupportParticipant } from '../types';
 import type { SignalerHomePreview } from '../dev/homePreview';
 import { getRelationForms, relationDisplay } from '../utils/relationCopy';
 
@@ -100,12 +100,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const responseReceiptScale = useRef(new Animated.Value(0)).current;
   const moodScales = useRef(STATUS_MOODS.map(() => new Animated.Value(1))).current;
 
-  // Press & release refs
-  const pressStartRef = useRef(0);
-  const chargeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const chargeTriggeredUrgent = useRef(false);
   const breatheLoopRef = useRef<{ scale: Animated.CompositeAnimation; shadow: Animated.CompositeAnimation } | null>(null);
-  const [particleCount, setParticleCount] = useState(14);
+  const [particleCount] = useState(14);
 
   const circleNames = useMemo(
     () => new Map(recipients.map((m) => [m.userId, m.name])), [recipients],
@@ -156,7 +152,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   }, [refreshCheckin, refreshWeek, refreshStats]);
   useEffect(() => () => {
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
-    if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
     if (breatheLoopRef.current) { breatheLoopRef.current.scale.stop(); breatheLoopRef.current.shadow.stop(); }
   }, []);
 
@@ -269,7 +264,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   /** Quick tap success (< 150ms hold) — same feel as before */
   const playSuccess = useCallback(() => {
     if (isMilestone) { setCelebrationVisible(true); haptics.success(); } else { haptics.medium(); }
-    setParticleCount(14);
 
     releaseRingScale.setValue(0.84);
     releaseRingOpacity.setValue(0.28);
@@ -282,25 +276,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     });
     playSuccessCommon();
   }, [buttonScale, releaseRingOpacity, releaseRingScale, isMilestone, playSuccessCommon]);
-
-  const restartBreatheLoop = useCallback(() => {
-    if (showChecked || !canCheckin) return;
-    const scaleLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(breatheScale, { toValue: 1.03, duration: 1250, useNativeDriver: true }),
-        Animated.timing(breatheScale, { toValue: 1, duration: 1250, useNativeDriver: true }),
-      ]),
-    );
-    const shadowLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(breatheShadow, { toValue: 0.2, duration: 1250, useNativeDriver: false }),
-        Animated.timing(breatheShadow, { toValue: 0.4, duration: 1250, useNativeDriver: false }),
-      ]),
-    );
-    breatheLoopRef.current = { scale: scaleLoop, shadow: shadowLoop };
-    scaleLoop.start();
-    shadowLoop.start();
-  }, [showChecked, canCheckin, breatheScale, breatheShadow]);
 
   /* ─── core check-in logic (shared by quick tap + charged) ─── */
 
@@ -390,17 +365,6 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       }
     } catch (err) { console.warn('[status] update error:', err); }
   }, [pv, userId, primaryRecipientId, pokeAlreadySent, sendSignal, moodScales, moodFadeOut, moodPickedScale, moodPickedOpacity]);
-
-  const handleMilestoneShare = useCallback(async () => {
-    const streakText = currentStreak === 7 ? 'tydzień' : currentStreak === 14 ? '2 tygodnie' : currentStreak === 21 ? '3 tygodnie' : currentStreak === 30 ? 'miesiąc' : `${currentStreak} dni`;
-    const displayName = primaryName || null;
-    const msg = displayName
-      ? `Od ${streakText} codziennie daję ${displayName} znak, że jest OK. Bez dzwonienia, bez SMS-ów. Jeden tap i obie strony mają spokój.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz`
-      : `Od ${streakText} codziennie daję bliskiej osobie znak, że jest OK. Jeden tap i spokój.\n\nhttps://cmok.app/pobierz`;
-    try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
-    } catch { /* cancelled */ }
-  }, [currentStreak, primaryName]);
 
   // Restore status from DB when screen loads (so picked pill persists across visits)
   useEffect(() => {

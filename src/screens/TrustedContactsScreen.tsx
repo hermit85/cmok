@@ -42,13 +42,10 @@ export function TrustedContactsScreen() {
     setJustAddedName(null);
     setNotFoundPhone(null);
     try {
-      await addTrustedContact(`48${cleanPhone}`);
+      const added = await addTrustedContact(`48${cleanPhone}`);
       analytics.contactAdded();
-      // Find the just-added contact name from the refreshed list
-      const newContact = activeContacts.find(c => c.phone?.replace(/\D/g, '').endsWith(cleanPhone));
-      setJustAddedName(newContact?.name || 'Osoba');
+      setJustAddedName(added?.name || 'Osoba');
       setPhone('');
-      // Clear toast after 3s
       setTimeout(() => setJustAddedName(null), 3000);
     } catch (error) {
       const msg = (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string')
@@ -88,7 +85,9 @@ export function TrustedContactsScreen() {
               await removeTrustedContact(contactId);
               analytics.contactRemoved();
             } catch (error) {
-              const message = error instanceof Error ? error.message : `Nie udało się usunąć ${name}.`;
+              const message = (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string')
+                ? error.message
+                : (error instanceof Error ? error.message : `Nie udało się usunąć ${name}.`);
               Alert.alert('Coś poszło nie tak', message);
             }
           },

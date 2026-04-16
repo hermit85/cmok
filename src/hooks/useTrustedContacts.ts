@@ -64,12 +64,12 @@ export function useTrustedContacts(relationshipId: string | null) {
   }, [refreshContacts]);
 
   const addTrustedContact = useCallback(
-    async (phone: string) => {
+    async (phone: string): Promise<{ name: string | null; phone: string | null } | null> => {
       if (!relationshipId) throw new Error('Missing relationship');
 
       setSaving(true);
       try {
-        const { error } = await supabase.rpc('add_trusted_contact_by_phone', {
+        const { data, error } = await supabase.rpc('add_trusted_contact_by_phone', {
           p_relationship_id: relationshipId,
           p_phone: phone,
         });
@@ -77,6 +77,10 @@ export function useTrustedContacts(relationshipId: string | null) {
         if (error) throw error;
 
         await refreshContacts();
+
+        // RPC returns array with single row; columns are out_name, out_phone
+        const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+        return row ? { name: row.out_name ?? null, phone: row.out_phone ?? null } : null;
       } finally {
         setSaving(false);
       }
