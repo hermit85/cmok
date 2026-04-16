@@ -229,16 +229,18 @@ export function useUrgentSignal(): UrgentSignalState {
   }, [loadState]);
 
   const callEdgeFunction = useCallback(async (payload: Record<string, unknown>) => {
-    // Ensure session is fresh before invoking (handles expired JWTs on simulator)
+    // Ensure session is fresh before invoking (handles expired JWTs)
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      // Try to refresh
       const { data: refreshed } = await supabase.auth.refreshSession();
       if (!refreshed.session) throw new Error('Unauthorized');
     }
     const { data, error } = await supabase.functions.invoke('urgent-signal', { body: payload });
     if (error) {
       console.warn('[urgent-signal] edge function error:', error);
+      // Detect 401 from FunctionsHttpError context
+      const status = (error as { context?: { status?: number } })?.context?.status;
+      if (status === 401) throw new Error('Unauthorized');
       throw new Error(error.message || 'Urgent signal failed');
     }
     return data;
