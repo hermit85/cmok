@@ -4,6 +4,58 @@ import { analytics } from '../services/analytics';
 
 const APP_URL = 'https://cmok.app/pobierz';
 
+/** Postgres unique_violation error code. */
+const UNIQUE_VIOLATION = '23505';
+
+/** Generate a random 6-digit invite code as a string. */
+export function randomInviteCode(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+/**
+ * Check whether a given invite code is currently taken by a pending pair.
+ * Used as an optimistic pre-check before write; the UNIQUE partial index
+ * is the authoritative guard against collisions.
+ */
+async function isInviteCodeTaken(code: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('care_pairs')
+    .select('id')
+    .eq('invite_code', code)
+    .eq('status', 'pending')
+    .limit(1)
+    .maybeSingle();
+  return !!data;
+}
+
+/**
+ * Pick a random 6-digit code that isn't already in use by a pending pair.
+ * Retries up to `attempts` times. The caller should still handle
+ * unique_violation (23505) from the actual write as the final fallback.
+ */
+export async function pickUniqueInviteCode(attempts: number = 6): Promise<string> {
+  for (let i = 0; i < attempts; i++) {
+    const candidate = randomInviteCode();
+    try {
+      if (!(await isInviteCodeTaken(candidate))) return candidate;
+    } catch {
+      // If the lookup fails (network etc.), fall back to returning the
+      // candidate — the DB UNIQUE index is the real guard.
+      return candidate;
+    }
+  }
+  // All attempts saw collisions — extremely unlikely; return last random.
+  return randomInviteCode();
+}
+
+/** True if a Supabase write failure is a unique_violation on invite_code. */
+export function isInviteCodeCollision(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { code?: string; message?: string };
+  if (e.code === UNIQUE_VIOLATION) return true;
+  return typeof e.message === 'string' && e.message.toLowerCase().includes('invite_code');
+}
+
 /**
  * Minimal invite event logging.
  * In production, this would write to Supabase or analytics.
@@ -141,9 +193,7 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
 
     const isRecipient = profile?.role === 'recipient' || profile?.role === 'caregiver';
 
-    const code = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
     const col = isRecipient ? 'caregiver_id' : 'senior_id';
 
     // Guard: don't create a new pending invite if an active relationship already exists
@@ -169,20 +219,23 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
       .limit(1)
       .maybeSingle();
 
-    if (existing?.id) {
-      const { error: updateErr } = await supabase
-        .from('care_pairs')
-        .update({ invite_code: code, invite_expires_at: expiresAt })
-        .eq('id', existing.id);
-      if (updateErr) throw updateErr;
-    } else {
-      const { error: insertErr } = await supabase.from('care_pairs').insert({
-        [col]: user.id,
-        invite_code: code,
-        invite_expires_at: expiresAt,
-        status: 'pending',
-      });
-      if (insertErr) throw insertErr;
+    // Retry up to 5 times on invite_code unique_violation (real collisions are
+    // rare because of pickUniqueInviteCode pre-check; this is the final guard).
+    let code = await pickUniqueInviteCode();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const { error: writeErr } = existing?.id
+        ? await supabase.from('care_pairs')
+            .update({ invite_code: code, invite_expires_at: expiresAt })
+            .eq('id', existing.id)
+        : await supabase.from('care_pairs').insert({
+            [col]: user.id,
+            invite_code: code,
+            invite_expires_at: expiresAt,
+            status: 'pending',
+          });
+      if (!writeErr) break;
+      if (!isInviteCodeCollision(writeErr) || attempt === 4) throw writeErr;
+      code = await pickUniqueInviteCode();
     }
 
     logInviteEvent('invite_created', { code });

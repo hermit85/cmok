@@ -69,7 +69,9 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const formattedPhone = '+48' + phone;
-  const isValid = phone.replace(/\D/g, '').length === 9;
+  const digitsOnly = phone.replace(/\D/g, '');
+  const isComplete = digitsOnly.length === 9;
+  const isValid = isComplete && /^[4-8]\d{8}$/.test(digitsOnly);
   const displayNumber = phone.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
   const displayPhone = fullPhone.replace(/(\+48)(\d{3})(\d{3})(\d{3})/, '$1 $2 $3 $4');
 
@@ -77,7 +79,9 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
     ? 'Używamy numeru tylko do wejścia do cmok.'
     : isValid
       ? 'To wygląda dobrze. Za chwilę wyślemy kod SMS.'
-      : `Jeszcze ${9 - phone.length} cyfr.`;
+      : isComplete
+        ? 'To nie wygląda na numer komórkowy. Sprawdź jeszcze raz.'
+        : `Jeszcze ${9 - phone.length} cyfr.`;
 
   // Focus phone input on mount (autoFocus can be unreliable in switch/case renders)
   useEffect(() => {

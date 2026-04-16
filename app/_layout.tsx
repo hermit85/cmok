@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { View, ActivityIndicator, AppState } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -121,28 +121,39 @@ function RootLayout() {
     return () => sub.remove();
   }, [router]);
 
-  // Rejestruj push token przy uruchomieniu + po zalogowaniu
+  // Rejestruj push token przy uruchomieniu + po zalogowaniu + po wznowieniu
   // Identify user in PostHog after auth
+  const lastPushRegisterRef = useRef(0);
   useEffect(() => {
-    const tryRegister = () => {
+    const PUSH_REGISTER_THROTTLE_MS = 30_000;
+    const tryRegister = (reason: string) => {
+      const now = Date.now();
+      if (now - lastPushRegisterRef.current < PUSH_REGISTER_THROTTLE_MS) return;
+      lastPushRegisterRef.current = now;
       registerPushToken()
         .then((result) => {
           if (result.status !== 'registered') {
-            console.log(`Push registration: ${result.status}`, result.reason || 'no-reason');
+            // Notify observability: silent push failures are a release-blocker
+            Sentry.captureMessage(`push_register_${result.status}`, {
+              level: 'warning',
+              extra: { reason, detail: result.reason || null },
+            });
           }
         })
-        .catch((err) => console.log('Push token registration failed:', err));
+        .catch((err) => {
+          Sentry.captureException(err, { extra: { context: 'push_register', reason } });
+        });
     };
 
     // Only register on mount if there's a valid session (avoids 401 on stale/deleted accounts)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) tryRegister();
+      if (session?.user) tryRegister('mount');
     });
 
     // Re-register after login + identify in PostHog
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
-        tryRegister();
+        tryRegister('signed_in');
         if (session?.user?.id) {
           posthog.identify(session.user.id, { phone: session.user.phone ?? '' });
         }
@@ -151,7 +162,19 @@ function RootLayout() {
         posthog.reset();
       }
     });
-    return () => subscription.unsubscribe();
+
+    // Re-register on app foreground (handles permission flips + rotated tokens)
+    const appStateSub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active') return;
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) tryRegister('foreground');
+      });
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      appStateSub.remove();
+    };
   }, []);
 
   if (!fontsLoaded) {

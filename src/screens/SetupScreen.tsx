@@ -2,17 +2,13 @@ import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
-import { logInviteEvent } from '../utils/invite';
+import { isInviteCodeCollision, logInviteEvent, pickUniqueInviteCode } from '../utils/invite';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 
 interface SetupScreenProps {
   onDone: () => void;
   onBack: () => void;
-}
-
-function generateInviteCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
@@ -46,7 +42,6 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
         return;
       }
 
-      const code = generateInviteCode();
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
       const { data: existingPending } = await supabase
@@ -57,30 +52,35 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
         .limit(1)
         .maybeSingle();
 
-      if (existingPending?.id) {
-        const { error } = await supabase
-          .from('care_pairs')
-          .update({
-            invite_code: code,
-            invite_expires_at: expiresAt,
-            signaler_label: label.trim(),
-            senior_name: label.trim(),
-          })
-          .eq('id', existingPending.id);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('care_pairs').insert({
-          caregiver_id: user.id,
-          invite_code: code,
-          invite_expires_at: expiresAt,
-          status: 'pending',
-          signaler_label: label.trim(),
-          senior_name: label.trim(),
-        });
-
-        if (error) throw error;
+      // Retry on rare invite_code unique_violation. The UNIQUE partial index
+      // (migration 020) is the authoritative guard; pickUniqueInviteCode is
+      // an optimistic pre-check that keeps retries to a minimum.
+      let code = await pickUniqueInviteCode();
+      let lastError: unknown = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { error } = existingPending?.id
+          ? await supabase.from('care_pairs')
+              .update({
+                invite_code: code,
+                invite_expires_at: expiresAt,
+                signaler_label: label.trim(),
+                senior_name: label.trim(),
+              })
+              .eq('id', existingPending.id)
+          : await supabase.from('care_pairs').insert({
+              caregiver_id: user.id,
+              invite_code: code,
+              invite_expires_at: expiresAt,
+              status: 'pending',
+              signaler_label: label.trim(),
+              senior_name: label.trim(),
+            });
+        if (!error) { lastError = null; break; }
+        lastError = error;
+        if (!isInviteCodeCollision(error)) throw error;
+        code = await pickUniqueInviteCode();
       }
+      if (lastError) throw lastError;
 
       logInviteEvent('invite_created', { label: label.trim() });
       onDone();

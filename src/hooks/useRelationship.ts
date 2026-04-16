@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { supabase } from '../services/supabase';
 import type { AppProfile, AppRole, Relationship, RelationshipStatus } from '../types';
 import { normalizeAppRole } from '../utils/roles';
@@ -136,6 +137,7 @@ export function useRelationship(): RelationshipState {
     }
   }, []);
 
+  const lastForegroundRefresh = useRef(0);
   useEffect(() => {
     refreshRelationship();
 
@@ -145,8 +147,20 @@ export function useRelationship(): RelationshipState {
       refreshRelationship();
     });
 
+    // Refresh on app foreground so stale relationship state (e.g. after the
+    // other side deleted their account) gets reconciled. Throttled to 30s.
+    const FOREGROUND_REFRESH_THROTTLE_MS = 30_000;
+    const appStateSub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active') return;
+      const now = Date.now();
+      if (now - lastForegroundRefresh.current < FOREGROUND_REFRESH_THROTTLE_MS) return;
+      lastForegroundRefresh.current = now;
+      refreshRelationship();
+    });
+
     return () => {
       subscription.unsubscribe();
+      appStateSub.remove();
       if (retryTimer.current) clearTimeout(retryTimer.current);
     };
   }, [refreshRelationship]);

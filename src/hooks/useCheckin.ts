@@ -2,6 +2,15 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabase';
 import { todayDateKey } from '../utils/today';
 
+function isAuthError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { status?: number; code?: string; message?: string };
+  if (e.status === 401) return true;
+  if (e.code === 'PGRST301' || e.code === '401') return true;
+  const msg = (e.message || '').toLowerCase();
+  return msg.includes('jwt') || msg.includes('token') || msg.includes('expired') || msg.includes('unauthor');
+}
+
 export function useCheckin() {
   const [checkedInToday, setCheckedInToday] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -62,7 +71,7 @@ export function useCheckin() {
   const performCheckin = useCallback(async () => {
     setLoading(true);
     try {
-      const userId = currentUserId ?? (await syncCurrentUser());
+      let userId = currentUserId ?? (await syncCurrentUser());
       if (!userId) {
         const error = new Error('Brak zalogowanego użytkownika');
         error.name = 'AUTH_REQUIRED';
@@ -71,12 +80,28 @@ export function useCheckin() {
 
       const today = todayDateKey();
 
-      const { error } = await supabase
-        .from('daily_checkins')
-        .upsert(
-          { senior_id: userId, local_date: today, source: 'app' },
-          { onConflict: 'senior_id,local_date' },
-        );
+      const attemptUpsert = () =>
+        supabase
+          .from('daily_checkins')
+          .upsert(
+            { senior_id: userId, local_date: today, source: 'app' },
+            { onConflict: 'senior_id,local_date' },
+          );
+
+      let { error } = await attemptUpsert();
+
+      // Stale JWT: attempt refresh + retry once before surfacing the error.
+      if (error && isAuthError(error)) {
+        const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+        if (refreshErr || !refreshed.session) {
+          const authErr = new Error('Brak zalogowanego użytkownika');
+          authErr.name = 'AUTH_REQUIRED';
+          throw authErr;
+        }
+        userId = refreshed.session.user.id;
+        setCurrentUserId(userId);
+        ({ error } = await attemptUpsert());
+      }
 
       if (error) throw error;
 
