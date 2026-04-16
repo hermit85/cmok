@@ -1,20 +1,24 @@
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Share, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
-import { Radius, Spacing } from '../constants/tokens';
 import { useRelationship } from '../hooks/useRelationship';
 import { useCircle } from '../hooks/useCircle';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
-import { generateAndShareInvite } from '../utils/invite';
 
-function StatusBadge({ joined }: { joined: boolean }) {
+const AVATAR_BIG = 72;
+const AVATAR_MED = 56;
+const AVATAR_SM = 52;
+
+function Avatar({ name, size, color }: { name: string; size: number; color?: string }) {
+  const initial = (name || '?').charAt(0).toUpperCase();
   return (
-    <View style={[st.badge, joined ? st.badgeJoined : st.badgePending]}>
-      <Text style={[st.badgeText, joined ? st.badgeTextJoined : st.badgeTextPending]}>
-        {joined ? 'w kręgu' : 'oczekuje'}
-      </Text>
+    <View style={[
+      st.avatar,
+      { width: size, height: size, borderRadius: size / 2, backgroundColor: color || Colors.safeLight },
+    ]}>
+      <Text style={[st.avatarText, { fontSize: size * 0.4, color: color ? '#FFFFFF' : Colors.safe }]}>{initial}</Text>
     </View>
   );
 }
@@ -28,10 +32,17 @@ export function CircleScreen() {
   const isRecipient = profile?.role === 'recipient';
   const isActive = status === 'active';
 
-  // Main person in the daily ritual
-  const mainPerson = isRecipient
-    ? signalers[0] || null
-    : recipients[0] || null;
+  const mainPerson = isRecipient ? signalers[0] || null : recipients[0] || null;
+  const myName = profile?.name || 'Ja';
+
+  const activeContacts = contacts.filter((c) => c.status === 'active');
+
+  const handleSharePeer = async () => {
+    const msg = 'Znasz kogoś, kto mieszka sam? cmok to codzienny znak, że wszystko OK. Jeden gest dziennie.\n\nhttps://cmok.app/pobierz';
+    try {
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+    } catch { /* cancelled */ }
+  };
 
   return (
     <SafeAreaView style={st.container}>
@@ -41,118 +52,138 @@ export function CircleScreen() {
         </Pressable>
 
         <Text style={st.title}>Twój krąg</Text>
+        <Text style={st.subtitle}>Ludzie, którzy są obok</Text>
 
-        {/* ─── Main daily person ─── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>Codzienny znak</Text>
+        {/* ─── Network visualization ─── */}
+        <View style={st.network}>
+          {/* YOU — center */}
+          <View style={st.youWrap}>
+            <Avatar name={myName} size={AVATAR_BIG} color={Colors.accent} />
+            <Text style={st.youName}>{myName}</Text>
+            <Text style={st.youRole}>To Ty</Text>
+          </View>
+
+          {/* Connection line to main person */}
           {mainPerson ? (
-            <View style={st.personRow}>
-              <View style={st.personAvatar}>
-                <Text style={st.personAvatarText}>{(mainPerson.name || '?').charAt(0).toUpperCase()}</Text>
-              </View>
-              <View style={st.personInfo}>
+            <>
+              <View style={st.connectionLine} />
+              <Text style={st.connectionLabel}>codzienny znak</Text>
+              <View style={st.mainPersonWrap}>
+                <Avatar name={mainPerson.name} size={AVATAR_MED} />
                 <Text style={st.personName}>{mainPerson.name}</Text>
                 <Text style={st.personRole}>
-                  {isRecipient ? 'Daje codzienny znak' : 'Dostaje Twój codzienny znak'}
+                  {isRecipient ? 'Daje znak' : 'Odbiera znak'}
+                </Text>
+                {isActive ? <View style={st.activeDot} /> : null}
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={st.connectionLinePending} />
+              <View style={st.mainPersonWrap}>
+                <View style={[st.avatar, st.avatarEmpty, { width: AVATAR_MED, height: AVATAR_MED, borderRadius: AVATAR_MED / 2 }]}>
+                  <Text style={st.avatarEmptyText}>?</Text>
+                </View>
+                <Text style={st.personNameEmpty}>
+                  {status === 'pending' ? 'Czeka na połączenie' : 'Jeszcze nie połączono'}
                 </Text>
               </View>
-              <StatusBadge joined={isActive} />
-            </View>
-          ) : (
-            <View style={st.emptyRow}>
-              <Text style={st.emptyText}>
-                {status === 'pending' ? 'Czeka na połączenie' : 'Jeszcze nie połączono'}
+            </>
+          )}
+        </View>
+
+        {/* ─── Trusted circle ─── */}
+        {isActive ? (
+          <View style={st.trustedSection}>
+            <View style={st.trustedHeader}>
+              <Text style={st.trustedTitle}>Krąg bliskich</Text>
+              <Text style={st.trustedCount}>
+                {activeContacts.length > 0 ? `${activeContacts.length} ${activeContacts.length === 1 ? 'osoba' : 'osób'}` : 'pusty'}
               </Text>
             </View>
-          )}
-        </View>
+            <Text style={st.trustedHint}>Wiedzą, gdy coś się dzieje</Text>
 
-        {/* ─── Circle / trusted contacts ─── */}
-        <View style={st.section}>
-          <Text style={st.sectionLabel}>Krąg bliskich</Text>
-          <Text style={st.sectionHint}>Wiedzą, gdy coś się dzieje, i mogą szybko zareagować</Text>
-
-          {contacts.length === 0 ? (
-            <View style={st.emptyRow}>
-              <Text style={st.emptyText}>Zaproś bliskich, żeby mogli być obok, gdy będzie trzeba.</Text>
-            </View>
-          ) : (
-            contacts.map((c) => (
-              <View key={c.id} style={st.personRow}>
-                <View style={st.personAvatar}>
-                  <Text style={st.personAvatarText}>{(c.name || '?').charAt(0).toUpperCase()}</Text>
+            <View style={st.contactsGrid}>
+              {activeContacts.map((c) => (
+                <View key={c.id} style={st.contactCard}>
+                  <Avatar name={c.name} size={AVATAR_SM} />
+                  <Text style={st.contactName} numberOfLines={1}>{c.name}</Text>
                 </View>
-                <View style={st.personInfo}>
-                  <Text style={st.personName}>{c.name}</Text>
-                  {c.phone ? <Text style={st.personPhone}>{c.phone}</Text> : null}
-                </View>
-                <StatusBadge joined={c.status === 'active'} />
-              </View>
-            ))
-          )}
-
-          {isRecipient && isActive ? (
-            <View style={st.actions}>
+              ))}
               <Pressable
                 onPress={() => router.push('/trusted-contacts')}
-                style={({ pressed }) => [st.addBtn, pressed && { opacity: 0.85 }]}
+                style={({ pressed }) => [st.contactCard, st.addCard, pressed && { opacity: 0.6 }]}
               >
-                <Text style={st.addBtnText}>Dodaj osobę do kręgu</Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => generateAndShareInvite()}
-                style={({ pressed }) => [st.inviteLink, pressed && { opacity: 0.6 }]}
-              >
-                <Text style={st.inviteLinkText}>Zaproś do kręgu</Text>
+                <View style={[st.avatar, st.avatarAdd, { width: AVATAR_SM, height: AVATAR_SM, borderRadius: AVATAR_SM / 2 }]}>
+                  <Text style={st.avatarAddText}>+</Text>
+                </View>
+                <Text style={st.contactAddLabel}>Dodaj</Text>
               </Pressable>
             </View>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
+
+        {/* ─── Viral: peer recommendation ─── */}
+        {isActive ? (
+          <Pressable onPress={handleSharePeer} style={({ pressed }) => [st.peerCard, pressed && { opacity: 0.85 }]}>
+            <Text style={st.peerTitle}>Znasz kogoś, kto mieszka sam?</Text>
+            <Text style={st.peerBody}>cmok pomaga. Poleć koleżance, sąsiadce, bratu.</Text>
+            <Text style={st.peerCta}>Podziel się →</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const AVATAR = 40;
-
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: Spacing.screen, paddingTop: 16, paddingBottom: 32 },
-  back: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginBottom: 20 },
-  backText: { fontSize: 16, fontWeight: '500', color: Colors.accent },
-  title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 24 },
+  content: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+  back: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginBottom: 12 },
+  backText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
+  title: { fontSize: 32, fontFamily: Typography.headingFamily, color: Colors.text },
+  subtitle: { fontSize: 15, color: Colors.textSecondary, marginTop: 4, marginBottom: 32 },
 
-  /* sections */
-  section: { marginBottom: 28 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: Colors.accent, marginBottom: 4 },
-  sectionHint: { fontSize: 14, color: Colors.textMuted, marginBottom: 12 },
+  /* network */
+  network: { alignItems: 'center' as const, marginBottom: 32 },
+  youWrap: { alignItems: 'center' as const },
+  youName: { fontSize: 17, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginTop: 10 },
+  youRole: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  connectionLine: { width: 2, height: 32, backgroundColor: Colors.safe, opacity: 0.4, marginTop: 12, marginBottom: 4 },
+  connectionLinePending: { width: 2, height: 32, backgroundColor: Colors.border, marginTop: 12, marginBottom: 4, borderStyle: 'dashed' as const },
+  connectionLabel: { fontSize: 11, color: Colors.safe, fontFamily: Typography.fontFamilyMedium, marginBottom: 8, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  mainPersonWrap: { alignItems: 'center' as const },
+  personName: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginTop: 10 },
+  personRole: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  personNameEmpty: { fontSize: 14, color: Colors.textMuted, marginTop: 10, fontFamily: Typography.fontFamilyMedium },
+  activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.safe, marginTop: 6 },
 
-  /* person row */
-  personRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  personAvatar: { width: AVATAR, height: AVATAR, borderRadius: AVATAR / 2, backgroundColor: Colors.safeLight, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  personAvatarText: { fontSize: 16, fontWeight: '700', color: Colors.safe },
-  personInfo: { flex: 1 },
-  personName: { fontSize: 16, fontWeight: '600', color: Colors.text },
-  personRole: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
-  personPhone: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
+  /* avatar */
+  avatar: { justifyContent: 'center' as const, alignItems: 'center' as const },
+  avatarText: { fontFamily: Typography.headingFamilySemiBold },
+  avatarEmpty: { backgroundColor: Colors.surface, borderWidth: 2, borderColor: Colors.border, borderStyle: 'dashed' as const },
+  avatarEmptyText: { fontSize: 20, color: Colors.textMuted, fontFamily: Typography.headingFamilySemiBold },
+  avatarAdd: { backgroundColor: Colors.safeLight, borderWidth: 2, borderColor: Colors.safe, borderStyle: 'dashed' as const },
+  avatarAddText: { fontSize: 22, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold },
 
-  /* badges */
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  badgeJoined: { backgroundColor: Colors.safeLight },
-  badgePending: { backgroundColor: Colors.surfaceWarm },
-  badgeText: { fontSize: 12, fontWeight: '600' },
-  badgeTextJoined: { color: Colors.statusOkText },
-  badgeTextPending: { color: Colors.textSecondary },
+  /* trusted */
+  trustedSection: { marginBottom: 28 },
+  trustedHeader: { flexDirection: 'row' as const, alignItems: 'baseline' as const, justifyContent: 'space-between' as const, marginBottom: 2 },
+  trustedTitle: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
+  trustedCount: { fontSize: 12, color: Colors.textMuted },
+  trustedHint: { fontSize: 13, color: Colors.textMuted, marginBottom: 16 },
+  contactsGrid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 16 },
+  contactCard: { alignItems: 'center' as const, width: 72 },
+  addCard: {},
+  contactName: { fontSize: 12, color: Colors.text, marginTop: 8, textAlign: 'center' as const, fontFamily: Typography.fontFamilyMedium },
+  contactAddLabel: { fontSize: 12, color: Colors.safe, marginTop: 8, textAlign: 'center' as const, fontFamily: Typography.fontFamilyMedium },
 
-  /* empty */
-  emptyRow: { paddingVertical: 16 },
-  emptyText: { fontSize: 15, color: Colors.textMuted },
-
-  /* actions */
-  actions: { marginTop: 16 },
-  addBtn: { backgroundColor: Colors.accent, minHeight: 48, borderRadius: Radius.sm, justifyContent: 'center', alignItems: 'center' },
-  addBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-  inviteLink: { minHeight: 44, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
-  inviteLinkText: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  /* peer recommendation */
+  peerCard: {
+    marginTop: 8, padding: 20, borderRadius: 20,
+    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
+  },
+  peerTitle: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 6 },
+  peerBody: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20, marginBottom: 12 },
+  peerCta: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
 });
