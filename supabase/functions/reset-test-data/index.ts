@@ -1,11 +1,16 @@
 // ============================================================
 // cmok · reset-test-data Edge Function
-// Czyści dane testowe bez usuwania kont, lub seeduje Sąsiada/invite.
-// Użycie: POST z body { mode: "keep_pair" | "full_reset" | "seed_sasiad" | "seed_invite" }
+// Czyści dane testowe, seeduje konta, lub konfiguruje pod Apple review.
+// Użycie: POST z body { mode: "..." }
 //   keep_pair — czyści checkins/signals/alerts, zostawia relację
 //   full_reset — czyści wszystko, wraca do stanu pre-onboarding
-//   seed_sasiad — tworzy konto +48100000003 jeśli nie istnieje (Sąsiad, signaler role)
-//   seed_invite — tworzy pending pair z invite_code 111222 dla recipienta (Darek)
+//   seed_sasiad — tworzy konto +48100000003 jeśli nie istnieje (Sąsiad, signaler)
+//   seed_invite — tworzy pending pair z invite_code 111222 dla recipienta
+//   seed_apple_review — pełna konfiguracja dla Apple reviewera:
+//     - naprawia nazwy (Mama/Darek/Sąsiad)
+//     - aktywna para Mama↔Darek
+//     - dzisiejszy check-in od Mamy (status: good)
+//     - backup invite code 111222 dla testowania onboardingu
 // ============================================================
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -39,6 +44,78 @@ serve(async (req) => {
       const body = await req.json();
       mode = body.mode || 'keep_pair';
     } catch { /* default to keep_pair */ }
+
+    // seed_apple_review: full setup for App Store reviewer
+    if (mode === 'seed_apple_review') {
+      const steps: string[] = [];
+
+      // 1. Find users
+      const { data: allUsers } = await serviceSupabase
+        .from('users')
+        .select('id, phone')
+        .in('phone', TEST_PHONES);
+
+      const mama = allUsers?.find(u => u.phone === '48100000001');
+      const darek = allUsers?.find(u => u.phone === '48100000002');
+
+      if (!mama || !darek) {
+        return jsonResponse({ error: 'Test users not found — log in as 001 and 002 first' }, 404);
+      }
+
+      // 2. Fix names
+      await serviceSupabase.from('users').update({ name: 'Mama' }).eq('id', mama.id);
+      await serviceSupabase.from('users').update({ name: 'Darek' }).eq('id', darek.id);
+      steps.push('names: Mama + Darek');
+
+      // 3. Clean slate: remove pairs involving these users
+      await serviceSupabase.from('care_pairs').delete()
+        .or(`senior_id.eq.${mama.id},caregiver_id.eq.${mama.id},senior_id.eq.${darek.id},caregiver_id.eq.${darek.id}`);
+
+      // 4. Create active pair
+      const { data: activePair, error: pairErr } = await serviceSupabase
+        .from('care_pairs')
+        .insert({
+          senior_id: mama.id,
+          caregiver_id: darek.id,
+          status: 'active',
+          signaler_label: 'Mama',
+          senior_name: 'Mama',
+          joined_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        })
+        .select()
+        .single();
+
+      if (pairErr) return jsonResponse({ error: `active pair: ${pairErr.message}` }, 500);
+      steps.push(`active_pair: ${activePair.id}`);
+
+      // 5. Today's check-in from Mama (so Darek sees "sign received")
+      const today = new Date().toISOString().slice(0, 10);
+      await serviceSupabase
+        .from('daily_checkins')
+        .delete()
+        .eq('senior_id', mama.id)
+        .eq('local_date', today);
+
+      await serviceSupabase.from('daily_checkins').insert({
+        senior_id: mama.id,
+        local_date: today,
+        checked_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        source: 'app',
+        status_emoji: 'good',
+      });
+      steps.push('today_checkin: good');
+
+      return jsonResponse({
+        ok: true,
+        mode,
+        steps,
+        credentials: {
+          signaler: { phone: '+48 100 000 001', otp: '123456', name: 'Mama' },
+          recipient: { phone: '+48 100 000 002', otp: '123456', name: 'Darek' },
+          note: 'Log in with either number — will land directly on home screen with active pair and today sign',
+        },
+      });
+    }
 
     // seed_invite: create pending pair with invite_code 111222 for recipient testing
     if (mode === 'seed_invite') {

@@ -16,6 +16,13 @@ Read this first when starting a new session. Also read `CLAUDE.md` for full proj
 
 ## Reset test data before testing
 
+**Apple App Store Review setup (BEFORE submission):**
+```bash
+curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
+  -H "Content-Type: application/json" -d '{"mode":"seed_apple_review"}'
+```
+Creates: active pair Mama↔Darek, today's check-in from Mama. Reviewer logs in with `100000001` or `100000002` (OTP `123456`) → lands on home screen. No onboarding needed.
+
 **Between tests (keep pair, clean data):**
 ```bash
 curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
@@ -26,6 +33,18 @@ curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-da
 ```bash
 curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
   -H "Content-Type: application/json" -d '{"mode":"full_reset"}'
+```
+
+**Seed invite code 111222 (for testing join flow):**
+```bash
+curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
+  -H "Content-Type: application/json" -d '{"mode":"seed_invite"}'
+```
+
+**Seed Sąsiad account (for trusted circle testing):**
+```bash
+curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
+  -H "Content-Type: application/json" -d '{"mode":"seed_sasiad"}'
 ```
 
 ## What was done in the last session (Build 14 → 16)
