@@ -1,10 +1,11 @@
 // ============================================================
 // cmok · reset-test-data Edge Function
-// Czyści dane testowe bez usuwania kont, lub seeduje Sąsiada.
-// Użycie: POST z body { mode: "keep_pair" | "full_reset" | "seed_sasiad" }
+// Czyści dane testowe bez usuwania kont, lub seeduje Sąsiada/invite.
+// Użycie: POST z body { mode: "keep_pair" | "full_reset" | "seed_sasiad" | "seed_invite" }
 //   keep_pair — czyści checkins/signals/alerts, zostawia relację
 //   full_reset — czyści wszystko, wraca do stanu pre-onboarding
 //   seed_sasiad — tworzy konto +48100000003 jeśli nie istnieje (Sąsiad, signaler role)
+//   seed_invite — tworzy pending pair z invite_code 111222 dla recipienta (Darek)
 // ============================================================
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -38,6 +39,45 @@ serve(async (req) => {
       const body = await req.json();
       mode = body.mode || 'keep_pair';
     } catch { /* default to keep_pair */ }
+
+    // seed_invite: create pending pair with invite_code 111222 for recipient testing
+    if (mode === 'seed_invite') {
+      const { data: darek } = await serviceSupabase
+        .from('users')
+        .select('id')
+        .eq('phone', '48100000002')
+        .maybeSingle();
+
+      if (!darek) {
+        return jsonResponse({ error: 'Recipient account (48100000002) not found' }, 404);
+      }
+
+      // Remove any existing pending pair for Darek to avoid conflict
+      await serviceSupabase
+        .from('care_pairs')
+        .delete()
+        .eq('caregiver_id', darek.id)
+        .eq('status', 'pending');
+
+      const { data: pair, error: pairErr } = await serviceSupabase
+        .from('care_pairs')
+        .insert({
+          caregiver_id: darek.id,
+          invite_code: '111222',
+          invite_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          status: 'pending',
+          signaler_label: 'Mama',
+          senior_name: 'Mama',
+        })
+        .select()
+        .single();
+
+      if (pairErr) {
+        return jsonResponse({ error: `seed_invite failed: ${pairErr.message}` }, 500);
+      }
+
+      return jsonResponse({ ok: true, mode, invite_code: '111222', pair_id: pair.id });
+    }
 
     // seed_sasiad: create auth+profile for 003 if missing
     if (mode === 'seed_sasiad') {
