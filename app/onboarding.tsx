@@ -99,6 +99,12 @@ export default function OnboardingFlow() {
     } else {
       setSelectedRole('recipient');
       analytics.onboardingIntent('recipient');
+      // Clear any stale pending invite — a recipient creates their own
+      // code in SetupScreen, they don't join someone else's.
+      if (pendingInviteCode) {
+        clearPendingInvite();
+        setPendingInviteCode(null);
+      }
       setStep('phone');
     }
   };
@@ -228,12 +234,12 @@ export default function OnboardingFlow() {
         onStart={() => {
           logInviteEvent('onboarding_started');
           analytics.onboardingStarted();
-          if (pendingInviteCode) {
-            setSelectedRole('signaler');
-            setStep('phone');
-          } else {
-            setStep('intent');
-          }
+          // Always go through intent so the user can pick their own role.
+          // A pendingInviteCode alone is not enough to assume signaler — it
+          // may be stale from a previous session. If they pick signaler,
+          // the code will pre-fill JoinScreen; if they pick recipient,
+          // handleIntent clears the stale invite.
+          setStep('intent');
         }}
         onLogin={async () => {
           // If there's a pending invite code, set signaler role before auth

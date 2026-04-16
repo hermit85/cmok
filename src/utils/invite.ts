@@ -68,10 +68,12 @@ export async function shareInvite(params: {
   code: string;
   signalerLabel?: string | null;
 }): Promise<boolean> {
-  const { code, signalerLabel } = params;
-  const name = signalerLabel || 'bliskiej osoby';
+  const { code } = params;
 
-  const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz apkę i wpisz kod:\n${APP_URL}`;
+  // Embed the code in the URL so communicators that only surface the link
+  // preview (WhatsApp, iMessage) still carry it to the other side.
+  const linkWithCode = `${APP_URL}?kod=${code}`;
+  const message = `Twój kod do cmok: ${code}\n\nChcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nPobierz apkę i wpisz kod:\n${linkWithCode}`;
 
   try {
     const result = await Share.share(
@@ -187,7 +189,10 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
 
     logInviteEvent('invite_created', { code });
 
-    const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz apkę i wpisz kod:\n${APP_URL}`;
+    // Embed the code in the URL so communicators that only surface the link
+    // preview (WhatsApp, iMessage) still carry it to the other side.
+    const linkWithCode = `${APP_URL}?kod=${code}`;
+    const message = `Twój kod do cmok: ${code}\n\nChcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nPobierz apkę i wpisz kod:\n${linkWithCode}`;
 
     const result = await Share.share(
       Platform.OS === 'ios'

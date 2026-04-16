@@ -232,11 +232,10 @@ export function useUrgentSignal(): UrgentSignalState {
     // Verify session is actually valid (not just cached). Force fresh getUser() check.
     const { data: { user }, error: userErr } = await supabase.auth.getUser();
     if (userErr || !user) {
-      // Try refresh once
+      // Try refresh once — but never sign out. An urgent signal is exactly the
+      // moment the user must NOT be kicked out of the app.
       const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
       if (refreshErr || !refreshed.session) {
-        // Session is dead — force sign out so user lands back at onboarding
-        await supabase.auth.signOut();
         throw new Error('Unauthorized');
       }
     }
@@ -245,7 +244,9 @@ export function useUrgentSignal(): UrgentSignalState {
       console.warn('[urgent-signal] edge function error:', error);
       const status = (error as { context?: { status?: number } })?.context?.status;
       if (status === 401) {
-        await supabase.auth.signOut();
+        // Do NOT sign the user out on a transient 401 — surface the error so
+        // the UI can retry. Signing out during an urgent flow is worse than
+        // showing a retry button.
         throw new Error('Unauthorized');
       }
       throw new Error(error.message || 'Urgent signal failed');

@@ -409,11 +409,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       if (msg === 'NO_RELATIONSHIP') {
         Alert.alert('Brak połączenia', 'Nie masz aktywnego połączenia. Zaproś bliską osobę do kręgu.');
       } else if (msg === 'NO_AUTH') {
-        Alert.alert(
-          'Sesja wygasła',
-          'Twoja sesja wygasła, zaloguj się ponownie.',
-          [{ text: 'OK', onPress: () => router.replace('/onboarding') }],
-        );
+        // Do NOT redirect to onboarding — the session is still there, only
+        // this single call to the edge function tripped on auth. Let the
+        // user retry without getting bounced out of the app.
+        Alert.alert('Nie udało się', 'Coś poszło nie tak z połączeniem. Spróbuj ponownie za chwilę.');
       } else {
         Alert.alert('Nie udało się', 'Coś poszło nie tak. Spróbuj ponownie za chwilę.');
       }
