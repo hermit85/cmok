@@ -26,9 +26,11 @@ export const Colors = {
 
   // Highlight / today
   highlight: '#FFD93D',
+  highlightLight: '#FFF8E1',
 
   // Delight / milestone
   delight: '#A78BFA',
+  delightLight: '#F0EAFF',
 
   // Text
   text: '#2D2926',
@@ -46,6 +48,10 @@ export const Colors = {
   borderStrong: '#D5CCC2',
   disabled: '#D9D1C8',
   shadow: '#201813',
+  /** Standard modal overlay (confirmations, pickers). */
+  overlay: 'rgba(45, 41, 38, 0.55)',
+  /** Stronger overlay for celebration / milestone screens. */
+  overlayStrong: 'rgba(45, 41, 38, 0.7)',
 
   // Status
   statusOkBg: '#E0F7F5',

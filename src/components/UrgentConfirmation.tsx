@@ -68,7 +68,7 @@ export function UrgentConfirmation({ visible, onConfirm, onCancel, circleCount =
 
 const s = StyleSheet.create({
   overlay: {
-    flex: 1, backgroundColor: 'rgba(45, 41, 38, 0.55)',
+    flex: 1, backgroundColor: Colors.overlay,
     justifyContent: 'center', alignItems: 'center', padding: 20,
   },
   card: {

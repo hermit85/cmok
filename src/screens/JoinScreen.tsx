@@ -251,7 +251,7 @@ const s = StyleSheet.create({
   boxRow: { flexDirection: 'row', gap: 8, justifyContent: 'space-between' },
   box: { flex: 1, minHeight: 58, borderRadius: 14, backgroundColor: Colors.cardStrong, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: Colors.border },
   boxFocused: { borderColor: Colors.safe },
-  boxFilled: { backgroundColor: Colors.safe },
+  boxFilled: { backgroundColor: Colors.safe, borderColor: Colors.safe },
   boxDigit: { fontSize: 24, fontFamily: Typography.headingFamily, color: Colors.text },
   boxDigitFilled: { color: '#FFFFFF' },
   hiddenInput: { position: 'absolute', opacity: 0, height: 0, width: 0 },

@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   dayLabelToday: { color: Colors.text },
   dot: { width: DOT, height: DOT, borderRadius: DOT / 2 },
   dotOk: { backgroundColor: Colors.safe },
-  dotMissing: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.border },
+  dotMissing: { backgroundColor: 'transparent', borderWidth: 2, borderColor: Colors.borderStrong },
   dotFuture: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: Colors.border, opacity: 0.4 },
   dotToday: { backgroundColor: Colors.highlight },
   dotTodayChecked: { borderWidth: 2, borderColor: Colors.highlight },

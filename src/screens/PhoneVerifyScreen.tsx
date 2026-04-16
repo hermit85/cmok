@@ -288,7 +288,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                       keyboardType="phone-pad"
                       autoFocus
                       placeholder="600 100 200"
-                      placeholderTextColor="#D1CBC4"
+                      placeholderTextColor={Colors.textSoft}
                       maxLength={11}
                     />
                   </View>
@@ -425,7 +425,7 @@ const s = StyleSheet.create({
   box: { flex: 1, minHeight: 58, borderRadius: 14, backgroundColor: Colors.cardStrong, borderWidth: 2, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
   boxFocused: { borderColor: Colors.safe },
   boxDigit: { fontSize: 26, fontWeight: '700', color: Colors.text },
-  boxFilled: { backgroundColor: Colors.safe },
+  boxFilled: { backgroundColor: Colors.safe, borderColor: Colors.safe },
   boxDigitFilled: { color: '#FFFFFF' },
   hiddenInput: { position: 'absolute', opacity: 0, height: 0, width: 0 },
 

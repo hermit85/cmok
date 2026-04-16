@@ -73,7 +73,7 @@ const STATUS_MOOD_LABELS: Record<string, string> = {
 const MORNING_THOUGHTS = [
   { key: 'hug', emoji: '\u{1F917}', label: 'Przytulam', bg: Colors.loveLight },
   { key: 'coffee', emoji: '\u{2615}', label: 'Dobry dzień!', bg: Colors.accentWash },
-  { key: 'think', emoji: '\u{1F4AD}', label: 'Myślę o Tobie', bg: '#F0EAFF' },
+  { key: 'think', emoji: '\u{1F4AD}', label: 'Myślę o Tobie', bg: Colors.delightLight },
 ] as const;
 
 const STATUS_SIZE = 180;
@@ -139,9 +139,9 @@ function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: b
 type ReactionHaptic = 'light' | 'medium' | 'heavy' | 'success';
 const REACTIONS: ReadonlyArray<{ emoji: string; label: string; bg: string; haptic: ReactionHaptic }> = [
   { emoji: '\u{2764}\u{FE0F}', label: 'Kocham', bg: Colors.loveLight, haptic: 'success' },
-  { emoji: '\u{1F31B}', label: 'Dobranoc', bg: '#F0EAFF', haptic: 'light' },
+  { emoji: '\u{1F31B}', label: 'Dobranoc', bg: Colors.delightLight, haptic: 'light' },
   { emoji: '\u{1F44D}', label: 'OK!', bg: Colors.safeLight, haptic: 'medium' },
-  { emoji: '\u{1F31E}', label: 'Super!', bg: '#FFF8E1', haptic: 'heavy' },
+  { emoji: '\u{1F31E}', label: 'Super!', bg: Colors.highlightLight, haptic: 'heavy' },
 ];
 
 function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentReactionToday, streak }: {

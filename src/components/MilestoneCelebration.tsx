@@ -78,7 +78,7 @@ export function MilestoneCelebration({ visible, streak, recipientName, onDismiss
 const s = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(45, 41, 38, 0.7)',
+    backgroundColor: Colors.overlayStrong,
     justifyContent: 'center', alignItems: 'center', padding: 32,
     zIndex: 100,
   },

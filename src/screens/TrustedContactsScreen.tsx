@@ -24,6 +24,7 @@ export function TrustedContactsScreen() {
   const { relationship, status, profile } = useRelationship();
   const { contacts, loading, saving, addTrustedContact, removeTrustedContact } = useTrustedContacts(relationship?.id || null);
   const [phone, setPhone] = useState('');
+  const [phoneFocused, setPhoneFocused] = useState(false);
   const phoneInputRef = useRef<TextInput>(null);
   const [justAddedName, setJustAddedName] = useState<string | null>(null);
   const [notFoundPhone, setNotFoundPhone] = useState<string | null>(null);
@@ -145,7 +146,7 @@ export function TrustedContactsScreen() {
           <>
             {/* ─── Add card ─── */}
             <Text style={styles.sectionLabel}>Dodaj osobę</Text>
-            <Pressable style={styles.inputCard} onPress={() => phoneInputRef.current?.focus()}>
+            <Pressable style={[styles.inputCard, phoneFocused && styles.inputCardFocused]} onPress={() => phoneInputRef.current?.focus()}>
               <View style={styles.inputWrapper}>
                 <Text style={styles.prefix}>+48</Text>
                 <TextInput
@@ -155,8 +156,10 @@ export function TrustedContactsScreen() {
                   onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 9))}
                   keyboardType="phone-pad"
                   placeholder="600 100 200"
-                  placeholderTextColor="#D1CBC4"
+                  placeholderTextColor={Colors.textSoft}
                   maxLength={11}
+                  onFocus={() => setPhoneFocused(true)}
+                  onBlur={() => setPhoneFocused(false)}
                 />
               </View>
               <Text style={[styles.helper, isValid && styles.helperReady]}>
@@ -295,7 +298,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface, borderRadius: 20,
     paddingHorizontal: 20, paddingVertical: 18,
     marginBottom: 14,
+    borderWidth: 2, borderColor: 'transparent',
   },
+  inputCardFocused: { borderColor: Colors.safe, backgroundColor: Colors.cardStrong },
   inputWrapper: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
   prefix: { fontSize: 22, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
   input: {

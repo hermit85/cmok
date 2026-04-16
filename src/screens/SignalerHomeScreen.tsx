@@ -16,6 +16,7 @@ import { Emoji } from '../components/Emoji';
 import { PushPermissionBanner } from '../components/PushPermissionBanner';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
+import { Radius, Spacing } from '../constants/tokens';
 import { haptics } from '../utils/haptics';
 import { useCheckin } from '../hooks/useCheckin';
 import { useCircle } from '../hooks/useCircle';
@@ -812,7 +813,7 @@ const s = StyleSheet.create({
   containerAfter: { backgroundColor: Colors.background },
   scroll: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8 },
-  offlineBadge: { textAlign: 'center', fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, backgroundColor: Colors.surface, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', marginTop: 4 },
+  offlineBadge: { textAlign: 'center', fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, backgroundColor: Colors.surface, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 5, borderRadius: Radius.pill, overflow: 'hidden', marginTop: Spacing.sm },
   pushBannerWrap: { paddingHorizontal: 24, marginTop: 10 },
   urgentSendingWrap: { flex: 1, justifyContent: 'center' as const, alignItems: 'center' as const, paddingHorizontal: 32, gap: 16 },
   urgentSendingTitle: { fontSize: 22, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center' as const, marginTop: 12 },
