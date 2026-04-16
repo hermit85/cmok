@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator, Alert, ScrollView, Share, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
@@ -21,10 +21,12 @@ function Avatar({ name }: { name: string }) {
 
 export function TrustedContactsScreen() {
   const router = useRouter();
-  const { relationship, status } = useRelationship();
+  const { relationship, status, profile } = useRelationship();
   const { contacts, loading, saving, addTrustedContact, removeTrustedContact } = useTrustedContacts(relationship?.id || null);
   const [phone, setPhone] = useState('');
   const phoneInputRef = useRef<TextInput>(null);
+  const [justAddedName, setJustAddedName] = useState<string | null>(null);
+  const [notFoundPhone, setNotFoundPhone] = useState<string | null>(null);
 
   const canManage = status === 'active' && !!relationship?.id;
 
@@ -33,26 +35,43 @@ export function TrustedContactsScreen() {
   const displayNumber = cleanPhone.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
 
   const activeContacts = contacts.filter((c) => c.status === 'active');
+  const myName = profile?.name || 'bliska osoba';
 
   const handleAdd = async () => {
     if (!isValid || !canManage || !relationship?.id) return;
+    setJustAddedName(null);
+    setNotFoundPhone(null);
     try {
       await addTrustedContact(`48${cleanPhone}`);
       analytics.contactAdded();
+      // Find the just-added contact name from the refreshed list
+      const newContact = activeContacts.find(c => c.phone?.replace(/\D/g, '').endsWith(cleanPhone));
+      setJustAddedName(newContact?.name || 'Osoba');
       setPhone('');
+      // Clear toast after 3s
+      setTimeout(() => setJustAddedName(null), 3000);
     } catch (error) {
-      // Supabase errors are plain objects with .message, not Error instances
       const msg = (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string')
         ? error.message
         : (error instanceof Error ? error.message : '');
       if (msg.includes('not found') || msg.includes('User not found')) {
-        Alert.alert('Nie znaleziono', 'Ta osoba nie ma jeszcze konta w cmok. Poproś ją, żeby najpierw zainstalowała i zalogowała się w apce.');
+        // Inline invite flow — not an error, just means we need to invite them
+        setNotFoundPhone(`+48 ${displayNumber}`);
       } else if (msg.includes('already belongs') || msg.includes('already')) {
         Alert.alert('Już w kręgu', 'Ta osoba jest już w Twoim kręgu.');
       } else {
         Alert.alert('Nie udało się dodać', msg || 'Sprawdź numer i spróbuj ponownie.');
       }
     }
+  };
+
+  const handleSendInvite = async () => {
+    const msg = `Cześć! ${myName} poprosił(a), żebyś był(a) w jej/jego kręgu bliskich w cmok.\n\ncmok to apka, która daje codzienny znak "wszystko OK" osobom które mieszkają osobno. Ty dostaniesz wiadomość tylko jeśli coś się będzie działo.\n\nPobierz i zaloguj się swoim numerem:\nhttps://cmok.app/pobierz`;
+    try {
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+    } catch { /* cancelled */ }
+    setNotFoundPhone(null);
+    setPhone('');
   };
 
   const handleRemove = (contactId: string, name: string) => {
@@ -125,7 +144,7 @@ export function TrustedContactsScreen() {
               </View>
               <Text style={[styles.helper, isValid && styles.helperReady]}>
                 {phone.length === 0
-                  ? 'Osoba musi mieć zainstalowane cmok.'
+                  ? 'Jeśli osoba nie ma cmok, wyślemy zaproszenie.'
                   : isValid
                     ? 'Numer wygląda dobrze.'
                     : 'Wpisz 9-cyfrowy numer.'}
@@ -143,6 +162,32 @@ export function TrustedContactsScreen() {
             >
               {saving ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.addButtonText}>Dodaj do kręgu</Text>}
             </Pressable>
+
+            {/* ─── Success toast ─── */}
+            {justAddedName ? (
+              <View style={styles.toastSuccess}>
+                <Text style={styles.toastSuccessText}>{justAddedName} dodany(a) do kręgu ✓</Text>
+              </View>
+            ) : null}
+
+            {/* ─── Invite card (user not in cmok) ─── */}
+            {notFoundPhone ? (
+              <View style={styles.inviteCard}>
+                <Text style={styles.inviteTitle}>Ta osoba nie ma jeszcze cmok</Text>
+                <Text style={styles.inviteBody}>
+                  Numer {notFoundPhone} nie jest w bazie. Wyślij zaproszenie — gdy pobierze apkę i zaloguje się, będziesz mógł/mogła dodać ją do kręgu.
+                </Text>
+                <Pressable
+                  onPress={handleSendInvite}
+                  style={({ pressed }) => [styles.inviteBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+                >
+                  <Text style={styles.inviteBtnText}>Wyślij zaproszenie</Text>
+                </Pressable>
+                <Pressable onPress={() => { setNotFoundPhone(null); setPhone(''); }} style={({ pressed }) => [styles.inviteDismiss, pressed && { opacity: 0.5 }]}>
+                  <Text style={styles.inviteDismissText}>Anuluj</Text>
+                </Pressable>
+              </View>
+            ) : null}
 
             {/* ─── List ─── */}
             <View style={styles.listSection}>
@@ -236,6 +281,29 @@ const styles = StyleSheet.create({
   },
   addButtonDisabled: { backgroundColor: Colors.disabled, shadowOpacity: 0, elevation: 0 },
   addButtonText: { fontSize: 17, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
+
+  /* success toast */
+  toastSuccess: {
+    marginTop: 14, paddingVertical: 12, paddingHorizontal: 18,
+    backgroundColor: Colors.safeLight, borderRadius: 14,
+    alignItems: 'center' as const,
+  },
+  toastSuccessText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+
+  /* invite card (user not in cmok) */
+  inviteCard: {
+    marginTop: 16, padding: 20, borderRadius: 20,
+    backgroundColor: Colors.surfaceWarm, borderWidth: 1, borderColor: Colors.accent + '33',
+  },
+  inviteTitle: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 6 },
+  inviteBody: { fontSize: 14, lineHeight: 20, color: Colors.textSecondary, marginBottom: 16 },
+  inviteBtn: {
+    backgroundColor: Colors.accent, height: 48, borderRadius: 14,
+    alignItems: 'center' as const, justifyContent: 'center' as const,
+  },
+  inviteBtnText: { fontSize: 15, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
+  inviteDismiss: { minHeight: 40, alignItems: 'center' as const, justifyContent: 'center' as const, marginTop: 6 },
+  inviteDismissText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted },
 
   /* list */
   listSection: {},
