@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, Share, Platform, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, Linking, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Clipboard from 'expo-clipboard';
 import { supabase } from '../services/supabase';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
@@ -10,7 +9,6 @@ import { Radius, Spacing } from '../constants/tokens';
 import { useRelationship } from '../hooks/useRelationship';
 import { useCircle } from '../hooks/useCircle';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
-import { shareInvite, logInviteEvent } from '../utils/invite';
 import { analytics } from '../services/analytics';
 
 export function SettingsScreen() {
@@ -22,8 +20,6 @@ export function SettingsScreen() {
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
   const [savingName, setSavingName] = useState(false);
-  const [inviteCode, setInviteCode] = useState<string | null>(null);
-  const [inviteLoading, setInviteLoading] = useState(false);
 
   const isRecipient = profile?.role === 'recipient';
   const isSignaler = profile?.role === 'signaler';
@@ -58,79 +54,6 @@ export function SettingsScreen() {
     } finally {
       setSavingName(false);
     }
-  };
-
-  /* ─── Invite: step 1 = generate code, step 2 = show + share ─── */
-  const handleGenerateInvite = async () => {
-    setInviteLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { Alert.alert('Zaloguj się', 'Połącz telefon z kontem.'); return; }
-
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      const col = isRecipient ? 'caregiver_id' : 'senior_id';
-
-      // Guard: don't create pending if active relationship exists
-      const { data: activePair } = await supabase
-        .from('care_pairs')
-        .select('id')
-        .eq(col, user.id)
-        .eq('status', 'active')
-        .limit(1)
-        .maybeSingle();
-
-      if (activePair) {
-        Alert.alert('Już masz połączenie', 'Masz już aktywną relację w cmok. Żeby dodać kogoś do kręgu bliskich, użyj opcji w ustawieniach.');
-        return;
-      }
-
-      // Check for existing pending pair to reuse
-      const { data: existing } = await supabase
-        .from('care_pairs')
-        .select('id')
-        .eq(col, user.id)
-        .eq('status', 'pending')
-        .limit(1)
-        .maybeSingle();
-
-      if (existing?.id) {
-        const { error: updateErr } = await supabase.from('care_pairs')
-          .update({ invite_code: code, invite_expires_at: expiresAt })
-          .eq('id', existing.id);
-        if (updateErr) throw updateErr;
-      } else {
-        const { error: insertErr } = await supabase.from('care_pairs').insert({
-          [col]: user.id,
-          invite_code: code,
-          invite_expires_at: expiresAt,
-          status: 'pending',
-          signaler_label: profile?.name || 'Bliska osoba',
-        });
-        if (insertErr) throw insertErr;
-      }
-
-      logInviteEvent('invite_created', { code });
-      setInviteCode(code);
-    } catch {
-      Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.');
-    } finally {
-      setInviteLoading(false);
-    }
-  };
-
-  const handleCopyInviteCode = async () => {
-    if (!inviteCode) return;
-    try {
-      await Clipboard.setStringAsync(inviteCode);
-      logInviteEvent('invite_code_copied', { code: inviteCode });
-      Alert.alert('Skopiowano', 'Kod jest w schowku.');
-    } catch { /* silent */ }
-  };
-
-  const handleShareInviteCode = async () => {
-    if (!inviteCode) return;
-    await shareInvite({ code: inviteCode, signalerLabel: profile?.name || undefined });
   };
 
   /* ─── Delete account ─── */

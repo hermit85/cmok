@@ -24,7 +24,7 @@ import { useWeekRhythm } from '../hooks/useWeekRhythm';
 import { useCheckinStats } from '../hooks/useCheckinStats';
 import { supabase } from '../services/supabase';
 import { savePendingCheckin, syncPendingCheckin } from '../services/offlineSync';
-import { logInviteEvent, generateAndShareInvite } from '../utils/invite';
+import { logInviteEvent } from '../utils/invite';
 import { todayDateKey } from '../utils/today';
 import { analytics } from '../services/analytics';
 import type { Signal, SupportParticipant } from '../types';
@@ -806,7 +806,6 @@ const s = StyleSheet.create({
 
   /* copy */
   copyLine: { fontSize: 16, lineHeight: 24, color: Colors.textSecondary, textAlign: 'center', marginTop: 20, maxWidth: 280 },
-  copySubLine: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
   copyLineDone: { fontSize: 20, lineHeight: 28, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, textAlign: 'center', marginTop: 20, maxWidth: 300 },
   timeLine: { fontSize: 13, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
   responseReceipt: {
@@ -854,9 +853,6 @@ const s = StyleSheet.create({
   statusSentHint: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
   tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 16 },
   streakHook: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
-  shareBtn: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12, backgroundColor: Colors.surface },
-  shareBtnText: { fontSize: 13, color: Colors.accent, fontFamily: Typography.headingFamilySemiBold },
-
   dotsWrap: { marginTop: 16 },
   statsRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, gap: 24,
@@ -866,8 +862,6 @@ const s = StyleSheet.create({
   statNumber: { fontSize: 24, fontFamily: Typography.headingFamily, color: Colors.safe },
   statLabel: { fontSize: 11, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, marginTop: 2 },
   statDivider: { width: 1, height: 28, backgroundColor: Colors.safe, opacity: 0.2 },
-  viralLink: { marginTop: 20, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
-  viralLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
 
   /* urgent button — visible but not alarming */
   urgentBtn: {
@@ -881,17 +875,6 @@ const s = StyleSheet.create({
   urgentBtnSub: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
   /* urgent full state */
-  /* poke — standalone gesture */
-  pokeSection: { alignItems: 'center', paddingVertical: 20, marginTop: 8, paddingHorizontal: 24 },
-  pokePrompt: { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
-  pokeRow: { flexDirection: 'row', gap: 14, justifyContent: 'center' },
-  pokeChip: { width: 64, paddingVertical: 12, borderRadius: 16, backgroundColor: Colors.surface, alignItems: 'center' as const, shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
-  pokeChipEmoji: { fontSize: 28, marginBottom: 4 },
-  pokeChipLabel: { fontSize: 9, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
-  pokeSentPill: { flexDirection: 'row', alignItems: 'center' as const, backgroundColor: Colors.safeLight, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 999, gap: 8 },
-  pokeEmoji: { fontSize: 18 },
-  pokeSentText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
-
   urgentScroll: { paddingHorizontal: 24, paddingTop: 26, paddingBottom: 28 },
   urgentLabel: { fontSize: 13, fontFamily: Typography.fontFamilyBold, color: Colors.alert, marginBottom: 10 },
   urgentTitle: { fontSize: 28, lineHeight: 34, fontFamily: Typography.headingFamily, color: Colors.text },
