@@ -9,7 +9,6 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { WeekDots } from '../components/WeekDots';
 import { Emoji } from '../components/Emoji';
 import { Particles } from '../components/Particles';
-import { MonthGrid } from '../components/MonthGrid';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
@@ -668,7 +667,6 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         <View style={st.rhythmSection}>
           {effWeek.length > 0 ? <WeekDots days={effWeek} /> : null}
           {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
-          {sigId ? <MonthGrid signalerId={sigId} /> : null}
         </View>
       </ScrollView>
     </SafeAreaView>
