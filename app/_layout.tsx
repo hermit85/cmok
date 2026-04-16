@@ -20,6 +20,7 @@ import { registerPushToken } from '../src/services/notifications';
 import { supabase } from '../src/services/supabase';
 import { posthog } from '../src/services/posthog';
 import { Colors } from '../src/constants/colors';
+import { clearPendingCheckin } from '../src/services/offlineSync';
 
 function RootLayout() {
   const router = useRouter();
@@ -149,6 +150,9 @@ function RootLayout() {
       }
       if (event === 'SIGNED_OUT') {
         posthog.reset();
+        // Drop any locally cached offline tap so a new user on the same
+        // device can't inherit a previous user's pending check-in.
+        clearPendingCheckin().catch(() => {});
       }
     });
     return () => subscription.unsubscribe();

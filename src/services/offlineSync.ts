@@ -41,8 +41,10 @@ export async function savePendingCheckin(seniorId: string): Promise<void> {
 
 /**
  * Sync pending check-in to Supabase.
- * Only syncs if the pending item is for TODAY's local date.
- * Stale items (from previous days) are discarded without syncing.
+ * Only syncs if:
+ *   - the pending item is for TODAY's local date, AND
+ *   - the stored senior_id matches the currently authenticated user.
+ * Stale / cross-user items are discarded without syncing.
  */
 export async function syncPendingCheckin(): Promise<boolean> {
   try {
@@ -55,6 +57,17 @@ export async function syncPendingCheckin(): Promise<boolean> {
     // SAFETY: reject stale pending items from previous days
     if (checkin.local_date !== today) {
       console.log('[offlineSync] discarding stale pending from', checkin.local_date, '(today is', today, ')');
+      await removeItem(PENDING_CHECKIN_KEY);
+      return false;
+    }
+
+    // SAFETY: reject pending items that don't belong to the current auth user.
+    // Prevents a previous user's offline tap from materialising as a checkin
+    // for a new account on the same device (which looked to the recipient
+    // like a sign appearing out of nowhere).
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || checkin.senior_id !== user.id) {
+      console.log('[offlineSync] discarding pending — senior_id does not match current user');
       await removeItem(PENDING_CHECKIN_KEY);
       return false;
     }
@@ -82,6 +95,15 @@ export async function syncPendingCheckin(): Promise<boolean> {
     console.error('syncPendingCheckin error:', err);
     return false;
   }
+}
+
+/**
+ * Clear any locally cached offline state that is tied to a user session.
+ * Call this from sign-out paths so a new user on the same device never
+ * inherits a previous user's pending tap.
+ */
+export async function clearPendingCheckin(): Promise<void> {
+  await removeItem(PENDING_CHECKIN_KEY);
 }
 
 /** Check if there's a pending check-in. */
