@@ -1,9 +1,10 @@
 // ============================================================
 // cmok · reset-test-data Edge Function
-// Czyści dane testowe bez usuwania kont.
-// Użycie: POST z body { mode: "keep_pair" | "full_reset" }
+// Czyści dane testowe bez usuwania kont, lub seeduje Sąsiada.
+// Użycie: POST z body { mode: "keep_pair" | "full_reset" | "seed_sasiad" }
 //   keep_pair — czyści checkins/signals/alerts, zostawia relację
 //   full_reset — czyści wszystko, wraca do stanu pre-onboarding
+//   seed_sasiad — tworzy konto +48100000003 jeśli nie istnieje (Sąsiad, signaler role)
 // ============================================================
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
@@ -37,6 +38,39 @@ serve(async (req) => {
       const body = await req.json();
       mode = body.mode || 'keep_pair';
     } catch { /* default to keep_pair */ }
+
+    // seed_sasiad: create auth+profile for 003 if missing
+    if (mode === 'seed_sasiad') {
+      const { data: existing } = await serviceSupabase
+        .from('users')
+        .select('id')
+        .eq('phone', '48100000003')
+        .maybeSingle();
+
+      if (existing) {
+        return jsonResponse({ ok: true, mode, note: 'already exists' });
+      }
+
+      const { data: authUser, error: authErr } = await serviceSupabase.auth.admin.createUser({
+        phone: '48100000003',
+        phone_confirm: true,
+      });
+      if (authErr || !authUser?.user) {
+        return jsonResponse({ error: `auth create failed: ${authErr?.message}` }, 500);
+      }
+
+      const { error: profileErr } = await serviceSupabase.from('users').insert({
+        id: authUser.user.id,
+        phone: '48100000003',
+        name: 'Sąsiad',
+        role: 'signaler',
+      });
+      if (profileErr) {
+        return jsonResponse({ error: `profile insert failed: ${profileErr.message}` }, 500);
+      }
+
+      return jsonResponse({ ok: true, mode, created: authUser.user.id });
+    }
 
     // 1. Find test user IDs
     const { data: users } = await serviceSupabase

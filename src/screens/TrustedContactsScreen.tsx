@@ -41,13 +41,16 @@ export function TrustedContactsScreen() {
       analytics.contactAdded();
       setPhone('');
     } catch (error) {
-      const msg = error instanceof Error ? error.message : '';
-      if (msg.includes('not found') || msg.includes('nie znaleziono') || msg.includes('User not found')) {
-        Alert.alert('Nie znaleziono', 'Ta osoba nie ma jeszcze konta w cmok. Poproś ją, żeby pobrała apkę.');
-      } else if (msg.includes('already') || msg.includes('już')) {
+      // Supabase errors are plain objects with .message, not Error instances
+      const msg = (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string')
+        ? error.message
+        : (error instanceof Error ? error.message : '');
+      if (msg.includes('not found') || msg.includes('User not found')) {
+        Alert.alert('Nie znaleziono', 'Ta osoba nie ma jeszcze konta w cmok. Poproś ją, żeby najpierw zainstalowała i zalogowała się w apce.');
+      } else if (msg.includes('already belongs') || msg.includes('already')) {
         Alert.alert('Już w kręgu', 'Ta osoba jest już w Twoim kręgu.');
       } else {
-        Alert.alert('Coś poszło nie tak', msg || 'Nie udało się dodać. Sprawdź numer i spróbuj ponownie.');
+        Alert.alert('Nie udało się dodać', msg || 'Sprawdź numer i spróbuj ponownie.');
       }
     }
   };
