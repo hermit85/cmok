@@ -11,6 +11,8 @@ import { Emoji } from '../components/Emoji';
 import { Particles } from '../components/Particles';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { PushPermissionBanner } from '../components/PushPermissionBanner';
+import { SafetyStatus } from '../components/SafetyStatus';
+import NetInfo from '@react-native-community/netinfo';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius } from '../constants/tokens';
@@ -254,12 +256,27 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const [showWarmToast, setShowWarmToast] = useState(false);
   const [showCirclePrompt, setShowCirclePrompt] = useState(false);
   const [pokePicked, setPokePicked] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
   const pokeAlreadySent = !pv && sigId ? hasSentPokeToday(sigId) : false;
   const hasSeenSign = useRef(false);
+  const prevIsOkRef = useRef(false);
+  // Tracks whether we've completed at least one data fetch, so we can
+  // distinguish "live arrival" (realtime update) from "initial load".
+  const hasSyncedOnceRef = useRef(false);
   const toastFade = useRef(new Animated.Value(0)).current;
   const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => { if (celebrationTimerRef.current) clearTimeout(celebrationTimerRef.current); }, []);
+  useEffect(() => () => {
+    if (celebrationTimerRef.current) clearTimeout(celebrationTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    const unsub = NetInfo.addEventListener((state) => {
+      setIsOffline(!(state.isConnected && state.isInternetReachable !== false));
+    });
+    return () => unsub();
+  }, []);
   const [todayTime, setTodayTime] = useState<string | null>(null);
   const [lastContact, setLastContact] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -309,7 +326,16 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       setTodayTime(todayRow ? fmtTime(todayRow.checked_at) : null);
       setSignerStatus(todayRow?.status_emoji || null);
       setLastContact(fmtRelative(latestRow?.local_date ?? null, latestRow?.checked_at ?? null));
-      setIsOk(urgentCase?.viewerRole === 'primary' && currentAlert ? false : !!todayRow);
+      const nextOk = urgentCase?.viewerRole === 'primary' && currentAlert ? false : !!todayRow;
+      // Live arrival: was false → now true after at least one prior fetch. A
+      // heavy haptic makes the moment feel physical, like "it just landed".
+      if (!prevIsOkRef.current && nextOk && hasSyncedOnceRef.current) {
+        haptics.heavy();
+      }
+      prevIsOkRef.current = nextOk;
+      hasSyncedOnceRef.current = true;
+      setIsOk(nextOk);
+      setLastSyncedAt(Date.now());
     } catch (e) { console.warn('fetchData:', e); } finally { setDataLoading(false); }
   }, [sigId, urgentCase?.viewerRole, currentAlert]);
 
@@ -586,6 +612,15 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         {/* ─── SECTION 1: Status hero ─── */}
         <View style={st.heroSection}>
           <StatusCircle ok={effOk} showCelebration={showCelebration} />
+          {!pv ? (
+            <SafetyStatus
+              signalerName={sigName}
+              signedAt={todayTime}
+              isSafe={effOk}
+              lastSyncedAt={lastSyncedAt}
+              isOffline={isOffline}
+            />
+          ) : null}
           {effOk ? (
             <Animated.View style={{ opacity: afterFade, alignItems: 'center' }}>
               <Text style={st.title} maxFontSizeMultiplier={1.3}>{title}</Text>

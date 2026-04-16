@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, ActivityIndicator, Pressable, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Pressable, Alert, ScrollView, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -9,6 +9,8 @@ import { supabase } from '../services/supabase';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Spacing } from '../constants/tokens';
+import { haptics } from '../utils/haptics';
+import { WarmToast } from '../components/WarmToast';
 
 export function WaitingForConnectionScreen() {
   const router = useRouter();
@@ -30,6 +32,10 @@ export function WaitingForConnectionScreen() {
   const sigName = relationship?.signalerLabel || 'bliska osoba';
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
+  const [justCopied, setJustCopied] = useState(false);
+  const copyScale = useRef(new Animated.Value(1)).current;
+  const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (copyResetRef.current) clearTimeout(copyResetRef.current); }, []);
 
   const handleSaveName = async () => {
     const trimmed = nameValue.trim();
@@ -47,7 +53,12 @@ export function WaitingForConnectionScreen() {
     try {
       await Clipboard.setStringAsync(inviteCode);
       logInviteEvent('invite_code_copied', { code: inviteCode });
-      Alert.alert('Skopiowano', 'Kod jest w schowku.');
+      haptics.success();
+      setJustCopied(true);
+      copyScale.setValue(0.94);
+      Animated.spring(copyScale, { toValue: 1, tension: 140, friction: 6, useNativeDriver: true }).start();
+      if (copyResetRef.current) clearTimeout(copyResetRef.current);
+      copyResetRef.current = setTimeout(() => setJustCopied(false), 1800);
     } catch { /* silent */ }
   };
 
@@ -104,11 +115,22 @@ export function WaitingForConnectionScreen() {
           <Text style={s.cardHint}>Pokaż ten kod lub wyślij go. Gdy {sigName} go wpisze, połączycie się.</Text>
 
           {inviteCode ? (
-            <Pressable onPress={handleCopyCode} style={({ pressed }) => [s.codeFrame, pressed && { opacity: 0.85 }]}>
-              <Text style={s.codeValue}>{inviteCode}</Text>
-              <Text style={s.copyHint}>Stuknij, żeby skopiować</Text>
-            </Pressable>
+            <Animated.View style={{ transform: [{ scale: copyScale }] }}>
+              <Pressable
+                onPress={handleCopyCode}
+                style={({ pressed }) => [s.codeFrame, justCopied && s.codeFrameCopied, pressed && { opacity: 0.85 }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Kod zaproszenia ${inviteCode}. Stuknij, żeby skopiować.`}
+              >
+                <Text style={[s.codeValue, justCopied && s.codeValueCopied]}>{inviteCode}</Text>
+                <Text style={[s.copyHint, justCopied && s.copyHintCopied]}>
+                  {justCopied ? '\u2713 Skopiowane' : 'Stuknij, żeby skopiować'}
+                </Text>
+              </Pressable>
+            </Animated.View>
           ) : null}
+          <WarmToast visible={justCopied} text="Kod skopiowany" tone="safe" />
+
 
           <Pressable
             onPress={handleShare}
@@ -214,9 +236,13 @@ const s = StyleSheet.create({
     backgroundColor: Colors.cardStrong, borderRadius: 16,
     paddingVertical: 18, paddingHorizontal: 28,
     marginBottom: 14, alignItems: 'center',
+    borderWidth: 1.5, borderColor: 'transparent',
   },
+  codeFrameCopied: { backgroundColor: Colors.safeLight, borderColor: Colors.safe },
   codeValue: { fontSize: 32, fontFamily: Typography.headingFamily, color: Colors.text, letterSpacing: 6 },
+  codeValueCopied: { color: Colors.safeStrong },
   copyHint: { fontSize: 11, color: Colors.textMuted, marginTop: 6 },
+  copyHintCopied: { color: Colors.safeStrong },
   expiryHint: { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: 10 },
   resendLink: { minHeight: 40, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
   resendLinkText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },

@@ -78,6 +78,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   const [showUrgentModal, setShowUrgentModal] = useState(false);
   const [localUrgentOffline, setLocalUrgentOffline] = useState(false);
+  const [urgentSending, setUrgentSending] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [pendingSaved, setPendingSaved] = useState(false);
   const [pendingCheckinTime, setPendingCheckinTime] = useState<string | null>(null);
@@ -393,6 +394,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
+    // Triple heavy pattern — iOS SOS feel, elderly-friendly "this really went"
+    haptics.heavy();
+    setTimeout(() => haptics.heavy(), 120);
+    setTimeout(() => haptics.heavy(), 240);
     if (pv) { setPreviewMode('support'); return; }
     if (!authReady || !isAuthenticated) {
       Alert.alert('Zaloguj się', 'Żeby dać znać bliskim, połącz telefon z kontem.');
@@ -413,10 +418,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       return;
     }
 
+    setUrgentSending(true);
     try {
       await sendUrgentSignal();
       analytics.urgentTriggered(false);
       setLocalUrgentOffline(false);
+      haptics.success();
     } catch (err) {
       const msg = err instanceof Error ? err.message : '';
       if (msg === 'NO_RELATIONSHIP') {
@@ -430,6 +437,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       } else {
         Alert.alert('Nie udało się', 'Coś poszło nie tak. Spróbuj ponownie za chwilę.');
       }
+    } finally {
+      setUrgentSending(false);
     }
   };
 
@@ -463,6 +472,21 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       Animated.spring(responseReceiptScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }).start();
     }
   }, [hasResponseForEffect, showChecked, responseReceiptScale]);
+
+  // Sending overlay — briefly visible between confirm tap and full urgent state.
+  // Without it users stare at the daily ritual screen for ~1-2s wondering if
+  // the signal went. Auto-transitions to showUrgent once currentAlert lands.
+  if (urgentSending && !showUrgent) {
+    return (
+      <SafeAreaView style={s.container}>
+        <View style={s.urgentSendingWrap}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+          <Text style={s.urgentSendingTitle}>Wysyłamy sygnał do bliskich</Text>
+          <Text style={s.urgentSendingBody}>Damy znać, gdy ktoś z kręgu go odbierze.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (showUrgent) {
     const loc = effectiveAlert?.latitude != null;
@@ -784,6 +808,9 @@ const s = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8 },
   offlineBadge: { textAlign: 'center', fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, backgroundColor: Colors.surface, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', marginTop: 4 },
   pushBannerWrap: { paddingHorizontal: 24, marginTop: 10 },
+  urgentSendingWrap: { flex: 1, justifyContent: 'center' as const, alignItems: 'center' as const, paddingHorizontal: 32, gap: 16 },
+  urgentSendingTitle: { fontSize: 22, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center' as const, marginTop: 12 },
+  urgentSendingBody: { fontSize: 15, color: Colors.textSecondary, textAlign: 'center' as const, lineHeight: 22 },
 
   /* button */
   buttonArea: { justifyContent: 'center', alignItems: 'center', height: BTN + 48 },
