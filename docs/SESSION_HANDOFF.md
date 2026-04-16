@@ -11,6 +11,8 @@ Read this first when starting a new session. Also read `CLAUDE.md` for full proj
 ## Test accounts
 - Signaler (Mama): `+48 100 000 001`, OTP `123456`
 - Recipient (Darek): `+48 100 000 002`, OTP `123456`
+- Trusted contact (Sąsiad): `+48 100 000 003`, OTP `123456`
+  - Used for testing trusted circle. Added via TrustedContacts screen.
 
 ## Reset test data before testing
 

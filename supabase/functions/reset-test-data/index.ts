@@ -9,7 +9,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const TEST_PHONES = ['48100000001', '48100000002'];
+const TEST_PHONES = ['48100000001', '48100000002', '48100000003'];
 
 const CORS_HEADERS = {
   'Content-Type': 'application/json',
@@ -131,6 +131,7 @@ serve(async (req) => {
       // keep_pair: just reset names to known good state
       await serviceSupabase.from('users').update({ name: 'Mama' }).eq('phone', '48100000001');
       await serviceSupabase.from('users').update({ name: 'Darek' }).eq('phone', '48100000002');
+      await serviceSupabase.from('users').update({ name: 'Sąsiad' }).eq('phone', '48100000003');
 
       // Reset pair labels
       if (pairIds.length > 0) {
@@ -138,7 +139,7 @@ serve(async (req) => {
           .update({ signaler_label: 'Mama', senior_name: 'Mama' })
           .in('id', pairIds);
       }
-      deleted.push('names_reset: Mama + Darek');
+      deleted.push('names_reset: Mama + Darek + Sąsiad');
     }
 
     return jsonResponse({ ok: true, mode, deleted });
