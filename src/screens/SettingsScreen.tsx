@@ -104,22 +104,20 @@ export function SettingsScreen() {
 
         <Text style={styles.title}>Ustawienia</Text>
 
-        {/* ─── Circle summary ─── */}
+        {/* ─── Main relationship ─── */}
         <Pressable
           onPress={() => router.push('/circle')}
-          style={({ pressed }) => [styles.card, pressed && { opacity: 0.88 }]}
+          style={({ pressed }) => [styles.card, styles.relationCard, pressed && { opacity: 0.88 }]}
         >
-          <Text style={styles.cardLabel}>Twój krąg</Text>
           {mainPerson ? (
             <View style={styles.circleRow}>
-              <View style={styles.miniAvatar}>
-                <Text style={styles.miniAvatarText}>{(mainPerson.name || '?').charAt(0).toUpperCase()}</Text>
+              <View style={styles.relationAvatar}>
+                <Text style={styles.relationAvatarText}>{(mainPerson.name || '?').charAt(0).toUpperCase()}</Text>
               </View>
               <View style={styles.circleInfo}>
-                <Text style={styles.cardValue}>{mainPerson.name}</Text>
-                <Text style={styles.cardDetail}>
-                  {isRecipient ? 'Codzienny znak' : 'Dostaje Twój znak'}
-                  {circleCount > 0 ? ` · +${circleCount} w kręgu` : ''}
+                <Text style={styles.relationName}>{mainPerson.name}</Text>
+                <Text style={styles.relationRole}>
+                  {isRecipient ? 'Daje Ci codzienny znak' : 'Dostaje Twój codzienny znak'}
                 </Text>
               </View>
               <Text style={styles.chevron}>→</Text>
@@ -133,14 +131,30 @@ export function SettingsScreen() {
           )}
         </Pressable>
 
-        {/* ─── Trusted circle ─── */}
+        {/* ─── Safety circle (trusted contacts) ─── */}
         {status === 'active' ? (
           <Pressable
             onPress={() => router.push('/trusted-contacts')}
-            style={({ pressed }) => [styles.card, pressed && { opacity: 0.88 }]}
+            style={({ pressed }) => [styles.card, styles.safetyCard, pressed && { opacity: 0.88 }]}
           >
-            <Text style={styles.inviteText}>Twój krąg bliskich</Text>
-            <Text style={styles.cardDetail}>Dodaj sąsiada, koleżankę, kogoś zaufanego. Dostaną wiadomość, jeśli poprosisz o pomoc.</Text>
+            <View style={styles.circleRow}>
+              <View style={styles.safetyIcon}>
+                <Text style={styles.safetyIconText}>+</Text>
+              </View>
+              <View style={styles.circleInfo}>
+                <Text style={styles.safetyTitle}>
+                  {circleCount > 0
+                    ? `${circleCount} ${circleCount === 1 ? 'osoba w kręgu bliskich' : 'osób w kręgu bliskich'}`
+                    : 'Krąg bliskich'}
+                </Text>
+                <Text style={styles.safetySubtitle}>
+                  {circleCount > 0
+                    ? 'Dotkni\u0119cie, żeby zobaczyć lub dodać kolejną osobę'
+                    : 'Dodaj sąsiada lub kogoś zaufanego, dostaną wiadomość gdy poprosisz o pomoc'}
+                </Text>
+              </View>
+              <Text style={styles.chevron}>→</Text>
+            </View>
           </Pressable>
         ) : null}
 
@@ -227,7 +241,7 @@ const styles = StyleSheet.create({
   title: { fontSize: Typography.title, fontFamily: Typography.headingFamily, color: Colors.text, marginBottom: 20 },
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 20, padding: Spacing.card, marginBottom: 16,
+    borderRadius: 20, padding: Spacing.card, marginBottom: 12,
     shadowColor: Colors.shadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
   },
   cardLabel: { fontSize: 11, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.8 },
@@ -241,6 +255,33 @@ const styles = StyleSheet.create({
   miniAvatarText: { fontSize: 14, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   circleInfo: { flex: 1 },
   chevron: { fontSize: 18, color: Colors.textMuted },
+
+  /* Main relationship card (highlighted) */
+  relationCard: {
+    backgroundColor: Colors.safeLight,
+    borderWidth: 1, borderColor: Colors.safe + '33',
+  },
+  relationAvatar: {
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: Colors.safe, justifyContent: 'center' as const, alignItems: 'center' as const, marginRight: 14,
+  },
+  relationAvatarText: { fontSize: 22, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
+  relationName: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
+  relationRole: { fontSize: 13, color: Colors.safeStrong, marginTop: 2, fontFamily: Typography.fontFamilyMedium },
+
+  /* Safety circle card (warm accent) */
+  safetyCard: {
+    backgroundColor: Colors.surfaceWarm,
+    borderWidth: 1, borderColor: Colors.accent + '22',
+  },
+  safetyIcon: {
+    width: 52, height: 52, borderRadius: 26,
+    backgroundColor: Colors.accent + '15', justifyContent: 'center' as const, alignItems: 'center' as const, marginRight: 14,
+    borderWidth: 2, borderColor: Colors.accent + '33', borderStyle: 'dashed' as const,
+  },
+  safetyIconText: { fontSize: 26, fontFamily: Typography.headingFamily, color: Colors.accent, marginTop: -2 },
+  safetyTitle: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
+  safetySubtitle: { fontSize: 13, color: Colors.textSecondary, marginTop: 3, lineHeight: 18 },
   inviteCard: { },
   inviteText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.accent, marginBottom: 4 },
   codeFrame: {

@@ -112,6 +112,17 @@ export function TrustedContactsScreen() {
           Sąsiad, koleżanka, brat. Dostaną wiadomość, gdy poprosisz o pomoc.
         </Text>
 
+        {canManage && activeContacts.length > 0 ? (
+          <View style={styles.heroBanner}>
+            <Text style={styles.heroBannerEmoji}>{'\u{1F49A}'}</Text>
+            <Text style={styles.heroBannerText}>
+              {activeContacts.length === 1
+                ? `${activeContacts[0].name} jest w Twoim kręgu`
+                : `${activeContacts.length} osób w Twoim kręgu`}
+            </Text>
+          </View>
+        ) : null}
+
         {!canManage ? (
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>Najpierw połącz główną relację</Text>
@@ -240,7 +251,17 @@ const styles = StyleSheet.create({
   backButton: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, marginBottom: 12 },
   backText: { fontSize: 16, fontFamily: Typography.fontFamilyMedium, color: Colors.accent },
   title: { fontSize: 32, fontFamily: Typography.headingFamily, color: Colors.text },
-  subtitle: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginTop: 6, marginBottom: 28 },
+  subtitle: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginTop: 6, marginBottom: 16 },
+
+  /* hero banner (when at least 1 person in circle) */
+  heroBanner: {
+    flexDirection: 'row' as const, alignItems: 'center' as const,
+    backgroundColor: Colors.safeLight, borderRadius: 16,
+    paddingVertical: 14, paddingHorizontal: 16,
+    marginBottom: 24, gap: 10,
+  },
+  heroBannerEmoji: { fontSize: 22 },
+  heroBannerText: { flex: 1, fontSize: 14, color: Colors.safeStrong, fontFamily: Typography.fontFamilyMedium },
 
   /* info card (not connected) */
   infoCard: {
