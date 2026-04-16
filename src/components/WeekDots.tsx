@@ -7,6 +7,14 @@ type DayStatus = 'ok' | 'missing' | 'future';
 
 /** Fixed Mon→Sun order matching useWeekRhythm's calendar week. */
 const DAY_LABELS_PL = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'] as const;
+const DAY_LABELS_FULL_PL = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'] as const;
+
+function a11yLabelFor(fullDay: string, status: DayStatus, isToday: boolean, todayCheckedIn: boolean): string {
+  if (isToday) return todayCheckedIn ? 'Dzisiaj, znak wysłany' : 'Dzisiaj, czekamy na znak';
+  if (status === 'future') return `${fullDay}, jeszcze nie nadszedł`;
+  if (status === 'ok') return `${fullDay}, znak był`;
+  return `${fullDay}, brak znaku`;
+}
 
 interface WeekDotsProps {
   days: DayStatus[];
@@ -73,7 +81,7 @@ function CascadeDots({ days, dayLabels }: { days: DayStatus[]; dayLabels: string
   }, []);
 
   return (
-    <View style={styles.row}>
+    <View style={styles.row} accessibilityLabel="Pełny tydzień, wszystkie znaki wysłane">
       {days.map((_, i) => (
         <View key={i} style={styles.dayColumn}>
           <Text style={styles.dayLabel}>{dayLabels[i]}</Text>
@@ -109,8 +117,15 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
             // Show checked-in today as teal+gold, pending today as gold pulse
             const todayCheckedIn = isToday && status === 'ok';
 
+            const fullDay = DAY_LABELS_FULL_PL[i] ?? dayLabels[i];
+            const a11y = a11yLabelFor(fullDay, status, isToday, todayCheckedIn);
             return (
-              <View key={i} style={styles.dayColumn}>
+              <View
+                key={i}
+                style={styles.dayColumn}
+                accessible
+                accessibilityLabel={a11y}
+              >
                 <Text style={[styles.dayLabel, isToday && styles.dayLabelToday]}>
                   {dayLabels[i]}
                 </Text>

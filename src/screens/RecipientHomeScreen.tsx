@@ -111,7 +111,11 @@ function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: b
   }, [ok]);
 
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{ alignItems: 'center', justifyContent: 'center' }}
+      accessibilityRole="image"
+      accessibilityLabel={ok ? 'Bezpiecznie. Dzisiejszy znak dotarł.' : 'Czekamy na dzisiejszy znak od bliskiej osoby.'}
+    >
       <Particles visible={showCelebration} count={10} colors={[Colors.safe, Colors.love, Colors.highlight, Colors.delight]} />
       <Animated.View style={[
         st.statusCircle,
@@ -130,12 +134,15 @@ function StatusCircle({ ok, showCelebration }: { ok: boolean; showCelebration: b
 
 /* ─── Response tap ─── */
 
-const REACTIONS = [
-  { emoji: '\u{2764}\u{FE0F}', label: 'Kocham', bg: Colors.loveLight },
-  { emoji: '\u{1F31B}', label: 'Dobranoc', bg: '#F0EAFF' },
-  { emoji: '\u{1F44D}', label: 'OK!', bg: Colors.safeLight },
-  { emoji: '\u{1F31E}', label: 'Super!', bg: '#FFF8E1' },
-] as const;
+// Per-emoji haptic patterns give each reaction its own physical feel:
+// Kocham → warm confirmation, Dobranoc → gentle, OK → single tap, Super → impactful.
+type ReactionHaptic = 'light' | 'medium' | 'heavy' | 'success';
+const REACTIONS: ReadonlyArray<{ emoji: string; label: string; bg: string; haptic: ReactionHaptic }> = [
+  { emoji: '\u{2764}\u{FE0F}', label: 'Kocham', bg: Colors.loveLight, haptic: 'success' },
+  { emoji: '\u{1F31B}', label: 'Dobranoc', bg: '#F0EAFF', haptic: 'light' },
+  { emoji: '\u{1F44D}', label: 'OK!', bg: Colors.safeLight, haptic: 'medium' },
+  { emoji: '\u{1F31E}', label: 'Super!', bg: '#FFF8E1', haptic: 'heavy' },
+];
 
 function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentReactionToday, streak }: {
   signalerName: string; signalerId: string; preview: boolean;
@@ -159,7 +166,8 @@ function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentRea
 
   const handleTap = async (emoji: string, index: number) => {
     if (sent) return;
-    haptics.medium();
+    const reaction = REACTIONS[index];
+    haptics[reaction.haptic]();
     logInviteEvent('recipient_response_started');
     Animated.sequence([
       Animated.spring(scales[index], { toValue: 1.5, useNativeDriver: true, speed: 50, bounciness: 14 }),
@@ -173,7 +181,6 @@ function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentRea
       }
       setJustSent(emoji);
       setShowReactionParticles(true);
-      haptics.success();
       logInviteEvent('recipient_response_sent');
       particleTimerRef.current = setTimeout(() => setShowReactionParticles(false), 1200);
     } catch { /* silent */ }
@@ -197,7 +204,7 @@ function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentRea
             <Text style={st.responseSentText}>{signalerName} zobaczy Twój gest</Text>
           </Animated.View>
           {streak && streak >= 2 ? (
-            <Text style={st.streakText}>{streak} {streak === 7 ? 'dni z rzędu — cały tydzień' : streak >= 14 ? `dni z rzędu — ${Math.floor(streak / 7)} tygodnie` : 'dni z rzędu'}</Text>
+            <Text style={st.streakText}>{streak} {streak === 7 ? 'dni z rzędu, cały tydzień' : streak >= 14 ? `dni z rzędu, ${Math.floor(streak / 7)} tygodnie` : 'dni z rzędu'}</Text>
           ) : null}
           <Text style={st.tomorrowHook}>Do zobaczenia jutro</Text>
         </>
@@ -210,6 +217,9 @@ function ResponseTap({ signalerName, signalerId, preview, sendSignal, hasSentRea
                 <Pressable
                   onPress={() => handleTap(r.emoji, i)}
                   style={({ pressed }) => [st.reactionBtn, { backgroundColor: r.bg }, pressed && { opacity: 0.8, transform: [{ scale: 0.92 }] }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Wyślij reakcję: ${r.label}`}
+                  accessibilityHint={`Wysyła ${r.label} do ${signalerName}`}
                 >
                   <Emoji style={st.reactionEmoji}>{r.emoji}</Emoji>
                   <Text style={st.reactionLabel}>{r.label}</Text>

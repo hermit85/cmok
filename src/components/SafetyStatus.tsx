@@ -51,7 +51,7 @@ export function SafetyStatus({ signalerName, signedAt, isSafe, lastSyncedAt, isO
     : 'Czekamy na dzisiejszy znak';
 
   const syncLine = isOffline
-    ? 'Offline — zsynchronizujemy gdy wrócisz'
+    ? 'Offline, zsynchronizujemy gdy wrócisz'
     : lastSyncedAt != null
       ? `Zaktualizowano ${formatAgo(Date.now() - lastSyncedAt)}`
       : 'Łączymy…';

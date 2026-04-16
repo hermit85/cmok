@@ -668,6 +668,10 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                   <Pressable
                     onPress={handleCheckinPress}
                     disabled={!canCheckin}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: !canCheckin, selected: buttonDone }}
+                    accessibilityLabel={buttonDone ? 'Znak na dziś wysłany' : 'Daj znak bliskim'}
+                    accessibilityHint={buttonDone ? 'Zrobione na dziś' : 'Jedno stuknięcie i bliscy wiedzą, że wszystko OK'}
                     style={({ pressed }) => [
                       s.btn, buttonDone && s.btnDone, buttonDisabled && s.btnOff, !buttonDone && !buttonDisabled && s.btnActive,
                       pressed && canCheckin && { opacity: 0.9, transform: [{ scale: 0.96 }] },
@@ -714,6 +718,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                       <Animated.View key={mood.key} style={{ transform: [{ scale: moodScales[i] }] }}>
                         <Pressable
                           onPress={() => handleStatusPick(mood.key, i)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Wyślij samopoczucie: ${mood.label}`}
                           style={({ pressed }) => [s.statusChip, pressed && { backgroundColor: Colors.surfacePressed }]}
                         >
                           <Emoji style={s.statusEmoji}>{mood.emoji}</Emoji>

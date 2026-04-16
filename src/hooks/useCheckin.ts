@@ -73,7 +73,7 @@ export function useCheckin() {
     try {
       let userId = currentUserId ?? (await syncCurrentUser());
       if (!userId) {
-        const error = new Error('Brak zalogowanego użytkownika');
+        const error = new Error('Brak aktywnej sesji');
         error.name = 'AUTH_REQUIRED';
         throw error;
       }
@@ -94,7 +94,7 @@ export function useCheckin() {
       if (error && isAuthError(error)) {
         const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
         if (refreshErr || !refreshed.session) {
-          const authErr = new Error('Brak zalogowanego użytkownika');
+          const authErr = new Error('Brak aktywnej sesji');
           authErr.name = 'AUTH_REQUIRED';
           throw authErr;
         }
