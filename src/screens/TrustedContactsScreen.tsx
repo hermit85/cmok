@@ -174,7 +174,7 @@ export function TrustedContactsScreen() {
               <View style={styles.inviteCard}>
                 <Text style={styles.inviteTitle}>Ta osoba nie ma jeszcze cmok</Text>
                 <Text style={styles.inviteBody}>
-                  Numer {notFoundPhone} nie jest w bazie. Wyślij zaproszenie — gdy pobierze apkę i zaloguje się, będziesz mógł/mogła dodać ją do kręgu.
+                  Numer {notFoundPhone} nie jest w bazie. Wyślij zaproszenie, a gdy pobierze apkę i zaloguje się, dodasz ją do kręgu.
                 </Text>
                 <Pressable
                   onPress={handleSendInvite}
@@ -204,7 +204,7 @@ export function TrustedContactsScreen() {
               ) : activeContacts.length === 0 ? (
                 <View style={styles.emptyCard}>
                   <Text style={styles.emptyTitle}>Krąg jest pusty</Text>
-                  <Text style={styles.emptyText}>Dodaj kogoś, kto może zareagować szybko — sąsiada, kogoś z rodziny.</Text>
+                  <Text style={styles.emptyText}>Dodaj kogoś, kto może zareagować szybko, sąsiada, kogoś z rodziny.</Text>
                 </View>
               ) : (
                 <View style={styles.listCard}>

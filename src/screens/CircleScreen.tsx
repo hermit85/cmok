@@ -181,7 +181,7 @@ const st = StyleSheet.create({
   /* peer recommendation */
   peerCard: {
     marginTop: 8, padding: 20, borderRadius: 20,
-    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: Colors.surfaceWarm, borderWidth: 1, borderColor: Colors.accent + '22',
   },
   peerTitle: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 6 },
   peerBody: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20, marginBottom: 12 },
