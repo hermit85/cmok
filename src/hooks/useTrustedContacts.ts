@@ -2,21 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 import type { TrustedContact } from '../types';
 
-function mapTrustedContact(raw: any, userMap: Map<string, { name: string; phone: string }>): TrustedContact {
-  const user = userMap.get(raw.user_id);
-
-  return {
-    id: raw.id,
-    relationshipId: raw.relationship_id,
-    userId: raw.user_id,
-    name: user?.name || 'Osoba zaufana',
-    phone: user?.phone || '',
-    status: raw.status,
-  };
+interface TrustedContactExt extends TrustedContact {
+  isSelf: boolean;
+  isAddableByMe: boolean;
 }
 
 export function useTrustedContacts(relationshipId: string | null) {
-  const [contacts, setContacts] = useState<TrustedContact[]>([]);
+  const [contacts, setContacts] = useState<TrustedContactExt[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -30,27 +22,33 @@ export function useTrustedContacts(relationshipId: string | null) {
     setLoading(true);
 
     try {
-      const { data: contactRows } = await supabase
-        .from('trusted_contacts')
-        .select('id, relationship_id, user_id, status')
-        .eq('relationship_id', relationshipId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: true });
+      // Use privacy-aware RPC: phone is masked for callers without permission
+      const { data, error } = await supabase.rpc('get_trusted_circle', {
+        p_relationship_id: relationshipId,
+      });
 
-      const userIds = [...new Set((contactRows || []).map((row) => row.user_id))];
+      if (error) throw error;
 
-      let userMap = new Map<string, { name: string; phone: string }>();
+      const mapped: TrustedContactExt[] = (data || []).map((row: {
+        trusted_contact_id: string;
+        user_id: string;
+        name: string;
+        phone: string | null;
+        status: string;
+        is_self: boolean;
+        is_addable_by_me: boolean;
+      }) => ({
+        id: row.trusted_contact_id,
+        relationshipId,
+        userId: row.user_id,
+        name: row.name || 'Osoba zaufana',
+        phone: row.phone || '',
+        status: row.status as 'active' | 'removed',
+        isSelf: row.is_self,
+        isAddableByMe: row.is_addable_by_me,
+      }));
 
-      if (userIds.length > 0) {
-        const { data: users } = await supabase
-          .from('users')
-          .select('id, name, phone')
-          .in('id', userIds);
-
-        userMap = new Map((users || []).map((user) => [user.id, { name: user.name, phone: user.phone }]));
-      }
-
-      setContacts((contactRows || []).map((row) => mapTrustedContact(row, userMap)));
+      setContacts(mapped);
     } catch (error) {
       console.error('[useTrustedContacts] refresh error:', error);
       setContacts([]);

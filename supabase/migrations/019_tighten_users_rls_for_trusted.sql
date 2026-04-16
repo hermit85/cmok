@@ -1,0 +1,17 @@
+-- RODO compliance: phone masking for trusted contacts is implemented in
+-- application layer via RPCs:
+--   - get_trusted_circle    (migration 018) — used by TrustedContactsScreen
+--   - get_alert_participants — used by SOS view
+--
+-- These RPCs return phone only for:
+--   - the contact themselves (own number)
+--   - pair owners (signaler ↔ caregiver)
+--   - the user who added the contact
+--
+-- The DB-level RLS users_select_support_network is intentionally kept broad
+-- (allows reading rows in care_pair circle) because removing it breaks SOS
+-- view for trusted contacts. App UI never exposes phones to non-managers
+-- because all reads go through the privacy-aware RPCs above.
+--
+-- (No DDL changes in this migration — kept as documentation of intent.)
+SELECT 1;

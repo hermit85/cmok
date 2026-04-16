@@ -223,16 +223,22 @@ export function TrustedContactsScreen() {
                     <View key={contact.id} style={[styles.contactRow, i > 0 && styles.contactRowDivider]}>
                       <Avatar name={contact.name} />
                       <View style={styles.contactMeta}>
-                        <Text style={styles.contactName}>{contact.name}</Text>
-                        {contact.phone ? <Text style={styles.contactPhone}>{contact.phone}</Text> : null}
+                        <Text style={styles.contactName}>
+                          {contact.name}{contact.isSelf ? ' (Ty)' : ''}
+                        </Text>
+                        <Text style={styles.contactPhone}>
+                          {contact.phone || '+48 *** *** ***'}
+                        </Text>
                       </View>
-                      <Pressable
-                        onPress={() => handleRemove(contact.id, contact.name)}
-                        style={({ pressed }) => [styles.removeButton, pressed && { opacity: 0.6 }]}
-                        hitSlop={12}
-                      >
-                        <Text style={styles.removeText}>Usuń</Text>
-                      </Pressable>
+                      {contact.isAddableByMe ? (
+                        <Pressable
+                          onPress={() => handleRemove(contact.id, contact.name)}
+                          style={({ pressed }) => [styles.removeButton, pressed && { opacity: 0.6 }]}
+                          hitSlop={12}
+                        >
+                          <Text style={styles.removeText}>Usuń</Text>
+                        </Pressable>
+                      ) : null}
                     </View>
                   ))}
                 </View>
