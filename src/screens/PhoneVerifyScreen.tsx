@@ -216,9 +216,9 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       haptics.error();
       const msg = err?.message || '';
       if (msg.includes('invalid') || msg.includes('expired') || msg.includes('otp')) {
-        setCodeError('Nieprawidłowy kod. Sprawdź i spróbuj ponownie.');
+        setCodeError('Ten kod nie pasuje. Sprawdź cyfry i wpisz jeszcze raz.');
       } else {
-        setCodeError('Nie udało się połączyć. Sprawdź internet i spróbuj za chwilę.');
+        setCodeError('Coś nas tu odcięło. Sprawdź internet i spróbuj za chwilę.');
       }
       setCode('');
       codeInputRef.current?.focus();

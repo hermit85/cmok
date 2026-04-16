@@ -42,7 +42,12 @@ export function TrustedSupportScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <ScrollView contentContainerStyle={styles.content}>
-          <Pressable onPress={() => router.push('/settings')} style={({ pressed }) => [styles.topLink, pressed && { opacity: 0.65 }]}>
+          <Pressable
+            onPress={() => router.push('/settings')}
+            style={({ pressed }) => [styles.topLink, pressed && { opacity: 0.65 }]}
+            accessibilityRole="link"
+            accessibilityLabel="Otwórz ustawienia"
+          >
             <Text style={styles.topLinkText}>Ustawienia</Text>
           </Pressable>
 
@@ -89,6 +94,9 @@ export function TrustedSupportScreen() {
           <Pressable
             onPress={handleClaim}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel={`Zajmę się tym, powiadom ${urgentCase.signalerName}`}
+            accessibilityState={{ disabled: loading, busy: loading }}
             style={({ pressed }) => [styles.primaryButton, pressed && { opacity: 0.9 }]}
           >
             <Text style={styles.primaryButtonText}>Zajmuję się tym</Text>
@@ -99,6 +107,9 @@ export function TrustedSupportScreen() {
           <Pressable
             onPress={handleResolve}
             disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Wszystko OK, zamknij sygnał"
+            accessibilityState={{ disabled: loading, busy: loading }}
             style={({ pressed }) => [styles.secondaryButton, pressed && { opacity: 0.8 }]}
           >
             <Text style={styles.secondaryButtonText}>Wszystko OK, zamknij</Text>
@@ -111,6 +122,8 @@ export function TrustedSupportScreen() {
           <Pressable
             onPress={() => openPhoneCall(urgentCase.participants[0].phone, 'Nie udało się połączyć.')}
             style={({ pressed }) => [styles.callLink, pressed && { opacity: 0.7 }]}
+            accessibilityRole="link"
+            accessibilityLabel={`Zadzwoń do ${urgentCase.signalerName}`}
           >
             <Text style={styles.callLinkText}>Zadzwoń</Text>
           </Pressable>

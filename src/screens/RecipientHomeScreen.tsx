@@ -554,6 +554,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             <Pressable
               onPress={() => Linking.openURL(`https://maps.apple.com/?ll=${effAlert.latitude},${effAlert.longitude}&q=${encodeURIComponent(relationDisplay(effUrgent.signalerName))}`)}
               style={({ pressed }) => [st.mapLink, pressed && { opacity: 0.7 }]}
+              accessibilityRole="link"
+              accessibilityLabel={`Pokaż lokalizację ${relationDisplay(effUrgent.signalerName)} na mapie`}
             >
               <Text style={st.mapLinkText}>Pokaż lokalizację na mapie</Text>
             </Pressable>
@@ -561,17 +563,36 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             <Text style={st.noLocationHint}>Bez lokalizacji</Text>
           )}
           {!claimed ? (
-            <Pressable onPress={handleClaim} disabled={urgentLoading} style={({ pressed }) => [st.claimBtn, pressed && { opacity: 0.9 }]}>
+            <Pressable
+              onPress={handleClaim}
+              disabled={urgentLoading}
+              accessibilityRole="button"
+              accessibilityLabel={`Zajmę się tym, powiadom ${relationDisplay(effUrgent.signalerName)}`}
+              accessibilityState={{ disabled: urgentLoading, busy: urgentLoading }}
+              style={({ pressed }) => [st.claimBtn, pressed && { opacity: 0.9 }]}
+            >
               <Text style={st.claimBtnText}>Zajmuję się tym</Text>
             </Pressable>
           ) : null}
           {claimed ? (
-            <Pressable onPress={handleResolve} disabled={urgentLoading} style={({ pressed }) => [st.resolveBtn, pressed && { opacity: 0.8 }]}>
+            <Pressable
+              onPress={handleResolve}
+              disabled={urgentLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Wszystko OK, zamknij sygnał"
+              accessibilityState={{ disabled: urgentLoading, busy: urgentLoading }}
+              style={({ pressed }) => [st.resolveBtn, pressed && { opacity: 0.8 }]}
+            >
               <Text style={st.resolveBtnText}>Wszystko OK, zamknij</Text>
             </Pressable>
           ) : null}
           <SupportParticipants participants={effUrgent.participants} />
-          <Pressable onPress={() => openPhoneCall(callPhone, 'Nie można połączyć.')} style={({ pressed }) => [st.textLink, pressed && { opacity: 0.7 }]}>
+          <Pressable
+            onPress={() => openPhoneCall(callPhone, 'Nie można połączyć.')}
+            style={({ pressed }) => [st.textLink, pressed && { opacity: 0.7 }]}
+            accessibilityRole="link"
+            accessibilityLabel={`Zadzwoń do ${relationDisplay(sigName)}`}
+          >
             <Text style={st.textLinkText}>Zadzwoń {relationTo(sigName)}</Text>
           </Pressable>
         </ScrollView>
@@ -614,10 +635,17 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
             <Pressable
               onPress={() => { dismissCirclePrompt(); router.push('/trusted-contacts'); }}
               style={({ pressed }) => [st.promptCta, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+              accessibilityRole="button"
+              accessibilityLabel="Dodaj osobę do kręgu bliskich"
             >
               <Text style={st.promptCtaText}>Dodaj osobę</Text>
             </Pressable>
-            <Pressable onPress={dismissCirclePrompt} style={({ pressed }) => [st.promptDismiss, pressed && { opacity: 0.5 }]}>
+            <Pressable
+              onPress={dismissCirclePrompt}
+              style={({ pressed }) => [st.promptDismiss, pressed && { opacity: 0.5 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Później, zamknij to przypomnienie"
+            >
               <Text style={st.promptDismissText}>Później</Text>
             </Pressable>
           </View>
@@ -732,7 +760,12 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           ) : null}
           {/* Circle nudge: show when circle has < 2 trusted contacts */}
           {effOk && circleSmall ? (
-            <Pressable onPress={() => router.push('/trusted-contacts')} style={({ pressed }) => [st.circleNudge, pressed && { opacity: 0.6 }]}>
+            <Pressable
+              onPress={() => router.push('/trusted-contacts')}
+              style={({ pressed }) => [st.circleNudge, pressed && { opacity: 0.6 }]}
+              accessibilityRole="link"
+              accessibilityLabel="Dodaj kogoś do kręgu bliskich"
+            >
               <Text style={st.circleNudgeText}>Dodaj kogoś do kręgu bliskich</Text>
             </Pressable>
           ) : null}

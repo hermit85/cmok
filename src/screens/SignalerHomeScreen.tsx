@@ -99,6 +99,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const releaseRingOpacity = useRef(new Animated.Value(0)).current;
   const afterFade = useRef(new Animated.Value(0)).current;
   const celebrationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sosHapticTimersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const toastFade = useRef(new Animated.Value(0)).current;
   const responseReceiptScale = useRef(new Animated.Value(0)).current;
   const moodScales = useRef(STATUS_MOODS.map(() => new Animated.Value(1))).current;
@@ -167,6 +168,8 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   }, [refreshCheckin, refreshWeek, refreshStats]);
   useEffect(() => () => {
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
+    sosHapticTimersRef.current.forEach(clearTimeout);
+    sosHapticTimersRef.current = [];
     if (breatheLoopRef.current) { breatheLoopRef.current.scale.stop(); breatheLoopRef.current.shadow.stop(); }
   }, []);
 
@@ -395,10 +398,14 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
-    // Triple heavy pattern — iOS SOS feel, elderly-friendly "this really went"
+    // Triple heavy pattern — iOS SOS feel, elderly-friendly "this really went".
+    // Tracked in a ref so we can cancel pending haptics on unmount (avoids
+    // ghost haptics after user navigates away mid-confirmation).
+    sosHapticTimersRef.current.forEach(clearTimeout);
+    sosHapticTimersRef.current = [];
     haptics.heavy();
-    setTimeout(() => haptics.heavy(), 120);
-    setTimeout(() => haptics.heavy(), 240);
+    sosHapticTimersRef.current.push(setTimeout(() => haptics.heavy(), 120));
+    sosHapticTimersRef.current.push(setTimeout(() => haptics.heavy(), 240));
     if (pv) { setPreviewMode('support'); return; }
     if (!authReady || !isAuthenticated) {
       Alert.alert('Zaloguj się', 'Żeby dać znać bliskim, połącz telefon z kontem.');
@@ -789,7 +796,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
 
           {/* ─── Circle CTA: build safety network ─── */}
           {showChecked ? (
-            <Pressable onPress={() => router.push('/trusted-contacts')} style={({ pressed }) => [s.circleLink, pressed && { opacity: 0.6 }]}>
+            <Pressable
+              onPress={() => router.push('/trusted-contacts')}
+              style={({ pressed }) => [s.circleLink, pressed && { opacity: 0.6 }]}
+              accessibilityRole="link"
+              accessibilityLabel="Dodaj kogoś do kręgu bliskich"
+            >
               <Text style={s.circleLinkText}>Dodaj kogoś do kręgu bliskich</Text>
             </Pressable>
           ) : null}

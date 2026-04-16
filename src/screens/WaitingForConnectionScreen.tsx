@@ -143,6 +143,8 @@ export function WaitingForConnectionScreen() {
           <Pressable
             onPress={handleShare}
             style={({ pressed }) => [s.shareBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel={`Wyślij zaproszenie do ${sigName}`}
           >
             <Text style={s.shareBtnText}>Wyślij zaproszenie</Text>
           </Pressable>
@@ -156,6 +158,8 @@ export function WaitingForConnectionScreen() {
           <Pressable
             onPress={handleShare}
             style={({ pressed }) => [s.resendLink, pressed && { opacity: 0.6 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Wyślij zaproszenie ponownie"
           >
             <Text style={s.resendLinkText}>Wyślij ponownie</Text>
           </Pressable>
@@ -168,7 +172,12 @@ export function WaitingForConnectionScreen() {
             <Text style={s.statusTitle}>Czekamy na {sigName}</Text>
             <Text style={s.statusHint}>Gdy się połączycie, zaczniecie Wasz codzienny cmok.</Text>
           </View>
-          <Pressable onPress={refreshRelationship} style={({ pressed }) => [s.checkBtn, pressed && { opacity: 0.7 }]}>
+          <Pressable
+            onPress={refreshRelationship}
+            style={({ pressed }) => [s.checkBtn, pressed && { opacity: 0.7 }]}
+            accessibilityRole="button"
+            accessibilityLabel="Sprawdź, czy bliska osoba już dołączyła"
+          >
             <Text style={s.checkBtnText}>Sprawdź</Text>
           </Pressable>
         </View>
@@ -188,13 +197,24 @@ export function WaitingForConnectionScreen() {
                 placeholderTextColor={Colors.textMuted}
                 returnKeyType="done"
                 onSubmitEditing={handleSaveName}
+                accessibilityLabel="Twoje imię"
               />
-              <Pressable onPress={handleSaveName} style={({ pressed }) => [s.saveBtn, pressed && { opacity: 0.7 }]}>
+              <Pressable
+                onPress={handleSaveName}
+                style={({ pressed }) => [s.saveBtn, pressed && { opacity: 0.7 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Zapisz imię"
+              >
                 <Text style={s.saveBtnText}>Zapisz</Text>
               </Pressable>
             </View>
           ) : (
-            <Pressable onPress={() => { setNameValue(profile?.name || ''); setEditingName(true); }} style={({ pressed }) => [s.nameRow, pressed && { opacity: 0.7 }]}>
+            <Pressable
+              onPress={() => { setNameValue(profile?.name || ''); setEditingName(true); }}
+              style={({ pressed }) => [s.nameRow, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel={profile?.name ? `Zmień imię: ${profile.name}` : 'Ustaw swoje imię'}
+            >
               <Text style={s.accountName}>{profile?.name || 'Ustaw imię'}</Text>
               <Text style={s.editHint}>Zmień</Text>
             </Pressable>
@@ -207,10 +227,18 @@ export function WaitingForConnectionScreen() {
             <Pressable
               onPress={async () => { await supabase.auth.signOut(); router.replace('/onboarding'); }}
               style={({ pressed }) => [s.accountLink, pressed && { opacity: 0.6 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Wyloguj się z tego telefonu"
             >
               <Text style={s.accountLinkText}>Wyloguj</Text>
             </Pressable>
-            <Pressable onPress={handleDeleteAccount} style={({ pressed }) => [s.accountLink, pressed && { opacity: 0.6 }]}>
+            <Pressable
+              onPress={handleDeleteAccount}
+              style={({ pressed }) => [s.accountLink, pressed && { opacity: 0.6 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Usuń konto i wszystkie dane"
+              accessibilityHint="Ta operacja jest nieodwracalna"
+            >
               <Text style={s.deleteText}>Usuń konto i dane</Text>
             </Pressable>
           </View>

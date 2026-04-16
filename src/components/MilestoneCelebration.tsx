@@ -63,11 +63,21 @@ export function MilestoneCelebration({ visible, streak, recipientName, onDismiss
         <Text style={s.headline}>{headline}</Text>
         <Text style={s.body}>{body}</Text>
 
-        <Pressable onPress={handleShare} style={({ pressed }) => [s.shareBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
+        <Pressable
+          onPress={handleShare}
+          style={({ pressed }) => [s.shareBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+          accessibilityRole="button"
+          accessibilityLabel={`Podziel się ${streak}-dniową serią z kimś bliskim`}
+        >
           <Text style={s.shareBtnText}>Podziel się z kimś bliskim</Text>
         </Pressable>
 
-        <Pressable onPress={onDismiss} style={({ pressed }) => [s.dismissBtn, pressed && { opacity: 0.5 }]}>
+        <Pressable
+          onPress={onDismiss}
+          style={({ pressed }) => [s.dismissBtn, pressed && { opacity: 0.5 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Zamknij gratulacje"
+        >
           <Text style={s.dismissText}>Zamknij</Text>
         </Pressable>
       </Animated.View>

@@ -103,7 +103,13 @@ export function MonthGrid({ signalerId }: MonthGridProps) {
 
   return (
     <View style={s.container}>
-      <Pressable onPress={handleToggle} style={({ pressed }) => [s.toggleBtn, pressed && { opacity: 0.6 }]}>
+      <Pressable
+        onPress={handleToggle}
+        style={({ pressed }) => [s.toggleBtn, pressed && { opacity: 0.6 }]}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? 'Zwiń widok miesiąca' : 'Pokaż pełny widok miesiąca'}
+        accessibilityState={{ expanded }}
+      >
         <Text style={s.toggleText}>{expanded ? 'Zwiń' : 'Pokaż więcej'}</Text>
       </Pressable>
 

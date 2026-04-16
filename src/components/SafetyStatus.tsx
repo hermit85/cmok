@@ -51,10 +51,10 @@ export function SafetyStatus({ signalerName, signedAt, isSafe, lastSyncedAt, isO
     : 'Czekamy na dzisiejszy znak';
 
   const syncLine = isOffline
-    ? 'Offline, zsynchronizujemy gdy wrócisz'
+    ? 'Bez internetu, damy znać gdy wróci'
     : lastSyncedAt != null
-      ? `Sprawdziliśmy ${formatAgo(Date.now() - lastSyncedAt)}`
-      : 'Łączymy się…';
+      ? `Czuwamy, ostatnio ${formatAgo(Date.now() - lastSyncedAt)}`
+      : 'Nasłuchujemy…';
 
   return (
     <View style={s.wrap}>
