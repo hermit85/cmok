@@ -255,11 +255,18 @@ export function useUrgentSignal(): UrgentSignalState {
 
   /** Pre-check: can urgent signal be sent? */
   const preflight = useCallback(async (): Promise<UrgentPreflightResult> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return { ok: false, reason: 'no_auth' };
+    // getUser() hits the server — won't be fooled by a cached but revoked
+    // session, unlike getSession(). Fallback to a single refresh before
+    // giving up so legitimate expired JWTs don't false-positive as no_auth.
+    let { data: { user }, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !user) {
+      const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+      if (refreshErr || !refreshed.session?.user) return { ok: false, reason: 'no_auth' };
+      user = refreshed.session.user;
+    }
 
     const { data: profile } = await supabase
-      .from('users').select('role').eq('id', session.user.id).maybeSingle();
+      .from('users').select('role').eq('id', user.id).maybeSingle();
     if (!profile) return { ok: false, reason: 'no_auth' };
 
     const role = normalizeAppRole(profile.role);
@@ -267,7 +274,7 @@ export function useUrgentSignal(): UrgentSignalState {
 
     const { data: pair } = await supabase
       .from('care_pairs').select('id, status')
-      .eq('senior_id', session.user.id).eq('status', 'active').limit(1).maybeSingle();
+      .eq('senior_id', user.id).eq('status', 'active').limit(1).maybeSingle();
 
     if (!pair) return { ok: false, reason: 'no_active_relationship' };
 

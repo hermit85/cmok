@@ -443,17 +443,28 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
 
   // One-time circle prompt after first sign
   const CIRCLE_PROMPT_KEY = 'cmok_circle_prompt_shown';
+  const circlePromptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!isFirstEver || !effOk || !circleSmall || pv) return;
+    let cancelled = false;
     (async () => {
       const shown = Platform.OS === 'web'
         ? localStorage.getItem(CIRCLE_PROMPT_KEY)
         : await SecureStore.getItemAsync(CIRCLE_PROMPT_KEY);
-      if (!shown) {
-        // Delay so the first-sign celebration lands first
-        setTimeout(() => setShowCirclePrompt(true), 2500);
-      }
+      if (cancelled || shown) return;
+      // Delay so the first-sign celebration lands first.
+      circlePromptTimerRef.current = setTimeout(() => {
+        circlePromptTimerRef.current = null;
+        setShowCirclePrompt(true);
+      }, 2500);
     })();
+    return () => {
+      cancelled = true;
+      if (circlePromptTimerRef.current) {
+        clearTimeout(circlePromptTimerRef.current);
+        circlePromptTimerRef.current = null;
+      }
+    };
   }, [isFirstEver, effOk, circleSmall, pv]);
 
   const dismissCirclePrompt = useCallback(async () => {
@@ -661,6 +672,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
                           key={t.key}
                           onPress={() => handleMorningThought(t.emoji, sigId)}
                           style={({ pressed }) => [st.morningChip, { backgroundColor: t.bg }, pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] }]}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Wyślij poranną myśl: ${t.label}`}
                         >
                           <Emoji style={st.morningSymbol}>{t.emoji}</Emoji>
                           <Text style={st.morningLabel}>{t.label}</Text>
@@ -705,6 +718,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
                         key={r.emoji}
                         onPress={() => handlePokePick(r.emoji)}
                         style={({ pressed }) => [st.pokeChip, { backgroundColor: r.bg }, pressed && { opacity: 0.7, transform: [{ scale: 0.92 }] }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Wyślij gest: ${r.label}`}
                       >
                         <Emoji style={st.pokeChipEmoji}>{r.emoji}</Emoji>
                         <Text style={st.pokeChipLabel}>{r.label}</Text>

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
 import { supabase } from '../services/supabase';
 import type { AppRole, CircleMember } from '../types';
 import { normalizeAppRole } from '../utils/roles';
@@ -105,8 +106,23 @@ export function useCircle() {
     }
   }, []);
 
+  // Refresh on app foreground so circle reflects remote changes (e.g. the
+  // other side deleted their account). Throttled to 30s — mirrors
+  // useRelationship behaviour. Without this, a signaler whose recipient
+  // vanished would keep showing stale circle until remount.
+  const lastForegroundRefresh = useRef(0);
   useEffect(() => {
     fetchCircle();
+
+    const FOREGROUND_REFRESH_THROTTLE_MS = 30_000;
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active') return;
+      const now = Date.now();
+      if (now - lastForegroundRefresh.current < FOREGROUND_REFRESH_THROTTLE_MS) return;
+      lastForegroundRefresh.current = now;
+      fetchCircle();
+    });
+    return () => sub.remove();
   }, [fetchCircle]);
 
   const signalers = members.filter((member) => member.role === 'signaler');

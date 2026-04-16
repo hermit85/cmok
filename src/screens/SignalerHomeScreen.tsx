@@ -513,14 +513,22 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           {effectiveUrgent ? <SupportParticipants participants={effectiveUrgent.participants} /> : null}
           <Pressable onPress={() => { if (currentAlert) resolveUrgent(currentAlert.id).catch(() => Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.')); }}
             disabled={urgentLoading || localUrgentOffline || !currentAlert}
+            accessibilityRole="button"
+            accessibilityLabel="Już jest dobrze, zamknij sygnał"
+            accessibilityState={{ disabled: urgentLoading || localUrgentOffline || !currentAlert }}
             style={({ pressed }) => [s.urgentResolveBtn, (urgentLoading || localUrgentOffline || !currentAlert) && { opacity: 0.4 }, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}>
             <Text style={s.urgentResolveBtnText}>Już jest dobrze</Text>
           </Pressable>
           <Pressable onPress={() => retrySend().catch(() => Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.'))} disabled={urgentLoading || localUrgentOffline}
+            accessibilityRole="button"
+            accessibilityLabel="Wyślij sygnał ponownie do kręgu"
+            accessibilityState={{ disabled: urgentLoading || localUrgentOffline }}
             style={({ pressed }) => [s.urgentRetryBtn, (urgentLoading || localUrgentOffline) && s.urgentRetryBtnOff, pressed && { opacity: 0.9 }]}>
             <Text style={s.urgentRetryBtnText}>Wyślij ponownie</Text>
           </Pressable>
           <Pressable onPress={() => { if (currentAlert) cancelUrgent(currentAlert.id).catch(() => Alert.alert('Nie udało się', 'Spróbuj ponownie.')); else setLocalUrgentOffline(false); }}
+            accessibilityRole="button"
+            accessibilityLabel="To była pomyłka, anuluj sygnał"
             style={({ pressed }) => [s.cancelLink, pressed && { opacity: 0.65 }]}>
             <Text style={s.cancelLinkText}>To pomyłka, anuluj</Text>
           </Pressable>
@@ -794,6 +802,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             if (!canUrgent) { Alert.alert('Zaloguj się', 'Żeby dać znać bliskim, połącz telefon z kontem.'); return; }
             setShowUrgentModal(true);
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Potrzebuję pomocy"
+          accessibilityHint="Wyśle sygnał do kręgu bliskich po potwierdzeniu"
           style={({ pressed }) => [s.urgentBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.98 }] }]}
         >
           <Text style={s.urgentBtnLabel}>Potrzebuję pomocy</Text>

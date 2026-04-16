@@ -108,6 +108,9 @@ export function SettingsScreen() {
         <Pressable
           onPress={() => router.push('/circle')}
           style={({ pressed }) => [styles.card, styles.relationCard, pressed && { opacity: 0.88 }]}
+          accessibilityRole="button"
+          accessibilityLabel={mainPerson ? `Otwórz krąg, ${mainPerson.name}` : 'Otwórz krąg'}
+          accessibilityHint="Otwiera widok relacji i kręgu bliskich"
         >
           {mainPerson ? (
             <View style={styles.circleRow}>
@@ -136,6 +139,12 @@ export function SettingsScreen() {
           <Pressable
             onPress={() => router.push('/trusted-contacts')}
             style={({ pressed }) => [styles.card, styles.safetyCard, pressed && { opacity: 0.88 }]}
+            accessibilityRole="button"
+            accessibilityLabel={
+              circleCount > 0
+                ? `Krąg bliskich, ${circleCount} ${circleCount === 1 ? 'osoba' : 'osób'}`
+                : 'Krąg bliskich, dodaj kogoś zaufanego'
+            }
           >
             <View style={styles.circleRow}>
               <View style={styles.safetyIcon}>
@@ -201,15 +210,30 @@ export function SettingsScreen() {
         {/* ─── Legal center ─── */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Prawne</Text>
-          <Pressable onPress={() => Linking.openURL('https://cmok.app/regulamin')} style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}>
+          <Pressable
+            onPress={() => Linking.openURL('https://cmok.app/regulamin')}
+            style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}
+            accessibilityRole="link"
+            accessibilityLabel="Otwórz regulamin w przeglądarce"
+          >
             <Text style={styles.legalItemText}>Regulamin</Text>
             <Text style={styles.chevron}>→</Text>
           </Pressable>
-          <Pressable onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')} style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}>
+          <Pressable
+            onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')}
+            style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}
+            accessibilityRole="link"
+            accessibilityLabel="Otwórz politykę prywatności w przeglądarce"
+          >
             <Text style={styles.legalItemText}>Polityka prywatności</Text>
             <Text style={styles.chevron}>→</Text>
           </Pressable>
-          <Pressable onPress={() => Linking.openURL('mailto:cmok.app@gmail.com')} style={({ pressed }) => [styles.legalItem, { borderBottomWidth: 0 }, pressed && { opacity: 0.6 }]}>
+          <Pressable
+            onPress={() => Linking.openURL('mailto:cmok.app@gmail.com')}
+            style={({ pressed }) => [styles.legalItem, { borderBottomWidth: 0 }, pressed && { opacity: 0.6 }]}
+            accessibilityRole="link"
+            accessibilityLabel="Napisz do nas mailem"
+          >
             <Text style={styles.legalItemText}>Kontakt</Text>
             <Text style={styles.legalDetail}>cmok.app@gmail.com</Text>
           </Pressable>
@@ -218,6 +242,9 @@ export function SettingsScreen() {
         <Pressable
           onPress={handleLogout}
           style={({ pressed }) => [styles.logoutButton, pressed && { opacity: 0.7, transform: [{ scale: 0.98 }] }]}
+          accessibilityRole="button"
+          accessibilityLabel="Wyloguj ten telefon"
+          accessibilityHint="Zostaniesz wylogowany, ale konto zostanie zachowane"
         >
           <Text style={styles.logoutText}>Wyloguj ten telefon</Text>
         </Pressable>
@@ -225,6 +252,9 @@ export function SettingsScreen() {
         <Pressable
           onPress={handleDeleteAccount}
           style={({ pressed }) => [styles.deleteButton, pressed && { opacity: 0.7 }]}
+          accessibilityRole="button"
+          accessibilityLabel="Usuń konto i wszystkie dane"
+          accessibilityHint="Ta operacja jest nieodwracalna"
         >
           <Text style={styles.deleteText}>Usuń konto i dane</Text>
         </Pressable>

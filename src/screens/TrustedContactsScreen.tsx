@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, TextInput, ActivityIndicator, Alert, ScrollView, Share, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -28,6 +28,10 @@ export function TrustedContactsScreen() {
   const phoneInputRef = useRef<TextInput>(null);
   const [justAddedName, setJustAddedName] = useState<string | null>(null);
   const [notFoundPhone, setNotFoundPhone] = useState<string | null>(null);
+  const addedToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (addedToastTimerRef.current) clearTimeout(addedToastTimerRef.current);
+  }, []);
 
   const canManage = status === 'active' && !!relationship?.id;
 
@@ -47,7 +51,8 @@ export function TrustedContactsScreen() {
       analytics.contactAdded();
       setJustAddedName(added?.name || 'Osoba');
       setPhone('');
-      setTimeout(() => setJustAddedName(null), 3000);
+      if (addedToastTimerRef.current) clearTimeout(addedToastTimerRef.current);
+      addedToastTimerRef.current = setTimeout(() => setJustAddedName(null), 3000);
     } catch (error) {
       const msg = (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string')
         ? error.message
@@ -174,6 +179,9 @@ export function TrustedContactsScreen() {
             <Pressable
               onPress={handleAdd}
               disabled={!isValid || saving || !!justAddedName}
+              accessibilityRole="button"
+              accessibilityLabel="Dodaj tę osobę do kręgu bliskich"
+              accessibilityState={{ disabled: !isValid || saving || !!justAddedName, busy: saving }}
               style={({ pressed }) => [
                 styles.addButton,
                 (!isValid || saving || !!justAddedName) && styles.addButtonDisabled,
@@ -200,10 +208,17 @@ export function TrustedContactsScreen() {
                 <Pressable
                   onPress={handleSendInvite}
                   style={({ pressed }) => [styles.inviteBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Wyślij zaproszenie do tej osoby"
                 >
                   <Text style={styles.inviteBtnText}>Wyślij zaproszenie</Text>
                 </Pressable>
-                <Pressable onPress={() => { setNotFoundPhone(null); setPhone(''); }} style={({ pressed }) => [styles.inviteDismiss, pressed && { opacity: 0.5 }]}>
+                <Pressable
+                  onPress={() => { setNotFoundPhone(null); setPhone(''); }}
+                  style={({ pressed }) => [styles.inviteDismiss, pressed && { opacity: 0.5 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Anuluj dodawanie"
+                >
                   <Text style={styles.inviteDismissText}>Anuluj</Text>
                 </Pressable>
               </View>
@@ -245,6 +260,8 @@ export function TrustedContactsScreen() {
                           onPress={() => handleRemove(contact.id, contact.name)}
                           style={({ pressed }) => [styles.removeButton, pressed && { opacity: 0.6 }]}
                           hitSlop={12}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Usuń ${contact.name} z kręgu`}
                         >
                           <Text style={styles.removeText}>Usuń</Text>
                         </Pressable>

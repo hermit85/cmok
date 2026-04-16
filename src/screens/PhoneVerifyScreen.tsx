@@ -218,7 +218,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
       if (msg.includes('invalid') || msg.includes('expired') || msg.includes('otp')) {
         setCodeError('Nieprawidłowy kod. Sprawdź i spróbuj ponownie.');
       } else {
-        setCodeError('Błąd połączenia. Sprawdź internet i spróbuj ponownie.');
+        setCodeError('Nie udało się połączyć. Sprawdź internet i spróbuj za chwilę.');
       }
       setCode('');
       codeInputRef.current?.focus();
@@ -303,6 +303,9 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                   onPress={() => { haptics.light(); setTermsAccepted(!termsAccepted); }}
                   style={s.termsRow}
                   hitSlop={8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: termsAccepted }}
+                  accessibilityLabel="Akceptuję regulamin i politykę prywatności"
                 >
                   <View style={[s.checkbox, termsAccepted && s.checkboxChecked]}>
                     {termsAccepted ? <Text style={s.checkmark}>✓</Text> : null}
@@ -322,6 +325,9 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                   <Pressable
                     onPress={handleSend}
                     disabled={!isValid || !termsAccepted}
+                    accessibilityRole="button"
+                    accessibilityLabel="Wyślij kod SMS"
+                    accessibilityState={{ disabled: !isValid || !termsAccepted }}
                     style={({ pressed }) => [
                       s.sendBtn,
                       isValid && termsAccepted ? s.sendBtnActive : s.sendBtnDisabled,
@@ -338,7 +344,12 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                 <Text style={s.subtitle}>Wysłaliśmy go na {displayPhone}</Text>
 
                 <View style={s.codeCard}>
-                  <Pressable onPress={() => codeInputRef.current?.focus()}>
+                  <Pressable
+                    onPress={() => codeInputRef.current?.focus()}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Pole kodu SMS, ${code.length} z 6 cyfr wpisanych`}
+                    accessibilityHint="Stuknij, żeby otworzyć klawiaturę"
+                  >
                     <CodeBoxes code={code} />
                   </Pressable>
                   <TextInput
@@ -364,6 +375,9 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                 <Pressable
                   onPress={handleResend}
                   disabled={resendCooldown > 0}
+                  accessibilityRole="button"
+                  accessibilityLabel={resendCooldown > 0 ? `Wyślij kod ponownie za ${resendCooldown} sekund` : 'Wyślij kod ponownie'}
+                  accessibilityState={{ disabled: resendCooldown > 0 }}
                   style={({ pressed }) => [s.resendLink, pressed && resendCooldown <= 0 && { opacity: 0.6 }]}
                 >
                   <Text style={[s.resendText, resendCooldown > 0 && { color: Colors.textSoft }]}>
