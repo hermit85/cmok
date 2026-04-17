@@ -53,6 +53,7 @@ export interface TrustedContact {
   name: string;
   phone: string;
   status: 'active' | 'pending' | 'removed';
+  inviteCode: string | null;
 }
 
 export interface SupportParticipant {

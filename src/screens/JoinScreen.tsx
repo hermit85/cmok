@@ -15,7 +15,7 @@ import { haptics } from '../utils/haptics';
 
 interface JoinScreenProps {
   onBack: () => void;
-  onDone: () => void;
+  onDone: (kind?: 'pair' | 'trusted') => void;
   relationLabel?: string;
   initialCode?: string;
   needsAuth?: boolean;
@@ -44,6 +44,7 @@ export function JoinScreen({
   const [autoJoining, setAutoJoining] = useState(false);
   const [inviterName, setInviterName] = useState<string | null>(null);
   const [joined, setJoined] = useState(false);
+  const [joinedKind, setJoinedKind] = useState<'pair' | 'trusted'>('pair');
   const inputRef = useRef<TextInput>(null);
   const successScale = useRef(new Animated.Value(0.8)).current;
   const successOpacity = useRef(new Animated.Value(0)).current;
@@ -88,7 +89,7 @@ export function JoinScreen({
     setLoading(true);
     setError('');
     try {
-      const { error: rpcError } = await supabase.rpc('accept_relationship_invite', {
+      const { data, error: rpcError } = await supabase.rpc('redeem_invite_code', {
         p_invite_code: finalCode,
       });
 
@@ -100,7 +101,10 @@ export function JoinScreen({
         return;
       }
 
-      logInviteEvent('invite_join_success', { code: finalCode });
+      const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+      const kind: 'pair' | 'trusted' = row?.kind === 'trusted' ? 'trusted' : 'pair';
+      logInviteEvent('invite_join_success', { code: finalCode, kind });
+      setJoinedKind(kind);
       setJoined(true);
       playSuccessAnimation();
     } catch {
@@ -120,21 +124,28 @@ export function JoinScreen({
   /* ─── SUCCESS STATE ─── */
   if (joined) {
     logInviteEvent('first_sign_cta_seen');
+    const isTrusted = joinedKind === 'trusted';
     return (
       <SafeAreaView style={[s.container, s.centered, { backgroundColor: Colors.background }]}>
         <Animated.View style={{ opacity: successOpacity, transform: [{ scale: successScale }], alignItems: 'center' }}>
           <View style={s.successCheck}>
             <Text style={s.successCheckText}><Text style={{ fontFamily: undefined, fontSize: 36 }}>✓</Text></Text>
           </View>
-          <Text style={s.successTitle}>Gotowe, jesteście razem</Text>
+          <Text style={s.successTitle}>
+            {isTrusted ? 'Jesteś w kręgu bliskich' : 'Gotowe, jesteście razem'}
+          </Text>
           <Text style={s.successSub}>
-            {inviterName
-              ? `Od teraz ${inviterName} będzie widzieć, że u Ciebie jest OK. Codziennie, jednym gestem.`
-              : 'Wasz codzienny rytuał bliskości właśnie się zaczął.'}
+            {isTrusted
+              ? (inviterName
+                  ? `${inviterName} będzie mógł(mogła) dać Ci znać, gdy będzie potrzebować wsparcia. Nic codziennie, żadnego spamu.`
+                  : 'Dostaniesz wiadomość tylko gdy ktoś z kręgu będzie potrzebować wsparcia.')
+              : (inviterName
+                  ? `Od teraz ${inviterName} będzie widzieć, że u Ciebie jest OK. Codziennie, jednym gestem.`
+                  : 'Wasz codzienny rytuał bliskości właśnie się zaczął.')}
           </Text>
           <BigButton
-            title="Wyślij pierwszy znak"
-            onPress={onDone}
+            title={isTrusted ? 'Rozumiem' : 'Wyślij pierwszy znak'}
+            onPress={() => onDone(joinedKind)}
             color={Colors.safe}
             style={s.successBtn}
           />

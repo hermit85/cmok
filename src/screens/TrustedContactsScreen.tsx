@@ -28,6 +28,7 @@ export function TrustedContactsScreen() {
   const phoneInputRef = useRef<TextInput>(null);
   const [justAddedName, setJustAddedName] = useState<string | null>(null);
   const [notFoundPhone, setNotFoundPhone] = useState<string | null>(null);
+  const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
   const addedToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
     if (addedToastTimerRef.current) clearTimeout(addedToastTimerRef.current);
@@ -56,6 +57,7 @@ export function TrustedContactsScreen() {
       if (added && added.name === 'Oczekuje') {
         setPhone('');
         setNotFoundPhone(`+48 ${displayNumber}`);
+        setPendingInviteCode(added.inviteCode || null);
       } else {
         setJustAddedName(added?.name || 'Osoba');
         setPhone('');
@@ -82,11 +84,15 @@ export function TrustedContactsScreen() {
   };
 
   const handleSendInvite = async () => {
-    const msg = `Cześć! ${myName} dodał(a) Cię do kręgu bliskich w cmok. Dostaniesz wiadomość tylko jeśli coś się będzie działo — nic codziennie, żadnego spamu.\n\nŻeby dołączyć:\n1. Pobierz cmok: https://cmok.app/pobierz\n2. Zaloguj się tym samym numerem, na który dostajesz tę wiadomość\n3. Gotowe, dołączysz automatycznie do kręgu ${myName}.`;
+    const codeLine = pendingInviteCode
+      ? `Twój kod zaproszenia: ${pendingInviteCode}\n\n`
+      : '';
+    const msg = `Cześć! ${myName} dodał(a) Cię do kręgu bliskich w cmok. Dostaniesz wiadomość tylko jeśli coś się będzie działo — nic codziennie, żadnego spamu.\n\n${codeLine}Żeby dołączyć:\n1. Pobierz cmok: https://cmok.app/pobierz\n2. Otwórz apkę, wybierz „Mam kod zaproszenia" i wpisz kod powyżej\n3. Gotowe — dołączasz do kręgu ${myName}.`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
     } catch { /* cancelled */ }
     setNotFoundPhone(null);
+    setPendingInviteCode(null);
     setPhone('');
   };
 
@@ -233,8 +239,14 @@ export function TrustedContactsScreen() {
               <View style={styles.inviteCard}>
                 <Text style={styles.inviteTitle}>Wyślij zaproszenie</Text>
                 <Text style={styles.inviteBody}>
-                  Numer {notFoundPhone} nie ma jeszcze cmok. Wyślij link do pobrania — gdy ta osoba zainstaluje apkę i zaloguje się tym samym numerem, dołączy do Twojego kręgu automatycznie. Dostaniesz wtedy powiadomienie.
+                  Numer {notFoundPhone} nie ma jeszcze cmok. Wyślij zaproszenie z kodem — ta osoba wpisze kod w apce i dołączy do Twojego kręgu.
                 </Text>
+                {pendingInviteCode ? (
+                  <View style={styles.codeBox}>
+                    <Text style={styles.codeLabel}>Kod zaproszenia</Text>
+                    <Text style={styles.codeValue}>{pendingInviteCode}</Text>
+                  </View>
+                ) : null}
                 <Pressable
                   onPress={handleSendInvite}
                   style={({ pressed }) => [styles.inviteBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
@@ -309,11 +321,17 @@ export function TrustedContactsScreen() {
                         <Text style={styles.contactPhone} numberOfLines={1}>
                           {contact.phone || '+48 *** *** ***'}
                         </Text>
+                        {contact.inviteCode ? (
+                          <Text style={styles.contactCode}>Kod: {contact.inviteCode}</Text>
+                        ) : null}
                       </View>
                       {contact.isAddableByMe ? (
                         <View style={styles.pendingActions}>
                           <Pressable
-                            onPress={() => { setNotFoundPhone(contact.phone || ''); }}
+                            onPress={() => {
+                              setNotFoundPhone(contact.phone || '');
+                              setPendingInviteCode(contact.inviteCode || null);
+                            }}
                             style={({ pressed }) => [styles.resendButton, pressed && { opacity: 0.7 }]}
                             hitSlop={8}
                             accessibilityRole="button"
@@ -432,6 +450,15 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.safeLight, minHeight: 32, justifyContent: 'center' as const,
   },
   resendText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
+
+  codeBox: {
+    backgroundColor: Colors.cardStrong, borderRadius: 14, borderWidth: 1, borderColor: Colors.border,
+    paddingVertical: 14, paddingHorizontal: 16, marginBottom: 16, alignItems: 'center' as const,
+  },
+  codeLabel: { fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted, letterSpacing: 1, marginBottom: 6 },
+  codeValue: { fontSize: 28, fontFamily: Typography.headingFamily, color: Colors.accent, letterSpacing: 4 },
+
+  contactCode: { fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.accent, marginTop: 2 },
 
   /* list */
   listSection: {},

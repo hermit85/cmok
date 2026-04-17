@@ -115,7 +115,7 @@ export default function OnboardingFlow() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Brak sesji');
 
-    // Pending trusted invite wins over intent-selected role.
+    // Pending trusted invite (phone-match fallback) wins over intent-selected role.
     const isTrustedInvitee = await detectPendingTrustedInvite();
     const effectiveRole: AppRole = isTrustedInvitee ? 'trusted' : role;
     const defaultName = effectiveRole === 'trusted'
@@ -278,7 +278,17 @@ export default function OnboardingFlow() {
     }
     setDestinationRoute('/waiting'); setStep('done');
   };
-  const handleJoined = () => { analytics.onboardingCompleted('signaler'); setDestinationRoute('/signaler-home'); setStep('done'); };
+  const handleJoined = (kind?: 'pair' | 'trusted') => {
+    if (kind === 'trusted') {
+      analytics.onboardingCompleted('trusted');
+      setDestinationRoute('/trusted-support');
+      setStep('done');
+      return;
+    }
+    analytics.onboardingCompleted('signaler');
+    setDestinationRoute('/signaler-home');
+    setStep('done');
+  };
 
   const goBack = () => {
     switch (step) {
@@ -360,7 +370,13 @@ export default function OnboardingFlow() {
     case 'join':
       return (
         <JoinScreen onBack={goBack}
-          onDone={() => { if (pendingInviteCode) { clearPendingInvite(); logInviteEvent('invite_resume_completed', { code: pendingInviteCode }); } handleJoined(); }}
+          onDone={(kind) => {
+            if (pendingInviteCode) {
+              clearPendingInvite();
+              logInviteEvent('invite_resume_completed', { code: pendingInviteCode });
+            }
+            handleJoined(kind);
+          }}
           relationLabel={recipientName || 'bliską osobą'} initialCode={pendingInviteCode || ''} />
       );
     case 'done':

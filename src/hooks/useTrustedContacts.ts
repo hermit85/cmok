@@ -35,6 +35,7 @@ export function useTrustedContacts(relationshipId: string | null) {
         name: string;
         phone: string | null;
         status: string;
+        invite_code: string | null;
         is_self: boolean;
         is_addable_by_me: boolean;
       }) => ({
@@ -44,6 +45,7 @@ export function useTrustedContacts(relationshipId: string | null) {
         name: row.name || 'Osoba zaufana',
         phone: row.phone || '',
         status: row.status as 'active' | 'pending' | 'removed',
+        inviteCode: row.invite_code ?? null,
         isSelf: row.is_self,
         isAddableByMe: row.is_addable_by_me,
       }));
@@ -62,7 +64,9 @@ export function useTrustedContacts(relationshipId: string | null) {
   }, [refreshContacts]);
 
   const addTrustedContact = useCallback(
-    async (phone: string): Promise<{ name: string | null; phone: string | null } | null> => {
+    async (
+      phone: string,
+    ): Promise<{ name: string | null; phone: string | null; inviteCode: string | null } | null> => {
       if (!relationshipId) throw new Error('Missing relationship');
 
       setSaving(true);
@@ -76,9 +80,14 @@ export function useTrustedContacts(relationshipId: string | null) {
 
         await refreshContacts();
 
-        // RPC returns array with single row; columns are out_name, out_phone
         const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
-        return row ? { name: row.out_name ?? null, phone: row.out_phone ?? null } : null;
+        return row
+          ? {
+              name: row.out_name ?? null,
+              phone: row.out_phone ?? null,
+              inviteCode: row.out_invite_code ?? null,
+            }
+          : null;
       } finally {
         setSaving(false);
       }
