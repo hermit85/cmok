@@ -80,6 +80,38 @@ serve(async (req) => {
   }
 
   try {
+    // AUTHZ: caller can only poke users with whom they share an active relationship.
+    // Prevents authenticated push-spam to arbitrary user_ids.
+    const { data: pairs } = await serviceSupabase
+      .from('care_pairs')
+      .select('senior_id, caregiver_id')
+      .or(`and(senior_id.eq.${user.id},caregiver_id.eq.${toUserId}),and(senior_id.eq.${toUserId},caregiver_id.eq.${user.id})`)
+      .eq('status', 'active')
+      .limit(1);
+
+    let isAllowed = (pairs || []).length > 0;
+    if (!isAllowed) {
+      // Allow when caller is a trusted contact of toUserId's relationship, or vice versa.
+      const { data: trustedShared } = await serviceSupabase
+        .from('trusted_contacts')
+        .select('relationship_id, user_id, care_pairs!inner(senior_id, caregiver_id, status)')
+        .in('user_id', [user.id, toUserId])
+        .eq('status', 'active')
+        .eq('care_pairs.status', 'active');
+      for (const row of (trustedShared || [])) {
+        const pair = Array.isArray((row as any).care_pairs) ? (row as any).care_pairs[0] : (row as any).care_pairs;
+        if (!pair) continue;
+        const pairMembers = [pair.senior_id, pair.caregiver_id];
+        if (pairMembers.includes(user.id) || pairMembers.includes(toUserId)) {
+          isAllowed = true;
+          break;
+        }
+      }
+    }
+    if (!isAllowed) {
+      return jsonResponse({ error: 'Forbidden' }, 403);
+    }
+
     const { data: profile } = await serviceSupabase
       .from('users')
       .select('name')

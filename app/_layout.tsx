@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { View, ActivityIndicator, AppState } from 'react-native';
+import { View, ActivityIndicator, AppState, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -12,6 +12,10 @@ Sentry.init({
   enableAutoSessionTracking: true,
 });
 import * as Notifications from 'expo-notifications';
+import {
+  requestTrackingPermissionsAsync,
+  getTrackingPermissionsAsync,
+} from 'expo-tracking-transparency';
 import { useRouter } from 'expo-router';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
@@ -31,6 +35,31 @@ function RootLayout() {
     Nunito_600SemiBold,
     Nunito_700Bold,
   });
+
+  // App Tracking Transparency prompt — shown once on first launch.
+  // Required by Apple when the app includes analytics SDKs, even if they
+  // don't use IDFA (reviewers check for ATT presence). Runs only on iOS,
+  // only when status is 'undetermined'. Runs after a short delay so the
+  // welcome screen renders first and the prompt doesn't feel jarring.
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      if (cancelled) return;
+      try {
+        const { status } = await getTrackingPermissionsAsync();
+        if (status === 'undetermined') {
+          await requestTrackingPermissionsAsync();
+        }
+      } catch {
+        // prompt unavailable (older iOS / simulator) — ignore silently
+      }
+    }, 1500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, []);
 
   // Capture JS errors in PostHog
   useEffect(() => {

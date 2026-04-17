@@ -40,6 +40,7 @@ export function TrustedContactsScreen() {
   const displayNumber = cleanPhone.replace(/(\d{3})(?=\d)/g, '$1 ').trim();
 
   const activeContacts = contacts.filter((c) => c.status === 'active');
+  const pendingContacts = contacts.filter((c) => c.status === 'pending');
   const myName = profile?.name || 'bliska osoba';
 
   const handleAdd = async () => {
@@ -49,19 +50,24 @@ export function TrustedContactsScreen() {
     try {
       const added = await addTrustedContact(`48${cleanPhone}`);
       analytics.contactAdded();
-      setJustAddedName(added?.name || 'Osoba');
-      setPhone('');
-      if (addedToastTimerRef.current) clearTimeout(addedToastTimerRef.current);
-      addedToastTimerRef.current = setTimeout(() => setJustAddedName(null), 3000);
+      // If RPC returned a pending row (no user_id yet), surface the invite sheet
+      // so the inviter can share the download link. The pending entry is already
+      // in the list; status flips to active automatically when the invitee signs up.
+      if (added && added.name === 'Oczekuje') {
+        setPhone('');
+        setNotFoundPhone(`+48 ${displayNumber}`);
+      } else {
+        setJustAddedName(added?.name || 'Osoba');
+        setPhone('');
+        if (addedToastTimerRef.current) clearTimeout(addedToastTimerRef.current);
+        addedToastTimerRef.current = setTimeout(() => setJustAddedName(null), 3000);
+      }
     } catch (error) {
       const msg = (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string')
         ? error.message
         : (error instanceof Error ? error.message : '');
       const low = msg.toLowerCase();
-      if (msg.includes('not found') || msg.includes('User not found')) {
-        // Inline invite flow — not an error, just means we need to invite them
-        setNotFoundPhone(`+48 ${displayNumber}`);
-      } else if (msg.includes('already belongs') || msg.includes('already')) {
+      if (msg.includes('already belongs') || msg.includes('already')) {
         Alert.alert('Już w kręgu', 'Ta osoba jest już w Twoim kręgu.');
       } else if (low.includes('network') || low.includes('failed to fetch') || low.includes('timeout') || low.includes('offline')) {
         Alert.alert('Brak internetu', 'Sprawdź połączenie i spróbuj ponownie za chwilę.');
@@ -101,6 +107,30 @@ export function TrustedContactsScreen() {
               const message = (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string')
                 ? error.message
                 : (error instanceof Error ? error.message : `Nie udało się usunąć ${name}.`);
+              Alert.alert('Coś poszło nie tak', message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleCancelPendingInvite = (contactId: string) => {
+    Alert.alert(
+      'Anulować zaproszenie?',
+      'Ta osoba nie dołączy do kręgu. Możesz zaprosić ją ponownie w każdej chwili.',
+      [
+        { text: 'Nie', style: 'cancel' },
+        {
+          text: 'Tak, anuluj',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeTrustedContact(contactId);
+            } catch (error) {
+              const message = (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string')
+                ? error.message
+                : (error instanceof Error ? error.message : 'Nie udało się anulować zaproszenia.');
               Alert.alert('Coś poszło nie tak', message);
             }
           },
@@ -201,9 +231,9 @@ export function TrustedContactsScreen() {
             {/* ─── Invite card (user not in cmok) ─── */}
             {notFoundPhone ? (
               <View style={styles.inviteCard}>
-                <Text style={styles.inviteTitle}>Ta osoba nie ma jeszcze cmok</Text>
+                <Text style={styles.inviteTitle}>Wyślij zaproszenie</Text>
                 <Text style={styles.inviteBody}>
-                  Numer {notFoundPhone} nie jest w bazie. Wyślij zaproszenie, a gdy pobierze apkę i zaloguje się, dodasz ją do kręgu.
+                  Numer {notFoundPhone} czeka na instalację apki. Wyślij zaproszenie — po instalacji i zalogowaniu tym numerem dołączy automatycznie.
                 </Text>
                 <Pressable
                   onPress={handleSendInvite}
@@ -237,7 +267,7 @@ export function TrustedContactsScreen() {
 
               {loading ? (
                 <ActivityIndicator size="small" color={Colors.accent} style={{ marginTop: 16 }} />
-              ) : activeContacts.length === 0 ? (
+              ) : (activeContacts.length === 0 && pendingContacts.length === 0) ? (
                 <View style={styles.emptyCard}>
                   <Text style={styles.emptyTitle}>Krąg jest pusty</Text>
                   <Text style={styles.emptyText}>Dodaj kogoś, kto może zareagować szybko, sąsiada, kogoś z rodziny.</Text>
@@ -265,6 +295,42 @@ export function TrustedContactsScreen() {
                         >
                           <Text style={styles.removeText}>Usuń</Text>
                         </Pressable>
+                      ) : null}
+                    </View>
+                  ))}
+                  {pendingContacts.map((contact, i) => (
+                    <View
+                      key={contact.id}
+                      style={[styles.contactRow, (activeContacts.length + i) > 0 && styles.contactRowDivider]}
+                    >
+                      <Avatar name="?" />
+                      <View style={styles.contactMeta}>
+                        <Text style={styles.contactName}>Zaproszony(a) — czeka na instalację</Text>
+                        <Text style={styles.contactPhone}>
+                          {contact.phone || '+48 *** *** ***'}
+                        </Text>
+                      </View>
+                      {contact.isAddableByMe ? (
+                        <View style={styles.pendingActions}>
+                          <Pressable
+                            onPress={() => { setNotFoundPhone(contact.phone || ''); }}
+                            style={({ pressed }) => [styles.resendButton, pressed && { opacity: 0.7 }]}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Wyślij zaproszenie ponownie"
+                          >
+                            <Text style={styles.resendText}>Przypomnij</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => handleCancelPendingInvite(contact.id)}
+                            style={({ pressed }) => [styles.removeButton, pressed && { opacity: 0.6 }]}
+                            hitSlop={12}
+                            accessibilityRole="button"
+                            accessibilityLabel="Anuluj zaproszenie"
+                          >
+                            <Text style={styles.removeText}>Anuluj</Text>
+                          </Pressable>
+                        </View>
                       ) : null}
                     </View>
                   ))}
@@ -359,6 +425,13 @@ const styles = StyleSheet.create({
   inviteBtnText: { fontSize: 15, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   inviteDismiss: { minHeight: 40, alignItems: 'center' as const, justifyContent: 'center' as const, marginTop: 6 },
   inviteDismissText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.textMuted },
+
+  pendingActions: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
+  resendButton: {
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10,
+    backgroundColor: Colors.safeLight, minHeight: 32, justifyContent: 'center' as const,
+  },
+  resendText: { fontSize: 13, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
 
   /* list */
   listSection: {},

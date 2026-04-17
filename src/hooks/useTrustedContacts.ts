@@ -31,7 +31,7 @@ export function useTrustedContacts(relationshipId: string | null) {
 
       const mapped: TrustedContactExt[] = (data || []).map((row: {
         trusted_contact_id: string;
-        user_id: string;
+        user_id: string | null;
         name: string;
         phone: string | null;
         status: string;
@@ -43,7 +43,7 @@ export function useTrustedContacts(relationshipId: string | null) {
         userId: row.user_id,
         name: row.name || 'Osoba zaufana',
         phone: row.phone || '',
-        status: row.status as 'active' | 'removed',
+        status: row.status as 'active' | 'pending' | 'removed',
         isSelf: row.is_self,
         isAddableByMe: row.is_addable_by_me,
       }));

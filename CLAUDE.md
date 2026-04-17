@@ -145,6 +145,22 @@ cmok to codzienny rytuał bliskości między osobami, które mieszkają osobno. 
 - Auth: SMS OTP (Supabase Auth, legacy JWT anon key)
 - RLS: enabled na wszystkich 8 tabelach
 - Edge functions: 12 (checkin-notify, urgent-signal, nudge-signal, morning-reminder, weekly-summary, missed-sign-alert, delete-account, register-device, checkin-monitor, reaction-notify, poke-notify, reset-test-data)
+- Edge functions verify_jwt: **false** (gateway nie waliduje JWT — funkcje same robią `auth.getUser()`). Powód: legacy JWT anon key vs. nowy publishable key mismatch w gateway.
+
+## Role użytkowników
+- `signaler` — daje codzienny znak, może SOS, buduje krąg bliskich
+- `recipient` — odbiera znak, reakcje, primary watcher
+- `trusted` — trzecia rola, osoba w kręgu bliskich. Auto-przypisywana przez trigger `users_activate_pending_trusted_insert` gdy user zarejestruje się na numerze który ktoś wcześniej wpisał w "Krąg bliskich". Trusted ląduje na `/trusted-support` (empty state "Teraz jest spokojnie", aktywny SOS gdy bliski go wyśle). Nie przechodzi przez setup/join.
+
+## Trusted contact invite flow
+1. Mama wpisuje `+48 500 000 003` w Krąg bliskich → RPC `add_trusted_contact_by_phone`:
+   - Jeśli numer jest w `users`: od razu `status=active`
+   - Jeśli nie: tworzy pending row z `phone=...`, `user_id=NULL`, `status='pending'`
+2. UI pokazuje pending w liście ("Zaproszony(a), czeka na instalację") + Share sheet z linkiem `cmok.app/pobierz`
+3. Sąsiad pobiera app, loguje się swoim numerem → INSERT do `users` → trigger `activate_pending_trusted_contacts`:
+   - UPDATE trusted_contacts SET user_id, status='active' WHERE phone matches
+   - UPDATE users SET role='trusted' (jeśli role było NULL)
+4. Onboarding wykrywa `role='trusted'` → redirect do `/trusted-support` (pomija setup/join)
 
 ## URL-e
 - App Store: https://apps.apple.com/pl/app/cmok/id6762090888

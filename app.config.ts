@@ -56,6 +56,13 @@ const config: ExpoConfig = {
     ],
     'expo-font',
     ['@sentry/react-native', { organization: 'cybird-consulting', project: 'cmok' }],
+    [
+      'expo-tracking-transparency',
+      {
+        userTrackingPermission:
+          'cmok używa anonimowej analityki, żeby wiedzieć co działa, a co nie. Twój numer i treści zostają u Ciebie.',
+      },
+    ],
   ],
   extra: {
     eas: {

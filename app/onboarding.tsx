@@ -26,7 +26,14 @@ import { analytics } from '../src/services/analytics';
 const ALLOW_ORGANIC_SIGNUP = false;
 
 type Step = 'welcome' | 'intent' | 'who-gets-sign' | 'phone' | 'setup' | 'join' | 'done';
-type DestinationRoute = '/waiting' | '/signaler-home' | '/recipient-home' | null;
+type DestinationRoute = '/waiting' | '/signaler-home' | '/recipient-home' | '/trusted-support' | null;
+
+function homeRouteForRole(role: AppRole | null | undefined): DestinationRoute {
+  if (role === 'signaler') return '/signaler-home';
+  if (role === 'recipient') return '/recipient-home';
+  if (role === 'trusted') return '/trusted-support';
+  return null;
+}
 
 export default function OnboardingFlow() {
   const [step, setStep] = useState<Step>('welcome');
@@ -53,6 +60,13 @@ export default function OnboardingFlow() {
         .from('users').select('id, role, name').eq('id', session.user.id).maybeSingle();
       if (!profile) return; // No profile → stay on welcome
 
+      // Trusted users bypass pair logic entirely — DB trigger already activated their invite.
+      if (profile.role === 'trusted') {
+        setDestinationRoute('/trusted-support');
+        setStep('done');
+        return;
+      }
+
       const role = profile.role === 'signaler' || profile.role === 'recipient' ? profile.role as AppRole : null;
       if (!role) return;
 
@@ -63,7 +77,7 @@ export default function OnboardingFlow() {
 
       if (activePair?.status === 'active') {
         setSelectedRole(role);
-        setDestinationRoute(role === 'signaler' ? '/signaler-home' : '/recipient-home');
+        setDestinationRoute(homeRouteForRole(role));
         setStep('done');
       } else if (activePair?.status === 'pending' && role === 'recipient') {
         // Recipient waiting for signaler to join
@@ -79,16 +93,51 @@ export default function OnboardingFlow() {
     })();
   }, []);
 
-  const createProfileForRole = async (role: AppRole) => {
+  // Check if this user's phone matches a pending trusted-contact invite.
+  // If yes, that intent overrides the user-selected role — we onboard them
+  // as a trusted contact straight to /trusted-support.
+  const detectPendingTrustedInvite = async (): Promise<boolean> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.phone) return false;
+    const cleanPhone = user.phone.replace(/\D/g, '');
+    if (!cleanPhone) return false;
+    const { data } = await supabase
+      .from('trusted_contacts')
+      .select('id')
+      .eq('phone', cleanPhone)
+      .eq('status', 'pending')
+      .is('user_id', null)
+      .limit(1);
+    return (data || []).length > 0;
+  };
+
+  const createProfileForRole = async (role: AppRole): Promise<AppRole> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Brak sesji');
-    const payload = { id: user.id, phone: user.phone || '', name: role === 'signaler' ? 'Ja' : 'Bliska osoba', role };
+
+    // Pending trusted invite wins over intent-selected role.
+    const isTrustedInvitee = await detectPendingTrustedInvite();
+    const effectiveRole: AppRole = isTrustedInvitee ? 'trusted' : role;
+    const defaultName = effectiveRole === 'trusted'
+      ? 'Osoba z kr\u0119gu'
+      : effectiveRole === 'signaler' ? 'Ja' : 'Bliska osoba';
+
+    const payload = {
+      id: user.id,
+      phone: user.phone || '',
+      name: defaultName,
+      role: effectiveRole,
+    };
     const { error } = await supabase.from('users').upsert(payload, { onConflict: 'id' });
-    if (!error) return;
-    const { error: legacyError } = await supabase.from('users').upsert(
-      { ...payload, role: toLegacyRole(role) }, { onConflict: 'id' },
-    );
-    if (legacyError) throw legacyError;
+    if (error) {
+      // Legacy fallback for old role names (pre-migration projects)
+      if (effectiveRole === 'trusted') throw error;
+      const { error: legacyError } = await supabase.from('users').upsert(
+        { ...payload, role: toLegacyRole(effectiveRole) }, { onConflict: 'id' },
+      );
+      if (legacyError) throw legacyError;
+    }
+    return effectiveRole;
   };
 
   const handleIntent = (intent: UserIntent) => {
@@ -113,10 +162,19 @@ export default function OnboardingFlow() {
     analytics.onboardingVerified(!!profile, relationshipStatus);
     const pendingInvite = await getPendingInvite();
 
+    // Case 0: Trusted contact role (auto-assigned by DB trigger if phone matched a pending invite).
+    // These users never pass through setup/join — straight to support-only home.
+    if (profile && profile.role === 'trusted') {
+      if (pendingInvite) await clearPendingInvite();
+      setDestinationRoute('/trusted-support');
+      setStep('done');
+      return;
+    }
+
     // Case 1: Active relationship → go home. Role from DB is authoritative.
     if (profile && relationshipStatus === 'active') {
       if (pendingInvite) await clearPendingInvite();
-      setDestinationRoute(profile.role === 'signaler' ? '/signaler-home' : '/recipient-home');
+      setDestinationRoute(homeRouteForRole(profile.role));
       setStep('done');
       return;
     }
@@ -155,7 +213,7 @@ export default function OnboardingFlow() {
       const { data: anyPair } = await supabase
         .from('care_pairs').select('status').eq(col, profile.id).in('status', ['active', 'pending']).limit(1).maybeSingle();
       if (anyPair?.status === 'active') {
-        setDestinationRoute(profile.role === 'signaler' ? '/signaler-home' : '/recipient-home');
+        setDestinationRoute(homeRouteForRole(profile.role));
         setStep('done');
         return;
       }
@@ -163,6 +221,18 @@ export default function OnboardingFlow() {
         setDestinationRoute('/waiting'); setStep('done');
         return;
       }
+
+      // If this phone has a pending trusted invite AND the profile's role is
+      // not signaler/recipient (e.g. role still null from partial onboarding),
+      // promote to trusted and go to support home.
+      const isTrustedInvitee = await detectPendingTrustedInvite();
+      if (isTrustedInvitee && profile.role !== 'signaler' && profile.role !== 'recipient') {
+        await supabase.from('users').update({ role: 'trusted' }).eq('id', profile.id);
+        setDestinationRoute('/trusted-support');
+        setStep('done');
+        return;
+      }
+
       // Truly no relationship — go to setup/join
       if (selectedRole && selectedRole !== profile.role) {
         await supabase.from('users').update({ role: selectedRole }).eq('id', profile.id);
@@ -175,11 +245,19 @@ export default function OnboardingFlow() {
     // Case 4: No profile — new user
     if (selectedRole) {
       try {
-        await createProfileForRole(selectedRole);
-        setStep(selectedRole === 'recipient' ? 'setup' : 'join');
+        const effectiveRole = await createProfileForRole(selectedRole);
+        // If a pending trusted-contact invite matched this phone, the profile
+        // was created with role='trusted' — trigger has activated the invite
+        // and we route straight to the support-only home (no setup/join).
+        if (effectiveRole === 'trusted') {
+          setDestinationRoute('/trusted-support');
+          setStep('done');
+          return;
+        }
+        setStep(effectiveRole === 'recipient' ? 'setup' : 'join');
       } catch (err) {
         console.warn('[onboarding] createProfile error:', err);
-        Alert.alert('Błąd', 'Nie udało się utworzyć profilu.');
+        Alert.alert('B\u0142\u0105d', 'Nie uda\u0142o si\u0119 utworzy\u0107 profilu.');
         setStep('intent');
       }
       return;

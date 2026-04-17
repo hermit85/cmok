@@ -1,4 +1,4 @@
-export type AppRole = 'signaler' | 'recipient';
+export type AppRole = 'signaler' | 'recipient' | 'trusted';
 export type RelationshipStatus = 'none' | 'pending' | 'active';
 
 export interface AppProfile {
@@ -49,10 +49,10 @@ export type SupportDeliveryState = 'sent' | 'failed' | 'pending';
 export interface TrustedContact {
   id: string;
   relationshipId: string;
-  userId: string;
+  userId: string | null;
   name: string;
   phone: string;
-  status: 'active' | 'removed';
+  status: 'active' | 'pending' | 'removed';
 }
 
 export interface SupportParticipant {

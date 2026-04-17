@@ -79,12 +79,10 @@ serve(async (req) => {
 
     const senderName = profile?.name || 'Bliska osoba';
 
-    // 2. Resolve the signaler to notify
-    // If toUserId was passed, use it. Otherwise find from care_pairs.
+    // 2. Resolve the signaler to notify — derive from active care_pair.
+    // Never trust toUserId from client without checking the pair exists.
     let signalerIds: string[] = [];
-    if (toUserId) {
-      signalerIds = [toUserId];
-    } else {
+    {
       const { data: pair } = await serviceSupabase
         .from('care_pairs')
         .select('senior_id')
@@ -92,7 +90,16 @@ serve(async (req) => {
         .eq('status', 'active')
         .limit(1)
         .maybeSingle();
-      if (pair?.senior_id) signalerIds = [pair.senior_id];
+      if (pair?.senior_id) {
+        // If client passed toUserId, it must match the actual signaler in the pair.
+        if (toUserId && toUserId !== pair.senior_id) {
+          return jsonResponse({ error: 'Forbidden' }, 403);
+        }
+        signalerIds = [pair.senior_id];
+      } else if (toUserId) {
+        // Client passed toUserId but caller has no active pair — reject.
+        return jsonResponse({ error: 'Forbidden' }, 403);
+      }
     }
 
     if (signalerIds.length === 0) {
