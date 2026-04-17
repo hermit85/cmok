@@ -161,13 +161,32 @@ export function useUrgentSignal(): UrgentSignalState {
           .order('sent_at', { ascending: false }),
       ]);
 
-      const trustedUserIds = (trustedContacts || []).map((c) => c.user_id);
-      const userIds = [...new Set([rel.signalerUserId, rel.recipientUserId, ...trustedUserIds, alert.acknowledged_by].filter(Boolean))];
-      const { data: users } = userIds.length > 0
-        ? await supabase.from('users').select('id, name, phone').in('id', userIds)
-        : { data: [] as Array<{ id: string; name: string; phone: string }> };
+      // RODO: use SECURITY DEFINER RPC that masks phone numbers per viewer role.
+      // Trusted contacts must NOT see phones of other trusted contacts.
+      const { data: rpcParticipants } = await supabase.rpc('get_alert_participants', {
+        p_alert_id: alert.id,
+      });
+      const rpcRows = (rpcParticipants || []) as Array<{
+        user_id: string; name: string; phone: string | null; kind: 'primary' | 'trusted';
+        signaler_name: string | null; claimer_name: string | null;
+      }>;
 
-      const userMap = new Map((users || []).map((u) => [u.id, u]));
+      const userMap = new Map<string, { id: string; name: string; phone: string }>(
+        rpcRows.map((p) => [p.user_id, { id: p.user_id, name: p.name, phone: p.phone || '' }]),
+      );
+      // Signaler is not returned as a participant by the RPC, inject from signaler_name column.
+      const signalerName = rpcRows[0]?.signaler_name || null;
+      if (signalerName) {
+        userMap.set(rel.signalerUserId, { id: rel.signalerUserId, name: signalerName, phone: '' });
+      }
+      // Claimer name (acknowledger) also lives as a column on every row.
+      const claimerName = rpcRows[0]?.claimer_name || null;
+      if (alert.acknowledged_by && claimerName) {
+        const existing = userMap.get(alert.acknowledged_by);
+        if (!existing) {
+          userMap.set(alert.acknowledged_by, { id: alert.acknowledged_by, name: claimerName, phone: '' });
+        }
+      }
       const latestDelivery = new Map<string, { status: 'sent' | 'failed'; sent_at: string }>();
       for (const d of deliveries || []) {
         if (!latestDelivery.has(d.recipient_id)) {

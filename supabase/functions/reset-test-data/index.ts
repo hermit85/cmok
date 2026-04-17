@@ -4,7 +4,7 @@
 // Użycie: POST z body { mode: "..." }
 //   keep_pair — czyści checkins/signals/alerts, zostawia relację
 //   full_reset — czyści wszystko, wraca do stanu pre-onboarding
-//   seed_sasiad — tworzy konto +48100000003 jeśli nie istnieje (Sąsiad, signaler)
+//   seed_sasiad — tworzy konto +48500000003 jeśli nie istnieje (Sąsiad, signaler)
 //   seed_invite — tworzy pending pair z invite_code 111222 dla recipienta
 //   seed_apple_review — pełna konfiguracja dla Apple reviewera:
 //     - naprawia nazwy (Mama/Darek/Sąsiad)
@@ -16,7 +16,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const TEST_PHONES = ['48100000001', '48100000002', '48100000003'];
+const TEST_PHONES = ['48500000001', '48500000002', '48500000003'];
 
 const CORS_HEADERS = {
   'Content-Type': 'application/json',
@@ -55,8 +55,8 @@ serve(async (req) => {
         .select('id, phone')
         .in('phone', TEST_PHONES);
 
-      const mama = allUsers?.find(u => u.phone === '48100000001');
-      const darek = allUsers?.find(u => u.phone === '48100000002');
+      const mama = allUsers?.find(u => u.phone === '48500000001');
+      const darek = allUsers?.find(u => u.phone === '48500000002');
 
       if (!mama || !darek) {
         return jsonResponse({ error: 'Test users not found — log in as 001 and 002 first' }, 404);
@@ -110,8 +110,8 @@ serve(async (req) => {
         mode,
         steps,
         credentials: {
-          signaler: { phone: '+48 100 000 001', otp: '123456', name: 'Mama' },
-          recipient: { phone: '+48 100 000 002', otp: '123456', name: 'Darek' },
+          signaler: { phone: '+48 500 000 001', otp: '123456', name: 'Mama' },
+          recipient: { phone: '+48 500 000 002', otp: '123456', name: 'Darek' },
           note: 'Log in with either number — will land directly on home screen with active pair and today sign',
         },
       });
@@ -122,11 +122,11 @@ serve(async (req) => {
       const { data: darek } = await serviceSupabase
         .from('users')
         .select('id')
-        .eq('phone', '48100000002')
+        .eq('phone', '48500000002')
         .maybeSingle();
 
       if (!darek) {
-        return jsonResponse({ error: 'Recipient account (48100000002) not found' }, 404);
+        return jsonResponse({ error: 'Recipient account (48500000002) not found' }, 404);
       }
 
       // Remove any existing pending pair for Darek to avoid conflict
@@ -161,7 +161,7 @@ serve(async (req) => {
       const { data: existing } = await serviceSupabase
         .from('users')
         .select('id')
-        .eq('phone', '48100000003')
+        .eq('phone', '48500000003')
         .maybeSingle();
 
       if (existing) {
@@ -169,7 +169,7 @@ serve(async (req) => {
       }
 
       const { data: authUser, error: authErr } = await serviceSupabase.auth.admin.createUser({
-        phone: '48100000003',
+        phone: '48500000003',
         phone_confirm: true,
       });
       if (authErr || !authUser?.user) {
@@ -178,7 +178,7 @@ serve(async (req) => {
 
       const { error: profileErr } = await serviceSupabase.from('users').insert({
         id: authUser.user.id,
-        phone: '48100000003',
+        phone: '48500000003',
         name: 'Sąsiad',
         role: 'signaler',
       });
@@ -280,9 +280,9 @@ serve(async (req) => {
       deleted.push(`auth_users: ${userIds.length}`);
     } else {
       // keep_pair: just reset names to known good state
-      await serviceSupabase.from('users').update({ name: 'Mama' }).eq('phone', '48100000001');
-      await serviceSupabase.from('users').update({ name: 'Darek' }).eq('phone', '48100000002');
-      await serviceSupabase.from('users').update({ name: 'Sąsiad' }).eq('phone', '48100000003');
+      await serviceSupabase.from('users').update({ name: 'Mama' }).eq('phone', '48500000001');
+      await serviceSupabase.from('users').update({ name: 'Darek' }).eq('phone', '48500000002');
+      await serviceSupabase.from('users').update({ name: 'Sąsiad' }).eq('phone', '48500000003');
 
       // Reset pair labels
       if (pairIds.length > 0) {

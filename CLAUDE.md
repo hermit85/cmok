@@ -155,9 +155,9 @@ cmok to codzienny rytuał bliskości między osobami, które mieszkają osobno. 
 - Deep link: cmok://join/{code}
 
 ## Numery testowe
-- +48 100 000 001 (signaler, "Mama") — kod SMS: 123456
-- +48 100 000 002 (recipient, "Darek") — kod SMS: 123456
-- +48 100 000 003 (trusted contact, "Sąsiad") — kod SMS: 123456
+- +48 500 000 001 (signaler, "Mama") — kod SMS: 123456
+- +48 500 000 002 (recipient, "Darek") — kod SMS: 123456
+- +48 500 000 003 (trusted contact, "Sąsiad") — kod SMS: 123456
 - Invite code: tworzy recipient w SetupScreen
 - Sąsiad: dodawany przez Mamę lub Darka do kręgu bliskich via TrustedContacts
 
