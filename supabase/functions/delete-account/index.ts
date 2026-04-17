@@ -45,14 +45,20 @@ serve(async (req) => {
   try {
     const userId = user.id;
 
+    // 0. Clear references that would otherwise block user delete via FK.
+    //    alert_cases.acknowledged_by now has ON DELETE SET NULL at the DB
+    //    level, but we clear it explicitly here as belt-and-suspenders so
+    //    the behavior is auditable even if the FK ever regresses.
+    await serviceSupabase.from('alert_cases').update({ acknowledged_by: null }).eq('acknowledged_by', userId);
+
     // 1. Delete signals (sent and received)
     await serviceSupabase.from('signals').delete().or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`);
 
     // 2. Delete daily checkins
     await serviceSupabase.from('daily_checkins').delete().eq('senior_id', userId);
 
-    // 3. Delete trusted contacts (as member)
-    await serviceSupabase.from('trusted_contacts').delete().eq('user_id', userId);
+    // 3. Delete trusted contacts (as member AND as inviter — pending invites I created)
+    await serviceSupabase.from('trusted_contacts').delete().or(`user_id.eq.${userId},added_by_user_id.eq.${userId}`);
 
     // 4. Delete alert deliveries (as recipient)
     await serviceSupabase.from('alert_deliveries').delete().eq('recipient_id', userId);
@@ -70,7 +76,10 @@ serve(async (req) => {
     await serviceSupabase.from('users').delete().eq('id', userId);
 
     // 9. Delete auth user (removes from auth.users)
-    await serviceSupabase.auth.admin.deleteUser(userId);
+    const { error: authDeleteError } = await serviceSupabase.auth.admin.deleteUser(userId);
+    if (authDeleteError) {
+      return jsonResponse({ error: 'Failed to delete auth user', details: authDeleteError.message }, 500);
+    }
 
     return jsonResponse({ ok: true, deleted: userId });
   } catch (error) {

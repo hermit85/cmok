@@ -45,6 +45,27 @@ serve(async (req) => {
     return jsonResponse({ error: 'Missing authorization header' }, 401);
   }
 
+  const userSupabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+
+  const serviceSupabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
+
+  // Auth first — reject invalid JWT before touching body or DB.
+  const {
+    data: { user },
+    error: authError,
+  } = await userSupabase.auth.getUser();
+
+  if (authError || !user) {
+    return jsonResponse({ error: 'Unauthorized' }, 401);
+  }
+
   let toUserId: string | undefined;
   let emoji: string | undefined;
   try {
@@ -57,26 +78,6 @@ serve(async (req) => {
 
   if (!toUserId) {
     return jsonResponse({ error: 'to_user_id required' }, 400);
-  }
-
-  const userSupabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: authHeader } } },
-  );
-
-  const serviceSupabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
-
-  const {
-    data: { user },
-    error: authError,
-  } = await userSupabase.auth.getUser();
-
-  if (authError || !user) {
-    return jsonResponse({ error: 'Unauthorized' }, 401);
   }
 
   try {
