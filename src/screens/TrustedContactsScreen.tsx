@@ -82,7 +82,7 @@ export function TrustedContactsScreen() {
   };
 
   const handleSendInvite = async () => {
-    const msg = `Cześć! ${myName} poprosił(a), żebyś był(a) w jej/jego kręgu bliskich w cmok.\n\ncmok to apka, która daje codzienny znak "wszystko OK" osobom które mieszkają osobno. Ty dostaniesz wiadomość tylko jeśli coś się będzie działo.\n\nPobierz i zaloguj się swoim numerem:\nhttps://cmok.app/pobierz`;
+    const msg = `Cześć! ${myName} dodał(a) Cię do kręgu bliskich w cmok. Dostaniesz wiadomość tylko jeśli coś się będzie działo — nic codziennie, żadnego spamu.\n\nŻeby dołączyć:\n1. Pobierz cmok: https://cmok.app/pobierz\n2. Zaloguj się tym samym numerem, na który dostajesz tę wiadomość\n3. Gotowe, dołączysz automatycznie do kręgu ${myName}.`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
     } catch { /* cancelled */ }
@@ -233,7 +233,7 @@ export function TrustedContactsScreen() {
               <View style={styles.inviteCard}>
                 <Text style={styles.inviteTitle}>Wyślij zaproszenie</Text>
                 <Text style={styles.inviteBody}>
-                  Numer {notFoundPhone} czeka na instalację apki. Wyślij zaproszenie — po instalacji i zalogowaniu tym numerem dołączy automatycznie.
+                  Numer {notFoundPhone} nie ma jeszcze cmok. Wyślij link do pobrania — gdy ta osoba zainstaluje apkę i zaloguje się tym samym numerem, dołączy do Twojego kręgu automatycznie. Dostaniesz wtedy powiadomienie.
                 </Text>
                 <Pressable
                   onPress={handleSendInvite}
@@ -305,8 +305,8 @@ export function TrustedContactsScreen() {
                     >
                       <Avatar name="?" />
                       <View style={styles.contactMeta}>
-                        <Text style={styles.contactName}>Zaproszony(a) — czeka na instalację</Text>
-                        <Text style={styles.contactPhone}>
+                        <Text style={styles.contactName} numberOfLines={1}>Czeka na instalację</Text>
+                        <Text style={styles.contactPhone} numberOfLines={1}>
                           {contact.phone || '+48 *** *** ***'}
                         </Text>
                       </View>
