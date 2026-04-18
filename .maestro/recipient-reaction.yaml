@@ -1,0 +1,30 @@
+# Flow: Darek (recipient) receives Mama's sign and reacts.
+#
+# Prereq: Mama already sent today's sign (run checkin-flow.yaml on Mama's sim).
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: false
+
+# Darek home — Jest znak hero
+- assertVisible: "Jest znak"
+- assertVisible: "Mama dała znak"
+
+# Tap a reaction
+- tapOn: "Kocham"
+
+# Should see "Mama zobaczy Twój gest" pill after reaction
+- assertVisible:
+    text: "zobaczy Twój gest"
+
+# Streak counter visible if streak ≥ 2
+- assertVisible:
+    text: "dni z rzędu"
+    optional: true
+
+# Peer rec card should appear at bottom of scroll when week has ≥1 OK day
+- scroll
+- assertVisible:
+    text: "Znasz kogoś z rodzicem"
+    optional: true

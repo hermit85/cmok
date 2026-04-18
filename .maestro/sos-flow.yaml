@@ -1,0 +1,38 @@
+# Flow: Mama triggers SOS → confirmation → sent state → resolve.
+# Also verifies PostResolveShare appears on resolve.
+#
+# Prereq: Mama logged in with active primary recipient. Skip if no trusted
+# contacts configured (UI allows SOS regardless but copy varies).
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: false
+
+# Tap "Potrzebuję pomocy" at bottom
+- scroll
+- tapOn: "Potrzebuję pomocy"
+
+# Confirmation modal
+- assertVisible:
+    text: "Na pewno"
+    optional: true
+- tapOn:
+    text: "Tak, wyślij"
+    optional: true
+
+# Urgent state — check "Coś się dzieje" copy
+- assertVisible: "Coś się dzieje"
+- assertVisible:
+    text: "Wyślij ponownie"
+    optional: true
+
+# Resolve
+- tapOn: "Już jest dobrze"
+
+# PostResolveShare overlay — headline + share button
+- assertVisible: "Już dobrze"
+- assertVisible: "Opowiedz o cmok"
+
+# Dismiss
+- tapOn: "Zamknij"

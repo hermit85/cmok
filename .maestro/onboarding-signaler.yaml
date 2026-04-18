@@ -1,0 +1,33 @@
+# Flow: signaler (Mama) joins using a code from recipient
+#
+# Prereq: recipient already generated a code (run onboarding-recipient.yaml first).
+#         You'll need to read the actual code off the waiting screen in practice —
+#         this flow hardcodes `111222` for demo. Swap before running.
+#
+# Expected outcome: Mama lands on signaler home, can see "daj znak" button.
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: true
+
+# Intent → "Daję codzienny znak"
+- tapOn: "Daję codzienny znak"
+
+# "Mam kod zaproszenia" branch (vs. "Ktoś chce mi dać znak" which goes to setup)
+- tapOn:
+    text: "Mam kod zaproszenia"
+    optional: true
+
+# Phone + OTP
+- inputText: "500000001"
+- tapOn: "Wyślij kod"
+- inputText: "123456"
+- tapOn: "Potwierdź"
+
+# Invite code entry — REPLACE 111222 with a live code before running
+- inputText: "111222"
+- tapOn: "Dołącz"
+
+# Should land on signaler home — the big "daj znak" button
+- assertVisible: "daj znak"

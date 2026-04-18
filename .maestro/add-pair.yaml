@@ -1,0 +1,37 @@
+# Flow: Darek (recipient) invites a second signaler via /add-pair.
+# Exercises P2.1 multi-pair unblock.
+#
+# Prereq: Darek logged in, active pair with Mama.
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: false
+
+- tapOn: "Ustawienia"
+
+# Scroll down if needed to find the CTA
+- scroll
+- assertVisible: "Zaproś kolejną bliską osobę"
+- tapOn: "Zaproś kolejną bliską osobę"
+
+# AddPairScreen step 1 — name input
+- inputText: "Babcia"
+- tapOn: "Stwórz zaproszenie"
+
+# Step 2 — code visible
+- assertVisible:
+    text: "Pokaż ten kod Babcia"
+- assertVisible:
+    text: "[0-9]{6}"
+- assertVisible: "Wyślij zaproszenie"
+
+# Copy button works
+- tapOn: "Skopiuj kod"
+- assertVisible: "Skopiowane"
+
+# Done
+- tapOn: "Gotowe"
+
+# Back on settings — second card in "Moi bliscy" should now include Babcia
+# (may require /circle screen visit to see full list)

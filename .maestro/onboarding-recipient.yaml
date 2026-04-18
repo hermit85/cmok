@@ -1,0 +1,38 @@
+# Flow: fresh recipient onboarding → invite code generated
+#
+# Prereq: run `reset-test-data` with `full_reset` so +48 500 000 002 has no account.
+# Expected outcome: Darek signs up, lands on /waiting with an invite code visible.
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: true
+
+# Welcome / intent screen → pick "Dostaję codzienny znak" (recipient)
+- tapOn: "Dostaję codzienny znak"
+
+# Phone entry
+- tapOn:
+    id: "phone-input"
+    optional: true
+- inputText: "500000002"
+- tapOn: "Wyślij kod"
+
+# OTP
+- inputText: "123456"
+- tapOn: "Potwierdź"
+
+# Setup: name the signaler
+- inputText: "Mama"
+- tapOn: "Dalej"
+
+# Waiting screen — should see 6-digit invite code
+- assertVisible:
+    text: "[0-9]{6}"
+- assertVisible: "Udostępnij"
+
+# Settings entry still works
+- tapOn: "Ustawienia"
+    optional: true
+- tapOn: "Wróć"
+    optional: true

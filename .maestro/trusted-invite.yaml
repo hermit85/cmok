@@ -1,0 +1,32 @@
+# Flow: Mama adds a trusted contact by phone (pending flow).
+#
+# Prereq: Mama logged in, active pair with Darek.
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: false
+
+# Go to Settings → Moi bliscy card → /circle → "Dodaj" in trusted grid
+- tapOn: "Ustawienia"
+- tapOn: "Moi bliscy"
+
+# On /circle, tap "+ Dodaj" in the trusted grid OR the CTA below
+- tapOn: "Dodaj"
+
+# Now on /trusted-contacts, enter phone of someone NOT yet on cmok
+- inputText: "600100200"
+- tapOn: "Dodaj do kręgu"
+
+# Expect the "Wyślij zaproszenie" card with 6-digit code
+- assertVisible: "Wyślij zaproszenie"
+- assertVisible:
+    text: "Kod zaproszenia"
+- assertVisible:
+    text: "[0-9]{6}"
+
+# Cancel the share sheet (we just verify UI, not actual share)
+- tapOn: "Anuluj"
+
+# Pending contact now shows in the list with "Czeka na instalację"
+- assertVisible: "Czeka na instalację"

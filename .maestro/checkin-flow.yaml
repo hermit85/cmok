@@ -1,0 +1,28 @@
+# Flow: Mama sends daily check-in + picks mood → UI shows both confirmation pills.
+#
+# Prereq: signaler + recipient paired and active (`keep_pair` reset is fine).
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: false
+
+# Assume already logged in as signaler (Mama)
+- assertVisible: "daj znak"
+
+# Tap the main check-in button
+- tapOn: "daj znak"
+
+# After check-in: "Gotowe" circle + copy + status mood picker
+- assertVisible: "Jak się dziś czujesz?"
+
+# Pick "Spokojnie" mood
+- tapOn: "Spokojnie"
+
+# Should see picked mood pill + symmetrical "Darek zobaczy Twój znak" confirmation
+- assertVisible: "Spokojnie"
+- assertVisible:
+    text: "zobaczy Twój znak"
+
+# tomorrowHook visible
+- assertVisible: "Gotowe na dziś"

@@ -1,0 +1,22 @@
+# Maestro config for cmok
+#
+# Install Maestro:
+#   curl -Ls "https://get.maestro.mobile.dev" | bash
+#
+# Run all flows:
+#   maestro test .maestro/
+#
+# Run a single flow:
+#   maestro test .maestro/onboarding-recipient.yaml
+#
+# Test accounts (see CLAUDE.md):
+#   recipient: +48 500 000 002 (Darek)  OTP: 123456
+#   signaler:  +48 500 000 001 (Mama)   OTP: 123456
+#   trusted:   +48 500 000 003 (Sąsiad) OTP: 123456
+#
+# Reset test data before running flows (from repo root):
+#   curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
+#     -H "Content-Type: application/json" \
+#     -d '{"mode": "full_reset"}'
+
+appId: com.hermit85.cmok
