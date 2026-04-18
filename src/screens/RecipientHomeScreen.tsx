@@ -13,6 +13,7 @@ import { SupportParticipants } from '../components/SupportParticipants';
 import { PushPermissionBanner } from '../components/PushPermissionBanner';
 import { SafetyStatus } from '../components/SafetyStatus';
 import { MilestoneCelebration } from '../components/MilestoneCelebration';
+import { PostResolveShare } from '../components/PostResolveShare';
 import NetInfo from '@react-native-community/netinfo';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
@@ -495,7 +496,15 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     if (!currentAlert) { Alert.alert('Ładowanie...', 'Poczekaj chwilę i spróbuj ponownie.'); return; }
     try { await claim(currentAlert.id); analytics.urgentClaimed(); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); }
   };
-  const handleResolve = async () => { if (!currentAlert) return; try { await resolve(currentAlert.id); analytics.urgentResolved(); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
+  const [postResolveVisible, setPostResolveVisible] = useState(false);
+  const handleResolve = async () => {
+    if (!currentAlert) return;
+    try {
+      await resolve(currentAlert.id);
+      analytics.urgentResolved();
+      setPostResolveVisible(true);
+    } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); }
+  };
 
   /* ─── Recipient milestone celebration (pride share) ─── */
   const [recipientMilestoneVisible, setRecipientMilestoneVisible] = useState(false);
@@ -695,6 +704,12 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         recipientName={sigName}
         perspective="recipient"
         onDismiss={() => setRecipientMilestoneVisible(false)}
+      />
+      <PostResolveShare
+        visible={postResolveVisible}
+        role="primary"
+        signalerName={sigName}
+        onDismiss={() => setPostResolveVisible(false)}
       />
       <ScreenHeader subtitle={`od ${nameFrom}`} />
       {!pv ? (

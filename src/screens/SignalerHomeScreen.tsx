@@ -11,6 +11,7 @@ import { WeekDots } from '../components/WeekDots';
 import { Particles } from '../components/Particles';
 import { UrgentConfirmation } from '../components/UrgentConfirmation';
 import { MilestoneCelebration } from '../components/MilestoneCelebration';
+import { PostResolveShare } from '../components/PostResolveShare';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { Emoji } from '../components/Emoji';
 import { PushPermissionBanner } from '../components/PushPermissionBanner';
@@ -86,6 +87,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const [justChecked, setJustChecked] = useState(false);
   const [celebrationVisible, setCelebrationVisible] = useState(false);
   const [milestoneVisible, setMilestoneVisible] = useState(false);
+  const [sosResolvedVisible, setSosResolvedVisible] = useState(false);
   const [statusPicked, setStatusPicked] = useState<string | null>(null);
   const statusLoadedFromDb = useRef(false);
   const [previewMode, setPreviewMode] = useState<SignalerHomePreview | null>(preview);
@@ -518,7 +520,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
             </View>
           ) : null}
           {effectiveUrgent ? <SupportParticipants participants={effectiveUrgent.participants} /> : null}
-          <Pressable onPress={() => { if (currentAlert) resolveUrgent(currentAlert.id).catch(() => Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.')); }}
+          <Pressable onPress={() => {
+              if (!currentAlert) return;
+              resolveUrgent(currentAlert.id)
+                .then(() => setSosResolvedVisible(true))
+                .catch(() => Alert.alert('Nie udało się', 'Spróbuj ponownie za chwilę.'));
+            }}
             disabled={urgentLoading || localUrgentOffline || !currentAlert}
             accessibilityRole="button"
             accessibilityLabel="Już jest dobrze, zamknij sygnał"
@@ -645,6 +652,12 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     <SafeAreaView style={[s.container, showChecked && s.containerAfter]}>
       <UrgentConfirmation visible={showUrgentModal} onConfirm={handleUrgentConfirm} onCancel={() => setShowUrgentModal(false)} circleCount={recipients.length} />
       <MilestoneCelebration visible={milestoneVisible} streak={currentStreak} recipientName={primaryName} onDismiss={() => setMilestoneVisible(false)} />
+      <PostResolveShare
+        visible={sosResolvedVisible}
+        role="signaler"
+        signalerName={null}
+        onDismiss={() => setSosResolvedVisible(false)}
+      />
       <ScreenHeader subtitle={hasName ? `dla ${rf.genitive}` : undefined} />
 
       {isOffline ? <Text style={s.offlineBadge}>Brak internetu</Text> : null}

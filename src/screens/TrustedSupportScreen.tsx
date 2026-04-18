@@ -5,9 +5,11 @@ import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius, Spacing } from '../constants/tokens';
 import { SupportParticipants } from '../components/SupportParticipants';
+import { PostResolveShare } from '../components/PostResolveShare';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { openPhoneCall } from '../utils/linking';
 import { analytics } from '../services/analytics';
+import { useState } from 'react';
 
 function formatTime(isoString: string) {
   const date = new Date(isoString);
@@ -17,6 +19,7 @@ function formatTime(isoString: string) {
 export function TrustedSupportScreen() {
   const router = useRouter();
   const { urgentCase, currentAlert, loading, refreshing, claim, resolve } = useUrgentSignal();
+  const [postResolve, setPostResolve] = useState<{ name: string | null } | null>(null);
 
   const handleClaim = async () => {
     if (!currentAlert) return;
@@ -26,7 +29,12 @@ export function TrustedSupportScreen() {
 
   const handleResolve = async () => {
     if (!currentAlert) return;
-    try { await resolve(currentAlert.id); }
+    const signalerName = urgentCase?.signalerName ?? null;
+    try {
+      await resolve(currentAlert.id);
+      // Capture the "hero moment" share right after resolve succeeds.
+      setPostResolve({ name: signalerName });
+    }
     catch { Alert.alert('Coś poszło nie tak', 'Nie udało się zamknąć.'); }
   };
 
@@ -60,6 +68,13 @@ export function TrustedSupportScreen() {
   if (!urgentCase || !currentAlert) {
     return (
       <SafeAreaView style={styles.container}>
+        {/* Post-resolve celebration (rendered at empty state — SOS is over) */}
+        <PostResolveShare
+          visible={!!postResolve}
+          role="trusted"
+          signalerName={postResolve?.name ?? null}
+          onDismiss={() => setPostResolve(null)}
+        />
         <ScrollView contentContainerStyle={styles.content}>
           <Pressable
             onPress={() => router.push('/settings')}
