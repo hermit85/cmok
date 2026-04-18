@@ -9,9 +9,16 @@ import { Typography } from '../constants/typography';
 interface SetupScreenProps {
   onDone: () => void;
   onBack: () => void;
+  /**
+   * 'initial' (default): first care-pair for this account. If one already exists,
+   *   we skip to home (protects against accidental duplicate during onboarding).
+   * 'additional': user explicitly wants to invite another signaler. We allow
+   *   creating a second/third pending pair alongside existing active ones.
+   */
+  mode?: 'initial' | 'additional';
 }
 
-export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
+export function SetupScreen({ onDone, onBack, mode = 'initial' }: SetupScreenProps) {
   const [label, setLabel] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -27,19 +34,21 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
 
       if (!user) throw new Error('Brak sesji');
 
-      // Block if active pair already exists
-      const { data: activePair } = await supabase
-        .from('care_pairs')
-        .select('id')
-        .eq('caregiver_id', user.id)
-        .eq('status', 'active')
-        .limit(1)
-        .maybeSingle();
+      // In 'initial' mode, skip setup if user already has an active pair (first-onboarding guard).
+      // In 'additional' mode we explicitly allow creating a new pair alongside existing ones.
+      if (mode === 'initial') {
+        const { data: activePair } = await supabase
+          .from('care_pairs')
+          .select('id')
+          .eq('caregiver_id', user.id)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
 
-      if (activePair) {
-        // Already has active relationship — skip setup, go to home
-        onDone();
-        return;
+        if (activePair) {
+          onDone();
+          return;
+        }
       }
 
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -54,13 +63,18 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
       let success = false;
       let lastError: unknown = null;
       for (let attempt = 0; attempt < 5; attempt++) {
-        const { data: currentPending } = await supabase
-          .from('care_pairs')
-          .select('id')
-          .eq('caregiver_id', user.id)
-          .eq('status', 'pending')
-          .limit(1)
-          .maybeSingle();
+        // In 'additional' mode we always create a NEW pending row (allow multiple
+        // concurrent pending invites — e.g. one waiting for Mama, one for Babcia).
+        // In 'initial' mode we may recycle an existing pending row to avoid dupes.
+        const { data: currentPending } = mode === 'additional'
+          ? { data: null }
+          : await supabase
+              .from('care_pairs')
+              .select('id')
+              .eq('caregiver_id', user.id)
+              .eq('status', 'pending')
+              .limit(1)
+              .maybeSingle();
 
         if (currentPending?.id) {
           const { data: updated, error } = await supabase
@@ -113,7 +127,7 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
     <SafeAreaView style={styles.container}>
       <View style={styles.topRow}>
         <Text style={styles.miniLogo}>cmok</Text>
-        <Text style={styles.stepHint}>krok 2 z 2</Text>
+        {mode === 'initial' ? <Text style={styles.stepHint}>krok 2 z 2</Text> : null}
       </View>
 
       <View style={styles.formContent}>
@@ -121,8 +135,16 @@ export function SetupScreen({ onDone, onBack }: SetupScreenProps) {
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={styles.title}>Jak nazwać osobę, która będzie dawać Ci znak?</Text>
-        <Text style={styles.subtitle}>Za chwilę zobaczysz kod, pokaż go tej osobie.</Text>
+        <Text style={styles.title}>
+          {mode === 'additional'
+            ? 'Jak nazwać kolejną bliską osobę?'
+            : 'Jak nazwać osobę, która będzie dawać Ci znak?'}
+        </Text>
+        <Text style={styles.subtitle}>
+          {mode === 'additional'
+            ? 'Za chwilę zobaczysz kod. Pokaż go tej osobie, żeby dołączyła.'
+            : 'Za chwilę zobaczysz kod, pokaż go tej osobie.'}
+        </Text>
 
         <View style={styles.formCard}>
           <View style={styles.inputWrapper}>

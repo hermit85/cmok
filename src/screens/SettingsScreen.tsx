@@ -184,6 +184,26 @@ export function SettingsScreen() {
           ) : null}
         </Pressable>
 
+        {/* ─── Multi-pair: invite additional signaler (recipient only, after primary pair active) ─── */}
+        {isRecipient && status === 'active' ? (
+          <Pressable
+            onPress={() => router.push('/add-pair')}
+            style={({ pressed }) => [styles.addPairCard, pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel="Zaproś kolejną bliską osobę"
+            accessibilityHint="Każda bliska osoba może dzielić z Tobą codzienny znak"
+          >
+            <View style={styles.addPairIcon}>
+              <Text style={styles.addPairIconText}>+</Text>
+            </View>
+            <View style={styles.addPairInfo}>
+              <Text style={styles.addPairTitle}>Zaproś kolejną bliską osobę</Text>
+              <Text style={styles.addPairSubtitle}>Babcia, druga córka, brat, każda może dzielić znak</Text>
+            </View>
+            <Text style={styles.chevron}>→</Text>
+          </Pressable>
+        ) : null}
+
         {/* ─── Account with editable name ─── */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Twoje konto</Text>
@@ -348,6 +368,25 @@ const styles = StyleSheet.create({
   relationName: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
   relationNameEmpty: { fontSize: 15, color: Colors.textMuted, fontFamily: Typography.fontFamilyMedium },
   relationRole: { fontSize: 13, color: Colors.safeStrong, marginTop: 2, fontFamily: Typography.fontFamilyMedium },
+
+  /* Add-pair CTA (multi-signaler) */
+  addPairCard: {
+    flexDirection: 'row' as const, alignItems: 'center' as const,
+    backgroundColor: Colors.surfaceWarm, borderRadius: 20,
+    padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.accent + '22',
+  },
+  addPairIcon: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: Colors.accent + '18',
+    justifyContent: 'center' as const, alignItems: 'center' as const,
+    marginRight: 14,
+    borderWidth: 2, borderColor: Colors.accent + '33', borderStyle: 'dashed' as const,
+  },
+  addPairIconText: { fontSize: 22, fontFamily: Typography.headingFamily, color: Colors.accent, marginTop: -2 },
+  addPairInfo: { flex: 1 },
+  addPairTitle: { fontSize: 15, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
+  addPairSubtitle: { fontSize: 12, color: Colors.textSecondary, marginTop: 2, lineHeight: 17 },
 
   inviteCard: { },
   inviteText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.accent, marginBottom: 4 },

@@ -65,6 +65,7 @@ export function logInviteEvent(
   event:
     | 'onboarding_started'
     | 'invite_created'
+    | 'additional_pair_created'
     | 'invite_shared'
     | 'invite_code_copied'
     | 'join_link_opened'
