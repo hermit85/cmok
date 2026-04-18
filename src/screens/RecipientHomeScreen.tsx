@@ -19,7 +19,7 @@ import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius } from '../constants/tokens';
 import { useCircle } from '../hooks/useCircle';
-import { useRelationship } from '../hooks/useRelationship';
+import { useAuthedUserId } from '../hooks/useAuthedUserId';
 import { useSignals } from '../hooks/useSignals';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { useWeekRhythm } from '../hooks/useWeekRhythm';
@@ -536,9 +536,9 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   }, [pv, sigId, sigStreak]);
 
   /* ─── Viral: peer recommendation (recipient demo 35-50 with aging parents) ─── */
-  const { profile: myProfile } = useRelationship();
+  const myUserId = useAuthedUserId();
   const handlePeerRecommend = async () => {
-    const url = buildPeerShareUrl(myProfile?.id, 'peer_family');
+    const url = buildPeerShareUrl(myUserId, 'peer_family');
     const msg = `Znasz kogoś z rodzicem lub babcią, kto mieszka sam? cmok daje codzienny znak, że u nich wszystko OK. Mnie pomogło — może i wam pomoże.\n\n${url}`;
     try {
       const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
@@ -709,14 +709,14 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         streak={recipientMilestoneStreak}
         recipientName={sigName}
         perspective="recipient"
-        srcUserId={myProfile?.id}
+        srcUserId={myUserId}
         onDismiss={() => setRecipientMilestoneVisible(false)}
       />
       <PostResolveShare
         visible={postResolveVisible}
         role="primary"
         signalerName={sigName}
-        srcUserId={myProfile?.id}
+        srcUserId={myUserId}
         onDismiss={() => setPostResolveVisible(false)}
       />
       <ScreenHeader subtitle={`od ${nameFrom}`} />

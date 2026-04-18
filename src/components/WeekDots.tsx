@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
@@ -95,7 +95,7 @@ function CascadeDots({ days, dayLabels }: { days: DayStatus[]; dayLabels: string
 }
 
 /* ─── Main ─── */
-export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
+function WeekDotsImpl({ days, showLabel = false }: WeekDotsProps) {
   const { label } = showLabel ? getStreakInfo(days) : { label: null };
   const fullWeek = days.length === 7 && days.every((d) => d === 'ok');
 
@@ -156,6 +156,21 @@ export function WeekDots({ days, showLabel = false }: WeekDotsProps) {
     </View>
   );
 }
+
+/**
+ * Memoised — days array is often a stable reference from useWeekRhythm
+ * so re-renders of the parent home screen (e.g. on every reaction tap)
+ * don't re-render 7 day columns + a pulsing today-dot animation.
+ * Custom comparator: shallow-compare the days array element-by-element.
+ */
+export const WeekDots = memo(WeekDotsImpl, (prev, next) => {
+  if (prev.showLabel !== next.showLabel) return false;
+  if (prev.days.length !== next.days.length) return false;
+  for (let i = 0; i < prev.days.length; i++) {
+    if (prev.days[i] !== next.days[i]) return false;
+  }
+  return true;
+});
 
 const DOT = 12;
 const COL_WIDTH = 28;
