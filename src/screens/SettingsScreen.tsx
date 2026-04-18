@@ -104,20 +104,27 @@ export function SettingsScreen() {
 
         <Text style={styles.title}>Ustawienia</Text>
 
-        {/* ─── Main relationship ─── */}
+        {/* ─── Moi bliscy — unified entry (main relationship + trusted circle) ─── */}
         <Pressable
           onPress={() => router.push('/circle')}
-          style={({ pressed }) => [styles.card, styles.relationCard, pressed && { opacity: 0.88 }]}
+          style={({ pressed }) => [styles.card, styles.peopleCard, pressed && { opacity: 0.88 }]}
           accessibilityRole="button"
-          accessibilityLabel={mainPerson ? `Otwórz krąg, ${mainPerson.name}` : 'Otwórz krąg'}
+          accessibilityLabel={
+            mainPerson
+              ? `Moi bliscy, ${mainPerson.name}${circleCount > 0 ? ` i ${circleCount} ${circleCount === 1 ? 'osoba' : 'osób'} w kręgu bliskich` : ''}`
+              : 'Moi bliscy'
+          }
           accessibilityHint="Otwiera widok relacji i kręgu bliskich"
         >
+          <Text style={styles.cardLabel}>Moi bliscy</Text>
+
+          {/* Main relationship (Darek-style row) */}
           {mainPerson ? (
-            <View style={styles.circleRow}>
+            <View style={styles.peopleMainRow}>
               <View style={styles.relationAvatar}>
                 <Text style={styles.relationAvatarText}>{(mainPerson.name || '?').charAt(0).toUpperCase()}</Text>
               </View>
-              <View style={styles.circleInfo}>
+              <View style={styles.peopleMainInfo}>
                 <Text style={styles.relationName}>{mainPerson.name}</Text>
                 <Text style={styles.relationRole}>
                   {isRecipient ? 'Daje Ci codzienny znak' : 'Dostaje Twój codzienny znak'}
@@ -128,44 +135,54 @@ export function SettingsScreen() {
           ) : circleLoading ? (
             <Text style={styles.cardDetail}>Sprawdzamy połączenie…</Text>
           ) : (
-            <Text style={styles.cardDetail}>
-              {status === 'pending' ? 'Czeka na połączenie' : 'Jeszcze nie połączono'}
-            </Text>
-          )}
-        </Pressable>
-
-        {/* ─── Safety circle (trusted contacts) ─── */}
-        {status === 'active' ? (
-          <Pressable
-            onPress={() => router.push('/trusted-contacts')}
-            style={({ pressed }) => [styles.card, styles.safetyCard, pressed && { opacity: 0.88 }]}
-            accessibilityRole="button"
-            accessibilityLabel={
-              circleCount > 0
-                ? `Krąg bliskich, ${circleCount} ${circleCount === 1 ? 'osoba' : 'osób'}`
-                : 'Krąg bliskich, dodaj kogoś zaufanego'
-            }
-          >
-            <View style={styles.circleRow}>
-              <View style={styles.safetyIcon}>
-                <Text style={styles.safetyIconText}>+</Text>
+            <View style={styles.peopleMainRow}>
+              <View style={[styles.relationAvatar, styles.relationAvatarEmpty]}>
+                <Text style={styles.relationAvatarEmptyText}>?</Text>
               </View>
-              <View style={styles.circleInfo}>
-                <Text style={styles.safetyTitle}>
-                  {circleCount > 0
-                    ? `${circleCount} ${circleCount === 1 ? 'osoba w kręgu bliskich' : 'osób w kręgu bliskich'}`
-                    : 'Krąg bliskich'}
-                </Text>
-                <Text style={styles.safetySubtitle}>
-                  {circleCount > 0
-                    ? 'Dotkni\u0119cie, żeby zobaczyć lub dodać kolejną osobę'
-                    : 'Dodaj sąsiada lub kogoś zaufanego, dostaną wiadomość gdy poprosisz o pomoc'}
+              <View style={styles.peopleMainInfo}>
+                <Text style={styles.relationNameEmpty}>
+                  {status === 'pending' ? 'Czeka na połączenie' : 'Jeszcze nie połączono'}
                 </Text>
               </View>
               <Text style={styles.chevron}>→</Text>
             </View>
-          </Pressable>
-        ) : null}
+          )}
+
+          {/* Trusted circle preview strip — only when active relationship exists */}
+          {status === 'active' ? (
+            <View style={styles.peopleDivider}>
+              <View style={styles.peopleTrustedRow}>
+                <View style={styles.peopleTrustedAvatars}>
+                  {contacts.slice(0, 3).map((c, idx) => (
+                    <View
+                      key={c.id}
+                      style={[
+                        styles.trustedMiniAvatar,
+                        idx > 0 && { marginLeft: -10 },
+                        c.status === 'pending' && styles.trustedMiniAvatarPending,
+                      ]}
+                    >
+                      <Text style={styles.trustedMiniAvatarText}>
+                        {c.status === 'pending' ? '?' : (c.name || '?').charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                  ))}
+                  <View style={[styles.trustedMiniAvatar, styles.trustedMiniAvatarAdd, contacts.length > 0 && { marginLeft: -10 }]}>
+                    <Text style={styles.trustedMiniAvatarAddText}>+</Text>
+                  </View>
+                </View>
+                <View style={styles.peopleTrustedInfo}>
+                  <Text style={styles.peopleTrustedLabel}>Krąg bliskich</Text>
+                  <Text style={styles.peopleTrustedCount}>
+                    {circleCount === 0
+                      ? 'Dodaj sąsiada lub kogoś zaufanego'
+                      : `${circleCount} ${circleCount === 1 ? 'osoba' : 'osób'}, bezpiecznik`}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          ) : null}
+        </Pressable>
 
         {/* ─── Account with editable name ─── */}
         <View style={styles.card}>
@@ -288,32 +305,50 @@ const styles = StyleSheet.create({
   circleInfo: { flex: 1 },
   chevron: { fontSize: 18, color: Colors.textMuted },
 
-  /* Main relationship card (highlighted) */
-  relationCard: {
+  /* Unified "Moi bliscy" card — main relationship + trusted preview */
+  peopleCard: {
     backgroundColor: Colors.safeLight,
     borderWidth: 1, borderColor: Colors.safe + '33',
+    paddingTop: 14,
   },
+  peopleMainRow: { flexDirection: 'row' as const, alignItems: 'center' as const, marginTop: 8 },
+  peopleMainInfo: { flex: 1 },
+  peopleDivider: {
+    marginTop: 16, paddingTop: 14,
+    borderTopWidth: 1, borderTopColor: Colors.safe + '1F',
+  },
+  peopleTrustedRow: { flexDirection: 'row' as const, alignItems: 'center' as const },
+  peopleTrustedAvatars: { flexDirection: 'row' as const, alignItems: 'center' as const, marginRight: 14 },
+  peopleTrustedInfo: { flex: 1 },
+  peopleTrustedLabel: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
+  peopleTrustedCount: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  trustedMiniAvatar: {
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: Colors.safe,
+    justifyContent: 'center' as const, alignItems: 'center' as const,
+    borderWidth: 2, borderColor: Colors.safeLight,
+  },
+  trustedMiniAvatarPending: { backgroundColor: Colors.textMuted },
+  trustedMiniAvatarText: { fontSize: 13, fontFamily: Typography.headingFamilySemiBold, color: '#FFFFFF' },
+  trustedMiniAvatarAdd: {
+    backgroundColor: Colors.cardStrong, borderColor: Colors.safe, borderWidth: 2,
+    borderStyle: 'dashed' as const,
+  },
+  trustedMiniAvatarAddText: { fontSize: 17, color: Colors.safe, fontFamily: Typography.headingFamilySemiBold, marginTop: -1 },
   relationAvatar: {
     width: 52, height: 52, borderRadius: 26,
     backgroundColor: Colors.safe, justifyContent: 'center' as const, alignItems: 'center' as const, marginRight: 14,
   },
+  relationAvatarEmpty: {
+    backgroundColor: 'transparent',
+    borderWidth: 2, borderColor: Colors.border, borderStyle: 'dashed' as const,
+  },
+  relationAvatarEmptyText: { fontSize: 20, color: Colors.textMuted, fontFamily: Typography.headingFamilySemiBold },
   relationAvatarText: { fontSize: 22, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
   relationName: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
+  relationNameEmpty: { fontSize: 15, color: Colors.textMuted, fontFamily: Typography.fontFamilyMedium },
   relationRole: { fontSize: 13, color: Colors.safeStrong, marginTop: 2, fontFamily: Typography.fontFamilyMedium },
 
-  /* Safety circle card (warm accent) */
-  safetyCard: {
-    backgroundColor: Colors.surfaceWarm,
-    borderWidth: 1, borderColor: Colors.accent + '22',
-  },
-  safetyIcon: {
-    width: 52, height: 52, borderRadius: 26,
-    backgroundColor: Colors.accent + '15', justifyContent: 'center' as const, alignItems: 'center' as const, marginRight: 14,
-    borderWidth: 2, borderColor: Colors.accent + '33', borderStyle: 'dashed' as const,
-  },
-  safetyIconText: { fontSize: 26, fontFamily: Typography.headingFamily, color: Colors.accent, marginTop: -2 },
-  safetyTitle: { fontSize: 16, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
-  safetySubtitle: { fontSize: 13, color: Colors.textSecondary, marginTop: 3, lineHeight: 18 },
   inviteCard: { },
   inviteText: { fontSize: 15, fontFamily: Typography.fontFamilyMedium, color: Colors.accent, marginBottom: 4 },
   codeFrame: {

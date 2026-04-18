@@ -51,7 +51,7 @@ export function CircleScreen() {
           <Text style={st.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={st.title}>Twój krąg</Text>
+        <Text style={st.title}>Moi bliscy</Text>
         <Text style={st.subtitle}>Ludzie, którzy są obok</Text>
 
         {/* ─── Network visualization ─── */}
