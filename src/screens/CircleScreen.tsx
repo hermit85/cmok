@@ -97,15 +97,29 @@ export function CircleScreen() {
         </View>
 
         {/* ─── Trusted circle ─── */}
+        {/* Copy depends on who's looking: the trusted circle is ALWAYS the
+           signaler's safety net (only signalers can send SOS). So the signaler
+           sees "Twój krąg bliskich" (their own), and the recipient sees
+           "Krąg bliskich {sigName}" (whose network they're helping build).
+           Both roles can add contacts to it. Without role-aware copy,
+           recipients get confused about who owns this list. */}
         {isActive ? (
           <View style={st.trustedSection}>
             <View style={st.trustedHeader}>
-              <Text style={st.trustedTitle}>Krąg bliskich</Text>
+              <Text style={st.trustedTitle}>
+                {isRecipient && mainPerson
+                  ? `Krąg bliskich ${mainPerson.name}`
+                  : 'Twój krąg bliskich'}
+              </Text>
               <Text style={st.trustedCount}>
                 {activeContacts.length > 0 ? `${activeContacts.length} ${activeContacts.length === 1 ? 'osoba' : 'osób'}` : 'pusty'}
               </Text>
             </View>
-            <Text style={st.trustedHint}>Wiedzą, gdy coś się dzieje</Text>
+            <Text style={st.trustedHint}>
+              {isRecipient && mainPerson
+                ? `Wiedzą, gdy ${mainPerson.name} prosi o pomoc`
+                : 'Wiedzą, gdy prosisz o pomoc'}
+            </Text>
 
             <View style={st.contactsGrid}>
               {activeContacts.map((c) => (

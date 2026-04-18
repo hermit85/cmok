@@ -36,6 +36,10 @@ export function TrustedContactsScreen() {
   }, []);
 
   const canManage = status === 'active' && !!relationship?.id;
+  const isRecipient = profile?.role === 'recipient';
+  // When a recipient manages the trusted circle they're building the
+  // SAFETY NETWORK AROUND THE SIGNALER, not around themselves. Name it.
+  const signalerName = isRecipient ? (relationship?.signalerLabel || 'bliska osoba') : null;
 
   const cleanPhone = phone.replace(/\D/g, '');
   const isValid = cleanPhone.length === 9;
@@ -94,7 +98,13 @@ export function TrustedContactsScreen() {
       ? buildJoinUrl(pendingInviteCode, profile?.id)
       : 'https://cmok.app/pobierz';
     const codeLine = pendingInviteCode ? `Twój kod: ${pendingInviteCode}\n\n` : '';
-    const msg = `Cześć! ${myName} dodał(a) Cię do kręgu bliskich w cmok. Dostaniesz wiadomość tylko jeśli coś się będzie działo, nic codziennie, żadnego spamu.\n\n${codeLine}${joinLink}`;
+    // When the recipient is inviting someone to the signaler's circle, say so
+    // explicitly so the invitee knows who's actually signaling for help.
+    // (Otherwise "Darek dodał Cię do kręgu" sounds like Darek signals.)
+    const intro = isRecipient && signalerName
+      ? `Cześć! ${myName} dodał(a) Cię do kręgu bliskich ${signalerName} w cmok. Dostaniesz wiadomość, gdy ${signalerName} poprosi o pomoc, nic codziennie.`
+      : `Cześć! ${myName} dodał(a) Cię do swojego kręgu bliskich w cmok. Dostaniesz wiadomość tylko jeśli coś się będzie działo, nic codziennie, żadnego spamu.`;
+    const msg = `${intro}\n\n${codeLine}${joinLink}`;
     try {
       const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
       if (result.action === Share.sharedAction) analytics.inviteShared('circle');
@@ -164,18 +174,26 @@ export function TrustedContactsScreen() {
           <Text style={styles.backText}>← Wróć</Text>
         </Pressable>
 
-        <Text style={styles.title}>Krąg bliskich</Text>
+        <Text style={styles.title}>
+          {isRecipient && signalerName ? `Krąg bliskich ${signalerName}` : 'Krąg bliskich'}
+        </Text>
         <Text style={styles.subtitle}>
-          Sąsiad, koleżanka, brat. Dostaną wiadomość, gdy poprosisz o pomoc.
+          {isRecipient && signalerName
+            ? `Sąsiad, koleżanka, brat. Dostaną wiadomość, gdy ${signalerName} poprosi o pomoc.`
+            : 'Sąsiad, koleżanka, brat. Dostaną wiadomość, gdy poprosisz o pomoc.'}
         </Text>
 
         {canManage && activeContacts.length > 0 ? (
           <View style={styles.heroBanner}>
             <Text style={styles.heroBannerEmoji}>{'\u{1F49A}'}</Text>
             <Text style={styles.heroBannerText}>
-              {activeContacts.length === 1
-                ? `${activeContacts[0].name} jest w Twoim kręgu`
-                : `${activeContacts.length} osób w Twoim kręgu`}
+              {isRecipient && signalerName
+                ? activeContacts.length === 1
+                  ? `${activeContacts[0].name} jest w kręgu ${signalerName}`
+                  : `${activeContacts.length} osób w kręgu ${signalerName}`
+                : activeContacts.length === 1
+                  ? `${activeContacts[0].name} jest w Twoim kręgu`
+                  : `${activeContacts.length} osób w Twoim kręgu`}
             </Text>
           </View>
         ) : null}
