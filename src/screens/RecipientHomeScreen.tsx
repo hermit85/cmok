@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Animated, Modal,
-  ActivityIndicator, ScrollView, Alert, Linking, Platform,
+  ActivityIndicator, ScrollView, Alert, Linking, Platform, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -496,6 +496,15 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   };
   const handleResolve = async () => { if (!currentAlert) return; try { await resolve(currentAlert.id); analytics.urgentResolved(); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
 
+  /* ─── Viral: peer recommendation (recipient demo 35-50 with aging parents) ─── */
+  const handlePeerRecommend = async () => {
+    const msg = 'Znasz kogoś z rodzicem lub babcią, kto mieszka sam? cmok daje codzienny znak, że u nich wszystko OK. Mnie pomogło — może i wam pomoże.\n\nhttps://cmok.app/pobierz';
+    try {
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      analytics.inviteShared('peer_family');
+    } catch { /* cancelled */ }
+  };
+
   const [morningSent, setMorningSent] = useState(false);
   const handleMorningThought = async (emoji: string, toUserId: string) => {
     if (morningSent) return;
@@ -776,6 +785,22 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           {effWeek.length > 0 ? <WeekDots days={effWeek} /> : null}
           {connectionLabel(connectionDays) ? <Text style={st.connectionLabel}>{connectionLabel(connectionDays)}</Text> : null}
         </View>
+
+        {/* ─── SECTION 4: Viral — peer rec (only after user has received ≥1 sign, knows the value) ─── */}
+        {!pv && effWeek.some((d) => d === 'ok') ? (
+          <Pressable
+            onPress={handlePeerRecommend}
+            style={({ pressed }) => [st.peerCard, pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel="Poleć cmok znajomym, którzy martwią się o rodzica"
+          >
+            <Text style={st.peerTitle}>Znasz kogoś z rodzicem w podobnej sytuacji?</Text>
+            <Text style={st.peerBody}>
+              cmok daje Ci codzienny spokój, że {name.toLowerCase()} jest OK. Twoim znajomym z rodzicami pewnie też by pomógł.
+            </Text>
+            <Text style={st.peerCta}>Poleć cmok →</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -864,6 +889,16 @@ const st = StyleSheet.create({
 
   circleNudge: { marginTop: 16, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
   circleNudgeText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safe },
+
+  /* viral peer recommendation */
+  peerCard: {
+    marginHorizontal: 24, marginTop: 8, marginBottom: 24,
+    backgroundColor: Colors.surfaceWarm, borderRadius: 20, padding: 18,
+    borderWidth: 1, borderColor: Colors.accent + '22',
+  },
+  peerTitle: { fontSize: 15, fontFamily: Typography.headingFamilySemiBold, color: Colors.text, marginBottom: 6 },
+  peerBody: { fontSize: 13, lineHeight: 19, color: Colors.textSecondary, marginBottom: 10 },
+  peerCta: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.accent },
 
   /* empty */
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
