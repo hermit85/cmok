@@ -179,8 +179,8 @@ export function TrustedContactsScreen() {
         </Text>
         <Text style={styles.subtitle}>
           {isRecipient && signalerName
-            ? `Sąsiad, koleżanka, brat. Dostaną wiadomość, gdy ${signalerName} poprosi o pomoc.`
-            : 'Sąsiad, koleżanka, brat. Dostaną wiadomość, gdy poprosisz o pomoc.'}
+            ? `Jeśli ${signalerName} poprosi o pomoc, a Ty akurat nie dasz rady, dostaną sygnał. Dodaj brata, sąsiadkę, kogoś kto może przyjść.`
+            : 'Jeśli poprosisz o pomoc, dostaną sygnał. Sąsiadka, ktoś z rodziny, ktoś kto może przyjść.'}
         </Text>
 
         {canManage && activeContacts.length > 0 ? (

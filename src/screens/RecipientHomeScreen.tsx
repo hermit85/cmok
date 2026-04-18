@@ -826,15 +826,24 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
               )}
             </View>
           ) : null}
-          {/* Circle nudge: show when circle has < 2 trusted contacts */}
+          {/* Circle nudge: show when circle has < 2 trusted contacts.
+             Two-line to tell the recipient WHY — without context this reads
+             as an unexplained ask. See the /circle + /trusted-contacts
+             subtitles for the longer version of the same pitch. */}
           {effOk && circleSmall ? (
             <Pressable
               onPress={() => router.push('/trusted-contacts')}
               style={({ pressed }) => [st.circleNudge, pressed && { opacity: 0.6 }]}
               accessibilityRole="link"
-              accessibilityLabel="Dodaj kogoś do kręgu bliskich"
+              accessibilityLabel={sigName ? `Dodaj kogoś do kręgu bliskich ${sigName}` : 'Dodaj kogoś do kręgu bliskich'}
+              accessibilityHint={sigName ? `Jeśli ${sigName} poprosi o pomoc a Ty nie dasz rady, zawołają krąg` : undefined}
             >
-              <Text style={st.circleNudgeText}>Dodaj kogoś do kręgu bliskich</Text>
+              <Text style={st.circleNudgeText}>
+                {sigName ? `Dodaj kogoś do kręgu bliskich ${sigName}` : 'Dodaj kogoś do kręgu bliskich'}
+              </Text>
+              <Text style={st.circleNudgeHint}>
+                Backup na wypadek, gdybyś akurat nie dał(a) rady pomóc
+              </Text>
             </Pressable>
           ) : null}
         </View>
@@ -946,8 +955,9 @@ const st = StyleSheet.create({
   pokeEmoji: { fontSize: 18 },
   pokeSentText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safeStrong },
 
-  circleNudge: { marginTop: 16, minHeight: 44, justifyContent: 'center', alignItems: 'center' },
-  circleNudgeText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safe },
+  circleNudge: { marginTop: 16, minHeight: 44, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16 },
+  circleNudgeText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.safe, textAlign: 'center' },
+  circleNudgeHint: { fontSize: 12, color: Colors.textMuted, marginTop: 3, textAlign: 'center', lineHeight: 17 },
 
   /* viral peer recommendation */
   peerCard: {

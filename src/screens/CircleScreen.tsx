@@ -117,8 +117,8 @@ export function CircleScreen() {
             </View>
             <Text style={st.trustedHint}>
               {isRecipient && mainPerson
-                ? `Wiedzą, gdy ${mainPerson.name} prosi o pomoc`
-                : 'Wiedzą, gdy prosisz o pomoc'}
+                ? `Jeśli ${mainPerson.name} poprosi o pomoc a Ty nie dasz rady, krąg zareaguje. Dodaj brata, sąsiadkę.`
+                : 'Gdy poprosisz o pomoc, dostaną sygnał. Dodaj sąsiadkę, kogoś z rodziny.'}
             </Text>
 
             <View style={st.contactsGrid}>
@@ -194,7 +194,7 @@ const st = StyleSheet.create({
   trustedHeader: { flexDirection: 'row' as const, alignItems: 'baseline' as const, justifyContent: 'space-between' as const, marginBottom: 2 },
   trustedTitle: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.text },
   trustedCount: { fontSize: 12, color: Colors.textMuted },
-  trustedHint: { fontSize: 13, color: Colors.textMuted, marginBottom: 16 },
+  trustedHint: { fontSize: 13, lineHeight: 19, color: Colors.textMuted, marginBottom: 16 },
   contactsGrid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 16 },
   contactCard: { alignItems: 'center' as const, width: 72 },
   addCard: {},
