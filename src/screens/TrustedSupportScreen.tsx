@@ -1,11 +1,13 @@
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator, ScrollView, Alert, Share, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/colors';
+import { Typography } from '../constants/typography';
 import { Radius, Spacing } from '../constants/tokens';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { openPhoneCall } from '../utils/linking';
+import { analytics } from '../services/analytics';
 
 function formatTime(isoString: string) {
   const date = new Date(isoString);
@@ -26,6 +28,23 @@ export function TrustedSupportScreen() {
     if (!currentAlert) return;
     try { await resolve(currentAlert.id); }
     catch { Alert.alert('Coś poszło nie tak', 'Nie udało się zamknąć.'); }
+  };
+
+  /* ─── Viral share handlers (empty state) ─── */
+  const handleShareSenior = async () => {
+    const msg = 'Znasz kogoś starszego, kto mieszka sam? cmok to codzienny znak, że wszystko OK. Jeden gest dziennie, spokój dla bliskich.\n\nhttps://cmok.app/pobierz';
+    try {
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      analytics.inviteShared('peer_senior');
+    } catch { /* cancelled */ }
+  };
+
+  const handleShareFamily = async () => {
+    const msg = 'Martwisz się o rodzica, babcię, dziadka? cmok daje codzienny znak, że wszystko u nich OK. Bez dzwonienia "czy żyjesz".\n\nhttps://cmok.app/pobierz';
+    try {
+      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      analytics.inviteShared('peer_family');
+    } catch { /* cancelled */ }
   };
 
   if (refreshing) {
@@ -58,6 +77,35 @@ export function TrustedSupportScreen() {
             <Text style={styles.emptyTitle}>Teraz jest spokojnie</Text>
             <Text style={styles.emptyText}>Jeśli ktoś z kręgu da znać, że coś się dzieje, zobaczysz to tutaj.</Text>
           </View>
+
+          {/* ─── Viral hub: keep trusted from being a dead-end ─── */}
+          <Text style={styles.viralSectionLabel}>A u Ciebie?</Text>
+
+          <Pressable
+            onPress={handleShareSenior}
+            style={({ pressed }) => [styles.viralCard, pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel="Znasz kogoś samotnego? Podziel się cmok"
+          >
+            <Text style={styles.viralTitle}>Znasz kogoś, kto mieszka sam?</Text>
+            <Text style={styles.viralBody}>
+              cmok daje bliskim spokój, jednym gestem dziennie. Opowiedz koleżance, sąsiadce, bratu.
+            </Text>
+            <Text style={styles.viralCta}>Podziel się →</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleShareFamily}
+            style={({ pressed }) => [styles.viralCardSoft, pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }]}
+            accessibilityRole="button"
+            accessibilityLabel="Martwisz się o rodzica? Zobacz jak cmok może pomóc"
+          >
+            <Text style={styles.viralTitle}>Martwisz się o rodzica, babcię?</Text>
+            <Text style={styles.viralBody}>
+              cmok to codzienny znak od bliskiej osoby, że u niej wszystko OK. Bez dzwonienia „czy żyjesz".
+            </Text>
+            <Text style={styles.viralCtaSoft}>Poleć cmok →</Text>
+          </Pressable>
         </ScrollView>
       </SafeAreaView>
     );
@@ -147,6 +195,38 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: Colors.text, marginBottom: 6 },
   emptyText: { fontSize: 15, lineHeight: 22, color: Colors.textSecondary },
+
+  /* viral hub */
+  viralSectionLabel: {
+    fontSize: 12, fontFamily: Typography.headingFamilySemiBold,
+    color: Colors.textMuted, marginTop: 32, marginBottom: 12,
+    textTransform: 'uppercase' as const, letterSpacing: 0.8,
+  },
+  viralCard: {
+    backgroundColor: Colors.surfaceWarm ?? Colors.card,
+    borderRadius: 20, padding: 18, marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.accent + '22',
+  },
+  viralCardSoft: {
+    backgroundColor: Colors.safeLight,
+    borderRadius: 20, padding: 18, marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.safe + '22',
+  },
+  viralTitle: {
+    fontSize: 16, fontFamily: Typography.headingFamilySemiBold,
+    color: Colors.text, marginBottom: 6,
+  },
+  viralBody: {
+    fontSize: 14, lineHeight: 20, color: Colors.textSecondary, marginBottom: 10,
+  },
+  viralCta: {
+    fontSize: 14, fontFamily: Typography.headingFamilySemiBold,
+    color: Colors.accent,
+  },
+  viralCtaSoft: {
+    fontSize: 14, fontFamily: Typography.headingFamilySemiBold,
+    color: Colors.safeStrong,
+  },
 
   /* urgent state */
   urgentLabel: { fontSize: 13, fontWeight: '700', color: Colors.alert, marginBottom: 10 },

@@ -56,7 +56,7 @@ export const analytics = {
     posthog.capture('urgent_resolved'),
 
   // ── Circle ──
-  inviteShared: (type: 'main' | 'circle') =>
+  inviteShared: (type: 'main' | 'circle' | 'peer_senior' | 'peer_family' | 'peer_general') =>
     posthog.capture('invite_shared', { type }),
 
   contactAdded: () =>
