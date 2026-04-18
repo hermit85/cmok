@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { supabase } from '../services/supabase';
 import type { AppProfile, AppRole, Relationship, RelationshipStatus } from '../types';
 import { normalizeAppRole } from '../utils/roles';
+import { createDedupedFetch } from '../utils/requestDedup';
 
 interface RelationshipState {
   loading: boolean;
@@ -98,6 +99,17 @@ async function fetchProfileAndRelationship(): Promise<{
   };
 }
 
+/**
+ * Module-level dedup for profile+relationship fetches. Multiple screens
+ * (Settings, Circle, TrustedContacts, WaitingForConnection) all call
+ * useRelationship. A Settings → Circle transition briefly mounts both,
+ * firing 2× the same SELECTs. Deduped here.
+ */
+const dedupedFetch = createDedupedFetch(fetchProfileAndRelationship);
+
+// Invalidate cache on auth change so a new session always fetches fresh.
+supabase.auth.onAuthStateChange(() => dedupedFetch.invalidate());
+
 export function useRelationship(): RelationshipState {
   const [loading, setLoading] = useState(true);
   const [sessionReady, setSessionReady] = useState(false);
@@ -112,7 +124,9 @@ export function useRelationship(): RelationshipState {
   const refreshRelationship = useCallback(async () => {
     setLoading(true);
     try {
-      const next = await fetchProfileAndRelationship();
+      // Dedupe concurrent/repeat fetches. Two screens calling useRelationship
+      // within the same navigation transition now share one SELECT set.
+      const next = await dedupedFetch();
       setProfile(next.profile);
       setRelationship(next.relationship);
       setStatus(next.status);
