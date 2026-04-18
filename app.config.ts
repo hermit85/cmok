@@ -21,7 +21,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.hermit85.cmok',
-    buildNumber: '25',
+    buildNumber: '26',
     // Universal Links: taps on https://cmok.app/join/{code} open the app
     // directly if installed. Requires matching apple-app-site-association
     // file served from cmok.app (infra side, cmok-web repo).
