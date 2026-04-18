@@ -109,6 +109,23 @@ export function WaitingForConnectionScreen() {
   const inviteCode = relationship?.inviteCode;
   const inviteExpiry = relationship?.inviteExpiresAt;
 
+  // Edge case: recipient with an active pair + a pending additional pair
+  // (post-AddPair flow). useRelationship prefers active, so relationship
+  // here is the active row and inviteCode is null. Redirect to home
+  // covers this on next render, but we show a transition loader meanwhile
+  // instead of a dead screen with non-functional "Wyślij zaproszenie"
+  // buttons.
+  if (status === 'active' && profile?.role === 'recipient') {
+    return (
+      <SafeAreaView style={[s.container, s.centered]}>
+        <ActivityIndicator size="large" color={Colors.accent} />
+        <Text style={{ marginTop: 12, color: Colors.textSecondary, fontFamily: Typography.fontFamilyMedium }}>
+          Przekierowuję…
+        </Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={s.container}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -143,9 +160,15 @@ export function WaitingForConnectionScreen() {
 
           <Pressable
             onPress={handleShare}
-            style={({ pressed }) => [s.shareBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
+            disabled={!inviteCode}
+            style={({ pressed }) => [
+              s.shareBtn,
+              !inviteCode && s.shareBtnDisabled,
+              pressed && inviteCode && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+            ]}
             accessibilityRole="button"
             accessibilityLabel={`Wyślij zaproszenie do ${sigName}`}
+            accessibilityState={{ disabled: !inviteCode }}
           >
             <Text style={s.shareBtnText}>Wyślij zaproszenie</Text>
           </Pressable>
@@ -156,14 +179,29 @@ export function WaitingForConnectionScreen() {
             </Text>
           ) : null}
 
-          <Pressable
-            onPress={handleShare}
-            style={({ pressed }) => [s.resendLink, pressed && { opacity: 0.6 }]}
-            accessibilityRole="button"
-            accessibilityLabel="Wyślij zaproszenie ponownie"
-          >
-            <Text style={s.resendLinkText}>Wyślij ponownie</Text>
-          </Pressable>
+          {inviteCode ? (
+            <Pressable
+              onPress={handleShare}
+              style={({ pressed }) => [s.resendLink, pressed && { opacity: 0.6 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Wyślij zaproszenie ponownie"
+            >
+              <Text style={s.resendLinkText}>Wyślij ponownie</Text>
+            </Pressable>
+          ) : (
+            // No invite code on file — prompt a manual refresh instead of
+            // showing a non-functional resend link (the old behaviour
+            // rendered a tappable link whose onPress silently returned
+            // early because !inviteCode).
+            <Pressable
+              onPress={refreshRelationship}
+              style={({ pressed }) => [s.resendLink, pressed && { opacity: 0.6 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Odśwież, żeby pobrać kod"
+            >
+              <Text style={s.resendLinkText}>Odśwież</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Card 2: Status */}
@@ -290,6 +328,7 @@ const s = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     shadowColor: Colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 3,
   },
+  shareBtnDisabled: { opacity: 0.4, shadowOpacity: 0, elevation: 0 },
   shareBtnText: { fontSize: 16, fontFamily: Typography.headingFamily, color: '#FFFFFF' },
 
   /* status card */
