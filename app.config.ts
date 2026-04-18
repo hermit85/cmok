@@ -22,10 +22,17 @@ const config: ExpoConfig = {
     supportsTablet: false,
     bundleIdentifier: 'com.hermit85.cmok',
     buildNumber: '26',
-    // Universal Links: taps on https://cmok.app/join/{code} open the app
-    // directly if installed. Requires matching apple-app-site-association
-    // file served from cmok.app (infra side, cmok-web repo).
-    associatedDomains: ['applinks:cmok.app'],
+    // Universal Links (Associated Domains capability) temporarily disabled
+    // for build 26. Blocked by two infra prereqs that aren't ready yet:
+    //   1. apple-app-site-association file served from cmok.app
+    //   2. Associated Domains capability enabled on the App ID + regenerated
+    //      provisioning profile (needs interactive `eas credentials` + Apple
+    //      Developer login to reauthorize the capability)
+    // Until both land, https://cmok.app/join/{code} will fall through to the
+    // landing page instead of opening the app directly — acceptable for the
+    // first iteration of the viral share flow.
+    //
+    // Re-enable with: associatedDomains: ['applinks:cmok.app'],
     infoPlist: {
       NSLocationWhenInUseUsageDescription: 'cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
     },
