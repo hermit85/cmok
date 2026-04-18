@@ -12,6 +12,7 @@ import { Particles } from '../components/Particles';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { PushPermissionBanner } from '../components/PushPermissionBanner';
 import { SafetyStatus } from '../components/SafetyStatus';
+import { MilestoneCelebration } from '../components/MilestoneCelebration';
 import NetInfo from '@react-native-community/netinfo';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
@@ -496,6 +497,34 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   };
   const handleResolve = async () => { if (!currentAlert) return; try { await resolve(currentAlert.id); analytics.urgentResolved(); } catch { Alert.alert('Nie udało się', 'Spróbuj ponownie.'); } };
 
+  /* ─── Recipient milestone celebration (pride share) ─── */
+  const [recipientMilestoneVisible, setRecipientMilestoneVisible] = useState(false);
+  const [recipientMilestoneStreak, setRecipientMilestoneStreak] = useState<number>(0);
+  const RECIPIENT_MILESTONE_KEY = 'cmok_recipient_last_milestone_seen';
+
+  useEffect(() => {
+    if (pv || !sigId || !sigStreak) return;
+    const MILESTONES = [7, 14, 21, 30, 50, 100, 365];
+    if (!MILESTONES.includes(sigStreak)) return;
+
+    let cancelled = false;
+    (async () => {
+      const storeKey = `${RECIPIENT_MILESTONE_KEY}_${sigId}`;
+      const lastSeenRaw = Platform.OS === 'web'
+        ? localStorage.getItem(storeKey)
+        : await SecureStore.getItemAsync(storeKey);
+      const lastSeen = lastSeenRaw ? parseInt(lastSeenRaw, 10) : 0;
+      if (cancelled || lastSeen >= sigStreak) return;
+      setRecipientMilestoneStreak(sigStreak);
+      setRecipientMilestoneVisible(true);
+      // Persist so we don't re-show same streak milestone on every re-render / app re-open
+      if (Platform.OS === 'web') localStorage.setItem(storeKey, String(sigStreak));
+      else await SecureStore.setItemAsync(storeKey, String(sigStreak));
+      analytics.milestoneReached(sigStreak);
+    })();
+    return () => { cancelled = true; };
+  }, [pv, sigId, sigStreak]);
+
   /* ─── Viral: peer recommendation (recipient demo 35-50 with aging parents) ─── */
   const handlePeerRecommend = async () => {
     const msg = 'Znasz kogoś z rodzicem lub babcią, kto mieszka sam? cmok daje codzienny znak, że u nich wszystko OK. Mnie pomogło — może i wam pomoże.\n\nhttps://cmok.app/pobierz';
@@ -660,6 +689,13 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           </View>
         </View>
       </Modal>
+      <MilestoneCelebration
+        visible={recipientMilestoneVisible}
+        streak={recipientMilestoneStreak}
+        recipientName={sigName}
+        perspective="recipient"
+        onDismiss={() => setRecipientMilestoneVisible(false)}
+      />
       <ScreenHeader subtitle={`od ${nameFrom}`} />
       {!pv ? (
         <View style={st.pushBannerWrap}>

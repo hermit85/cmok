@@ -253,7 +253,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   // Streak including today's check-in (computed early for animation use)
   // Only add +1 during transitional state (justChecked but DB hasn't confirmed yet)
   const currentStreak = (justChecked && !checkedInToday && !pv) ? Math.max(dbStreak + 1, 1) : dbStreak;
-  const isMilestone = currentStreak === 7 || currentStreak === 14 || currentStreak === 21 || currentStreak === 30;
+  const isMilestone = [7, 14, 21, 30, 50, 100, 365].includes(currentStreak);
 
   /* ─── success animations ─── */
 

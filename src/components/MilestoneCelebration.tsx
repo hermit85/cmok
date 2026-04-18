@@ -14,19 +14,36 @@ import { haptics } from '../utils/haptics';
 interface Props {
   visible: boolean;
   streak: number;
+  /** Name to use in share copy. For signaler: recipient's name. For recipient: signaler's name. */
   recipientName: string | null;
+  /** Perspective changes body copy + share framing. Default 'signaler' (Mama's side). */
+  perspective?: 'signaler' | 'recipient';
   onDismiss: () => void;
 }
 
-function milestoneText(streak: number): { headline: string; body: string } {
+function milestoneTextSignaler(streak: number): { headline: string; body: string } {
   if (streak === 7) return { headline: 'Cały tydzień!', body: 'Siedem dni z rzędu.\nTo już rytuał.' };
   if (streak === 14) return { headline: 'Dwa tygodnie!', body: 'Połowa miesiąca codziennego kontaktu.' };
   if (streak === 21) return { headline: 'Trzy tygodnie!', body: 'To już nawyk.\nJesteś niesamowita.' };
   if (streak === 30) return { headline: 'Cały miesiąc!', body: '30 dni spokoju\ndla Ciebie i Twoich bliskich.' };
+  if (streak === 50) return { headline: '50 dni!', body: 'Ponad siedem tygodni z rzędu.\nRobisz to, co najważniejsze.' };
+  if (streak === 100) return { headline: 'Setka!', body: '100 dni codziennego gestu.\nTo jest coś wielkiego.' };
+  if (streak === 365) return { headline: 'Cały rok!', body: '365 dni spokoju.\nJesteś niesamowita.' };
   return { headline: `${streak} dni!`, body: 'Świetna seria!' };
 }
 
-export function MilestoneCelebration({ visible, streak, recipientName, onDismiss }: Props) {
+function milestoneTextRecipient(streak: number, name: string): { headline: string; body: string } {
+  if (streak === 7) return { headline: 'Cały tydzień!', body: `${name} daje znak siedem dni z rzędu.\nMacie rytuał.` };
+  if (streak === 14) return { headline: 'Dwa tygodnie!', body: `Połowa miesiąca codziennego kontaktu z ${name.toLowerCase()}.` };
+  if (streak === 21) return { headline: 'Trzy tygodnie!', body: `${name} trzyma rytm.\nTo już nawyk.` };
+  if (streak === 30) return { headline: 'Cały miesiąc!', body: `30 dni spokoju,\nże u ${name.toLowerCase()} wszystko OK.` };
+  if (streak === 50) return { headline: '50 dni!', body: `${name} nie opuszcza dnia.\nMacie to.` };
+  if (streak === 100) return { headline: 'Setka!', body: `100 dni znaku od ${name.toLowerCase()}.\nNiesamowite.` };
+  if (streak === 365) return { headline: 'Cały rok!', body: `365 dni spokoju\nz ${name.toLowerCase()}.` };
+  return { headline: `${streak} dni!`, body: `${name} trzyma serię.` };
+}
+
+export function MilestoneCelebration({ visible, streak, recipientName, perspective = 'signaler', onDismiss }: Props) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -44,11 +61,15 @@ export function MilestoneCelebration({ visible, streak, recipientName, onDismiss
 
   if (!visible) return null;
 
-  const { headline, body } = milestoneText(streak);
+  const name = recipientName || 'bliska osoba';
+  const { headline, body } = perspective === 'recipient'
+    ? milestoneTextRecipient(streak, name)
+    : milestoneTextSignaler(streak);
 
   const handleShare = async () => {
-    const name = recipientName || 'bliska osoba';
-    const msg = `Od ${streak} dni codziennie daję ${name} znak, że u mnie OK. Bez dzwonienia, bez stresu. Jeden tap i spokój.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz`;
+    const msg = perspective === 'recipient'
+      ? `Od ${streak} dni dostaję od ${name} codzienny znak, że u niej OK. Bez dzwonienia, bez stresu. Spokój w tle.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz`
+      : `Od ${streak} dni codziennie daję ${name} znak, że u mnie OK. Bez dzwonienia, bez stresu. Jeden tap i spokój.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz`;
     try {
       const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
       if (result.action === Share.sharedAction) analytics.milestoneShared(streak);
