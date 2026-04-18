@@ -84,10 +84,15 @@ export function TrustedContactsScreen() {
   };
 
   const handleSendInvite = async () => {
-    const codeLine = pendingInviteCode
-      ? `Twój kod zaproszenia: ${pendingInviteCode}\n\n`
-      : '';
-    const msg = `Cześć! ${myName} dodał(a) Cię do kręgu bliskich w cmok. Dostaniesz wiadomość tylko jeśli coś się będzie działo — nic codziennie, żadnego spamu.\n\n${codeLine}Żeby dołączyć:\n1. Pobierz cmok: https://cmok.app/pobierz\n2. Otwórz apkę, wybierz „Mam kod zaproszenia" i wpisz kod powyżej\n3. Gotowe — dołączasz do kręgu ${myName}.`;
+    // Direct-join Universal Link carries the code; tapping it on a device
+    // with cmok installed opens straight into the trusted-redeem flow, and
+    // on a fresh device goes to App Store then resumes the code after
+    // install (via pendingInvite storage in the deep-link handler).
+    const joinLink = pendingInviteCode
+      ? `https://cmok.app/join/${encodeURIComponent(pendingInviteCode)}`
+      : 'https://cmok.app/pobierz';
+    const codeLine = pendingInviteCode ? `Twój kod: ${pendingInviteCode}\n\n` : '';
+    const msg = `Cześć! ${myName} dodał(a) Cię do kręgu bliskich w cmok. Dostaniesz wiadomość tylko jeśli coś się będzie działo — nic codziennie, żadnego spamu.\n\n${codeLine}${joinLink}`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
     } catch { /* cancelled */ }

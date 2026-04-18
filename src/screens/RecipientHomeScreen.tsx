@@ -19,6 +19,7 @@ import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
 import { Radius } from '../constants/tokens';
 import { useCircle } from '../hooks/useCircle';
+import { useRelationship } from '../hooks/useRelationship';
 import { useSignals } from '../hooks/useSignals';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { useWeekRhythm } from '../hooks/useWeekRhythm';
@@ -30,7 +31,7 @@ import type { DailyCheckin, SupportParticipant as SParticipant } from '../types'
 import type { RecipientHomePreview } from '../dev/homePreview';
 import { formatClock } from '../utils/date';
 import { todayDateKey } from '../utils/today';
-import { logInviteEvent } from '../utils/invite';
+import { logInviteEvent, buildPeerShareUrl } from '../utils/invite';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
 import * as SecureStore from 'expo-secure-store';
 import { analytics } from '../services/analytics';
@@ -535,8 +536,10 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   }, [pv, sigId, sigStreak]);
 
   /* ─── Viral: peer recommendation (recipient demo 35-50 with aging parents) ─── */
+  const { profile: myProfile } = useRelationship();
   const handlePeerRecommend = async () => {
-    const msg = 'Znasz kogoś z rodzicem lub babcią, kto mieszka sam? cmok daje codzienny znak, że u nich wszystko OK. Mnie pomogło — może i wam pomoże.\n\nhttps://cmok.app/pobierz';
+    const url = buildPeerShareUrl(myProfile?.id, 'peer_family');
+    const msg = `Znasz kogoś z rodzicem lub babcią, kto mieszka sam? cmok daje codzienny znak, że u nich wszystko OK. Mnie pomogło — może i wam pomoże.\n\n${url}`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
       analytics.inviteShared('peer_family');

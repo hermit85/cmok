@@ -6,6 +6,8 @@ import { Typography } from '../constants/typography';
 import { useRelationship } from '../hooks/useRelationship';
 import { useCircle } from '../hooks/useCircle';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
+import { buildPeerShareUrl } from '../utils/invite';
+import { analytics } from '../services/analytics';
 
 const AVATAR_BIG = 72;
 const AVATAR_MED = 56;
@@ -38,9 +40,11 @@ export function CircleScreen() {
   const activeContacts = contacts.filter((c) => c.status === 'active');
 
   const handleSharePeer = async () => {
-    const msg = 'Znasz kogoś, kto mieszka sam? cmok to codzienny znak, że wszystko OK. Jeden gest dziennie.\n\nhttps://cmok.app/pobierz';
+    const url = buildPeerShareUrl(profile?.id, 'peer_general');
+    const msg = `Znasz kogoś, kto mieszka sam? cmok to codzienny znak, że wszystko OK. Jeden gest dziennie.\n\n${url}`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      analytics.inviteShared('peer_general');
     } catch { /* cancelled */ }
   };
 

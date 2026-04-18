@@ -2,7 +2,37 @@ import { Share, Platform, Alert } from 'react-native';
 import { supabase } from '../services/supabase';
 import { analytics } from '../services/analytics';
 
-const APP_URL = 'https://cmok.app/pobierz';
+/** Base URL for app download when no invite code is attached. */
+const APP_DOWNLOAD_URL = 'https://cmok.app/pobierz';
+/** Base URL for direct-join deep link. Append /{code} for the target. */
+const JOIN_URL_BASE = 'https://cmok.app/join';
+
+/**
+ * Build a direct-join deep link for a specific invite code.
+ * When the domain serves an AASA file (iOS Universal Links) this opens
+ * cmok directly if installed, or falls through to the App Store.
+ *
+ * Optional `srcUserId` is the inviter's user id — attached as `?src=` so
+ * the app (on open via Universal Link) can attribute the install/join
+ * to the specific share source in PostHog.
+ */
+export function buildJoinUrl(code: string, srcUserId?: string | null): string {
+  const base = `${JOIN_URL_BASE}/${encodeURIComponent(code)}`;
+  return srcUserId ? `${base}?src=${encodeURIComponent(srcUserId)}` : base;
+}
+
+/**
+ * Build an attribution-tagged download URL for peer/milestone/SOS shares
+ * (shares without a specific invite code). Carries `src` (inviter user id)
+ * and `type` (viral variant) so the landing page / PostHog can attribute
+ * install → share-type conversion.
+ */
+export function buildPeerShareUrl(srcUserId: string | null | undefined, type: string): string {
+  const qs: string[] = [];
+  if (srcUserId) qs.push(`src=${encodeURIComponent(srcUserId)}`);
+  if (type) qs.push(`type=${encodeURIComponent(type)}`);
+  return qs.length > 0 ? `${APP_DOWNLOAD_URL}?${qs.join('&')}` : APP_DOWNLOAD_URL;
+}
 
 /** Postgres unique_violation error code. */
 const UNIQUE_VIOLATION = '23505';
@@ -120,11 +150,16 @@ export function logInviteEvent(
 export async function shareInvite(params: {
   code: string;
   signalerLabel?: string | null;
+  /** Inviter's user id — enables PostHog attribution of the resulting join. */
+  srcUserId?: string | null;
 }): Promise<boolean> {
-  const { code, signalerLabel } = params;
+  const { code, signalerLabel, srcUserId } = params;
   const name = signalerLabel || 'bliskiej osoby';
 
-  const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz apkę i wpisz kod:\n${APP_URL}`;
+  // Primary CTA: direct-join Universal Link (opens app if installed, falls
+  // through to App Store otherwise). Fallback: raw code for users who type
+  // manually, e.g. after install on a fresh device.
+  const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\n${buildJoinUrl(code, srcUserId)}\n\nAlbo wpisz kod: ${code}`;
 
   try {
     const result = await Share.share(
@@ -150,7 +185,7 @@ export async function shareCircleInvite(): Promise<boolean> {
     `Dołącz do kręgu bliskich w cmok.`,
     ``,
     `cmok to prywatna aplikacja, ktoś bliski chce dodać Cię do swojego kręgu.`,
-    `Pobierz: ${APP_URL}`,
+    `Pobierz: ${APP_DOWNLOAD_URL}`,
   ].join('\n');
 
   try {
@@ -257,7 +292,10 @@ export async function generateAndShareInvite(): Promise<{ code: string; shared: 
 
     logInviteEvent('invite_created', { code });
 
-    const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\nTwój kod: ${code}\n\nPobierz apkę i wpisz kod:\n${APP_URL}`;
+    // Primary CTA: direct-join Universal Link (opens app if installed, falls
+  // through to App Store otherwise). Fallback: raw code for users who type
+  // manually, e.g. after install on a fresh device.
+  const message = `Chcę, żebyśmy mieli codzienny cmok. Jeden znak dziennie i spokój dla nas obu.\n\n${buildJoinUrl(code)}\n\nAlbo wpisz kod: ${code}`;
 
     const result = await Share.share(
       Platform.OS === 'ios'

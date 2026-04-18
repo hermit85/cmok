@@ -10,6 +10,8 @@ import { Typography } from '../constants/typography';
 import { Particles } from './Particles';
 import { analytics } from '../services/analytics';
 import { haptics } from '../utils/haptics';
+import { buildPeerShareUrl } from '../utils/invite';
+import { useRelationship } from '../hooks/useRelationship';
 
 interface Props {
   visible: boolean;
@@ -44,6 +46,7 @@ function milestoneTextRecipient(streak: number, name: string): { headline: strin
 }
 
 export function MilestoneCelebration({ visible, streak, recipientName, perspective = 'signaler', onDismiss }: Props) {
+  const { profile } = useRelationship();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -67,9 +70,11 @@ export function MilestoneCelebration({ visible, streak, recipientName, perspecti
     : milestoneTextSignaler(streak);
 
   const handleShare = async () => {
+    const shareType = `milestone_${perspective}_${streak}d`;
+    const url = buildPeerShareUrl(profile?.id, shareType);
     const msg = perspective === 'recipient'
-      ? `Od ${streak} dni dostaję od ${name} codzienny znak, że u niej OK. Bez dzwonienia, bez stresu. Spokój w tle.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz`
-      : `Od ${streak} dni codziennie daję ${name} znak, że u mnie OK. Bez dzwonienia, bez stresu. Jeden tap i spokój.\n\ncmok, darmowa apka:\nhttps://cmok.app/pobierz`;
+      ? `Od ${streak} dni dostaję od ${name} codzienny znak, że u niej OK. Bez dzwonienia, bez stresu. Spokój w tle.\n\n${url}`
+      : `Od ${streak} dni codziennie daję ${name} znak, że u mnie OK. Bez dzwonienia, bez stresu. Jeden tap i spokój.\n\n${url}`;
     try {
       const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
       if (result.action === Share.sharedAction) analytics.milestoneShared(streak);

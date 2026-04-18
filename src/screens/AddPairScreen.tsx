@@ -85,7 +85,12 @@ export function AddPairScreen() {
 
   const handleShare = async () => {
     if (!inviteCode) return;
-    await shareInvite({ code: inviteCode, signalerLabel: label.trim() });
+    const { data: { user } } = await supabase.auth.getUser();
+    await shareInvite({
+      code: inviteCode,
+      signalerLabel: label.trim(),
+      srcUserId: user?.id ?? null,
+    });
     analytics.inviteShared('main');
   };
 

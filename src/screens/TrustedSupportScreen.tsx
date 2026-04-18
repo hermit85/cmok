@@ -7,8 +7,10 @@ import { Radius, Spacing } from '../constants/tokens';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { PostResolveShare } from '../components/PostResolveShare';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
+import { useRelationship } from '../hooks/useRelationship';
 import { openPhoneCall } from '../utils/linking';
 import { analytics } from '../services/analytics';
+import { buildPeerShareUrl } from '../utils/invite';
 import { useState } from 'react';
 
 function formatTime(isoString: string) {
@@ -19,6 +21,7 @@ function formatTime(isoString: string) {
 export function TrustedSupportScreen() {
   const router = useRouter();
   const { urgentCase, currentAlert, loading, refreshing, claim, resolve } = useUrgentSignal();
+  const { profile } = useRelationship();
   const [postResolve, setPostResolve] = useState<{ name: string | null } | null>(null);
 
   const handleClaim = async () => {
@@ -40,7 +43,8 @@ export function TrustedSupportScreen() {
 
   /* ─── Viral share handlers (empty state) ─── */
   const handleShareSenior = async () => {
-    const msg = 'Znasz kogoś starszego, kto mieszka sam? cmok to codzienny znak, że wszystko OK. Jeden gest dziennie, spokój dla bliskich.\n\nhttps://cmok.app/pobierz';
+    const url = buildPeerShareUrl(profile?.id, 'peer_senior');
+    const msg = `Znasz kogoś starszego, kto mieszka sam? cmok to codzienny znak, że wszystko OK. Jeden gest dziennie, spokój dla bliskich.\n\n${url}`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
       analytics.inviteShared('peer_senior');
@@ -48,7 +52,8 @@ export function TrustedSupportScreen() {
   };
 
   const handleShareFamily = async () => {
-    const msg = 'Martwisz się o rodzica, babcię, dziadka? cmok daje codzienny znak, że wszystko u nich OK. Bez dzwonienia "czy żyjesz".\n\nhttps://cmok.app/pobierz';
+    const url = buildPeerShareUrl(profile?.id, 'peer_family');
+    const msg = `Martwisz się o rodzica, babcię, dziadka? cmok daje codzienny znak, że wszystko u nich OK. Bez dzwonienia "czy żyjesz".\n\n${url}`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
       analytics.inviteShared('peer_family');

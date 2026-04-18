@@ -20,6 +20,10 @@ const config: ExpoConfig = {
     supportsTablet: false,
     bundleIdentifier: 'com.hermit85.cmok',
     buildNumber: '25',
+    // Universal Links: taps on https://cmok.app/join/{code} open the app
+    // directly if installed. Requires matching apple-app-site-association
+    // file served from cmok.app (infra side, cmok-web repo).
+    associatedDomains: ['applinks:cmok.app'],
     infoPlist: {
       NSLocationWhenInUseUsageDescription: 'Cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
     },
@@ -32,6 +36,16 @@ const config: ExpoConfig = {
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',
     },
+    // Android App Links for https://cmok.app/join/{code}. Requires matching
+    // assetlinks.json on cmok.app.
+    intentFilters: [
+      {
+        action: 'VIEW',
+        autoVerify: true,
+        data: [{ scheme: 'https', host: 'cmok.app', pathPrefix: '/join' }],
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ],
     permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'],
   },
   web: {

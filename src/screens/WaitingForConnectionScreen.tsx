@@ -75,6 +75,7 @@ export function WaitingForConnectionScreen() {
     await shareInvite({
       code: inviteCode,
       signalerLabel: relationship?.signalerLabel,
+      srcUserId: profile?.id,
     });
   };
 

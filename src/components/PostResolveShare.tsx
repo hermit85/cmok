@@ -13,6 +13,8 @@ import { Typography } from '../constants/typography';
 import { Particles } from './Particles';
 import { analytics } from '../services/analytics';
 import { haptics } from '../utils/haptics';
+import { buildPeerShareUrl } from '../utils/invite';
+import { useRelationship } from '../hooks/useRelationship';
 
 type Role = 'signaler' | 'primary' | 'trusted';
 
@@ -24,31 +26,31 @@ interface Props {
   onDismiss: () => void;
 }
 
-function copyFor(role: Role, name: string): { headline: string; body: string; share: string } {
-  const sName = name.toLowerCase();
+function copyFor(role: Role, name: string, shareUrl: string): { headline: string; body: string; share: string } {
   if (role === 'signaler') {
     return {
       headline: 'Już dobrze',
       body: 'Dziękujemy za to, że macie siebie.\nSpokój wraca.',
-      share: `Byłam w potrzebie, krąg zareagował w kilka minut. cmok po prostu działa — jeden tap i ktoś był ze mną.\n\nDarmowa apka:\nhttps://cmok.app/pobierz`,
+      share: `Byłam w potrzebie, krąg zareagował w kilka minut. cmok po prostu działa — jeden tap i ktoś był ze mną.\n\n${shareUrl}`,
     };
   }
   if (role === 'primary') {
     return {
       headline: 'Zamknięte',
       body: `${name} jest bezpieczna.\nDobrze, że tam byłeś.`,
-      share: `${name} potrzebowała pomocy, cmok nas powiadomił, byliśmy na miejscu w kilka minut. Każdemu z rodzicem samotnie mieszkającym się przyda.\n\nDarmowa apka:\nhttps://cmok.app/pobierz`,
+      share: `${name} potrzebowała pomocy, cmok nas powiadomił, byliśmy na miejscu w kilka minut. Każdemu z rodzicem samotnie mieszkającym się przyda.\n\n${shareUrl}`,
     };
   }
   // trusted
   return {
     headline: 'Już spokojnie',
     body: `${name} jest bezpieczna.\nDobrze, że byłeś na wezwanie.`,
-    share: `${name} potrzebowała pomocy, cmok powiadomił sąsiadów i rodzinę — w kilka minut ktoś był przy niej. Działa jak bezpiecznik.\n\nDarmowa apka:\nhttps://cmok.app/pobierz`,
+    share: `${name} potrzebowała pomocy, cmok powiadomił sąsiadów i rodzinę — w kilka minut ktoś był przy niej. Działa jak bezpiecznik.\n\n${shareUrl}`,
   };
 }
 
 export function PostResolveShare({ visible, role, signalerName, onDismiss }: Props) {
+  const { profile } = useRelationship();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.88)).current;
 
@@ -67,7 +69,9 @@ export function PostResolveShare({ visible, role, signalerName, onDismiss }: Pro
   if (!visible) return null;
 
   const name = signalerName || 'bliska osoba';
-  const { headline, body, share } = copyFor(role, name);
+  const shareType = `sos_resolved_${role}`;
+  const shareUrl = buildPeerShareUrl(profile?.id, shareType);
+  const { headline, body, share } = copyFor(role, name, shareUrl);
 
   const handleShare = async () => {
     try {

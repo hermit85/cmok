@@ -5,6 +5,7 @@ import { JoinScreen } from '../../src/screens/JoinScreen';
 import { supabase } from '../../src/services/supabase';
 import { logInviteEvent } from '../../src/utils/invite';
 import { savePendingInvite, clearPendingInvite } from '../../src/utils/pendingInvite';
+import { posthog } from '../../src/services/posthog';
 
 /**
  * Deep link entry: cmok://join/{code}
@@ -13,15 +14,25 @@ import { savePendingInvite, clearPendingInvite } from '../../src/utils/pendingIn
  * Not authed → persist code, redirect to onboarding. After auth, index.tsx resumes.
  */
 export default function JoinByCode() {
-  const { code } = useLocalSearchParams<{ code: string }>();
+  const { code, src } = useLocalSearchParams<{ code: string; src?: string }>();
   const router = useRouter();
   const [checking, setChecking] = useState(true);
   const [isAuthed, setIsAuthed] = useState(false);
 
   const cleanCode = (code || '').replace(/\D/g, '').slice(0, 6);
+  const srcUserId = typeof src === 'string' && src.length > 0 ? src : null;
 
   useEffect(() => {
     logInviteEvent('join_link_opened', { code: cleanCode });
+
+    // K-factor attribution: every time a share link is opened we log the
+    // source user id (from `?src=`). Lets us measure invite→open→join per
+    // inviter and per viral variant (via the `type` query on peer shares).
+    posthog.capture('install_via_invite', {
+      code: cleanCode,
+      source_user_id: srcUserId,
+      has_code: cleanCode.length === 6,
+    });
 
     (async () => {
       // Always persist the code so it survives auth flow
