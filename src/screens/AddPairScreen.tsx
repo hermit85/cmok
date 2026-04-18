@@ -86,12 +86,14 @@ export function AddPairScreen() {
   const handleShare = async () => {
     if (!inviteCode) return;
     const { data: { user } } = await supabase.auth.getUser();
+    // shareInvite() already fires analytics.inviteShared('main') internally
+    // when Share.sharedAction succeeds — we do NOT re-fire here (was dubbing
+    // the event + firing on cancel, inflating K-factor metrics).
     await shareInvite({
       code: inviteCode,
       signalerLabel: label.trim(),
       srcUserId: user?.id ?? null,
     });
-    analytics.inviteShared('main');
   };
 
   const handleDone = () => {
@@ -111,10 +113,20 @@ export function AddPairScreen() {
             Osoba wpisze go w aplikacji cmok. Gdy to zrobi, zobaczysz jej znak codziennie.
           </Text>
 
-          <Animated.View style={[styles.codeFrame, { transform: [{ scale: copyScale }] }]}>
-            <Text style={styles.codeValue}>{inviteCode}</Text>
-            <Text style={styles.codeHint}>{justCopied ? 'Skopiowane!' : 'Dotknij, żeby skopiować'}</Text>
-          </Animated.View>
+          {/* Whole frame is tappable — the hint below promises it. Wrapping
+             in Pressable (not adding onPress to Animated.View) keeps the
+             a11y semantics correct as a button. */}
+          <Pressable
+            onPress={handleCopy}
+            accessibilityRole="button"
+            accessibilityLabel={`Kod ${inviteCode}, dotknij żeby skopiować`}
+            style={({ pressed }) => [pressed && { opacity: 0.85 }]}
+          >
+            <Animated.View style={[styles.codeFrame, { transform: [{ scale: copyScale }] }]}>
+              <Text style={styles.codeValue}>{inviteCode}</Text>
+              <Text style={styles.codeHint}>{justCopied ? 'Skopiowane!' : 'Dotknij, żeby skopiować'}</Text>
+            </Animated.View>
+          </Pressable>
 
           <Pressable
             onPress={handleCopy}

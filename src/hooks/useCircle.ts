@@ -37,11 +37,16 @@ async function fetchCircleImpl(): Promise<CircleResult> {
   const normalizedRole = normalizeAppRole(profile.role);
   if (!normalizedRole) return { members: [], userRole: null, error: 'Unknown user role' };
 
+  // Deterministic order — earliest joined pair wins as [0]. Matters when
+  // multi-pair ships for real (RecipientHome + SignalerHome still read
+  // signalers[0] / recipients[0]; random ordering would pick a
+  // different "primary" on every render).
   const { data: pairs, error: pairsError } = await supabase
     .from('care_pairs')
     .select('*')
     .or(`senior_id.eq.${user.id},caregiver_id.eq.${user.id}`)
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .order('joined_at', { ascending: true });
 
   if (pairsError) return { members: [], userRole: normalizedRole, error: pairsError.message };
   if (!pairs || pairs.length === 0) return { members: [], userRole: normalizedRole, error: null };

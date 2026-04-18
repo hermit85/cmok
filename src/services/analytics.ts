@@ -66,11 +66,26 @@ export const analytics = {
     posthog.capture('contact_removed'),
 
   // ── Milestones ──
-  milestoneReached: (streak: number) =>
-    posthog.capture('milestone_reached', { streak }),
+  milestoneReached: (streak: number, perspective?: 'signaler' | 'recipient') => {
+    const props: Record<string, string | number> = { streak };
+    if (perspective) props.perspective = perspective;
+    posthog.capture('milestone_reached', props);
+  },
 
-  milestoneShared: (streak: number) =>
-    posthog.capture('milestone_shared', { streak }),
+  /**
+   * Fires when a milestone celebration triggers a successful share.
+   * `perspective` tells us who shared (signaler vs recipient, the
+   * recipient side has different demo and likely different K).
+   * `variant` mirrors the shareType string we embed in the URL (e.g.
+   * `milestone_recipient_30d`) so we can join share events with
+   * install_via_invite attributions downstream.
+   */
+  milestoneShared: (streak: number, perspective?: 'signaler' | 'recipient', variant?: string) => {
+    const props: Record<string, string | number> = { streak };
+    if (perspective) props.perspective = perspective;
+    if (variant) props.variant = variant;
+    posthog.capture('milestone_shared', props);
+  },
 
   // ── Settings ──
   nameChanged: () =>

@@ -10,6 +10,7 @@ import { useRelationship } from '../hooks/useRelationship';
 import { useCircle } from '../hooks/useCircle';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
 import { analytics } from '../services/analytics';
+import { MULTI_PAIR_ENABLED } from '../constants/featureFlags';
 
 export function SettingsScreen() {
   const router = useRouter();
@@ -185,7 +186,10 @@ export function SettingsScreen() {
         </Pressable>
 
         {/* ─── Multi-pair: invite additional signaler (recipient only, after primary pair active) ─── */}
-        {isRecipient && status === 'active' ? (
+        {/* Gated behind MULTI_PAIR_ENABLED — home screens still render a single signaler
+           via signalers[0] so shipping this CTA would break the UX for users who add
+           a second pair. Flag flips in the P2.2 sprint when multi-status-circle lands. */}
+        {MULTI_PAIR_ENABLED && isRecipient && status === 'active' ? (
           <Pressable
             onPress={() => router.push('/add-pair')}
             style={({ pressed }) => [styles.addPairCard, pressed && { opacity: 0.85, transform: [{ scale: 0.99 }] }]}

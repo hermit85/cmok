@@ -272,7 +272,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     // Milestone
     if (celebrationTimeoutRef.current) clearTimeout(celebrationTimeoutRef.current);
     if (isMilestone) {
-      analytics.milestoneReached(currentStreak);
+      analytics.milestoneReached(currentStreak, 'signaler');
       celebrationTimeoutRef.current = setTimeout(() => {
         setCelebrationVisible(false);
         setMilestoneVisible(true);

@@ -7,6 +7,7 @@ import { Typography } from '../constants/typography';
 import { useRelationship } from '../hooks/useRelationship';
 import { useTrustedContacts } from '../hooks/useTrustedContacts';
 import { analytics } from '../services/analytics';
+import { buildJoinUrl } from '../utils/invite';
 
 const AVATAR = 44;
 
@@ -84,17 +85,19 @@ export function TrustedContactsScreen() {
   };
 
   const handleSendInvite = async () => {
-    // Direct-join Universal Link carries the code; tapping it on a device
-    // with cmok installed opens straight into the trusted-redeem flow, and
-    // on a fresh device goes to App Store then resumes the code after
-    // install (via pendingInvite storage in the deep-link handler).
+    // Direct-join Universal Link carries the code + inviter id (for
+    // PostHog attribution of the resulting join). Tapping it on a device
+    // with cmok installed opens straight into the trusted-redeem flow.
+    // On a fresh device the link falls through to App Store; the code
+    // is preserved via pendingInvite storage in the deep-link handler.
     const joinLink = pendingInviteCode
-      ? `https://cmok.app/join/${encodeURIComponent(pendingInviteCode)}`
+      ? buildJoinUrl(pendingInviteCode, profile?.id)
       : 'https://cmok.app/pobierz';
     const codeLine = pendingInviteCode ? `Twój kod: ${pendingInviteCode}\n\n` : '';
-    const msg = `Cześć! ${myName} dodał(a) Cię do kręgu bliskich w cmok. Dostaniesz wiadomość tylko jeśli coś się będzie działo — nic codziennie, żadnego spamu.\n\n${codeLine}${joinLink}`;
+    const msg = `Cześć! ${myName} dodał(a) Cię do kręgu bliskich w cmok. Dostaniesz wiadomość tylko jeśli coś się będzie działo, nic codziennie, żadnego spamu.\n\n${codeLine}${joinLink}`;
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      if (result.action === Share.sharedAction) analytics.inviteShared('circle');
     } catch { /* cancelled */ }
     setNotFoundPhone(null);
     setPendingInviteCode(null);
@@ -244,7 +247,7 @@ export function TrustedContactsScreen() {
               <View style={styles.inviteCard}>
                 <Text style={styles.inviteTitle}>Wyślij zaproszenie</Text>
                 <Text style={styles.inviteBody}>
-                  Numer {notFoundPhone} nie ma jeszcze cmok. Wyślij zaproszenie z kodem — ta osoba wpisze kod w apce i dołączy do Twojego kręgu.
+                  Numer {notFoundPhone} nie ma jeszcze cmok. Wyślij zaproszenie z kodem, ta osoba wpisze go w apce i dołączy do Twojego kręgu.
                 </Text>
                 {pendingInviteCode ? (
                   <View style={styles.codeBox}>

@@ -7,7 +7,7 @@ import { Radius, Spacing } from '../constants/tokens';
 import { SupportParticipants } from '../components/SupportParticipants';
 import { PostResolveShare } from '../components/PostResolveShare';
 import { useUrgentSignal } from '../hooks/useUrgentSignal';
-import { useRelationship } from '../hooks/useRelationship';
+import { useAuthedUserId } from '../hooks/useAuthedUserId';
 import { openPhoneCall } from '../utils/linking';
 import { analytics } from '../services/analytics';
 import { buildPeerShareUrl } from '../utils/invite';
@@ -21,7 +21,7 @@ function formatTime(isoString: string) {
 export function TrustedSupportScreen() {
   const router = useRouter();
   const { urgentCase, currentAlert, loading, refreshing, claim, resolve } = useUrgentSignal();
-  const { profile } = useRelationship();
+  const myUserId = useAuthedUserId();
   const [postResolve, setPostResolve] = useState<{ name: string | null } | null>(null);
 
   const handleClaim = async () => {
@@ -45,7 +45,7 @@ export function TrustedSupportScreen() {
   // Only fire analytics when the user actually completes a share (not on
   // dismiss / cancel) — prevents inflated K-factor metrics from sheet-peeks.
   const handleShareSenior = async () => {
-    const url = buildPeerShareUrl(profile?.id, 'peer_senior');
+    const url = buildPeerShareUrl(myUserId, 'peer_senior');
     const msg = `Znasz kogoś starszego, kto mieszka sam? cmok to codzienny znak, że wszystko OK. Jeden gest dziennie, spokój dla bliskich.\n\n${url}`;
     try {
       const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
@@ -54,7 +54,7 @@ export function TrustedSupportScreen() {
   };
 
   const handleShareFamily = async () => {
-    const url = buildPeerShareUrl(profile?.id, 'peer_family');
+    const url = buildPeerShareUrl(myUserId, 'peer_family');
     const msg = `Martwisz się o rodzica, babcię, dziadka? cmok daje codzienny znak, że wszystko u nich OK. Bez dzwonienia "czy żyjesz".\n\n${url}`;
     try {
       const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
@@ -80,7 +80,7 @@ export function TrustedSupportScreen() {
           visible={!!postResolve}
           role="trusted"
           signalerName={postResolve?.name ?? null}
-          srcUserId={profile?.id}
+          srcUserId={myUserId}
           onDismiss={() => setPostResolve(null)}
         />
         <ScrollView contentContainerStyle={styles.content}>
@@ -93,7 +93,7 @@ export function TrustedSupportScreen() {
             <Text style={styles.topLinkText}>Ustawienia</Text>
           </Pressable>
 
-          <Text style={styles.title}>Jesteś na wezwanie</Text>
+          <Text style={styles.title}>Jesteś blisko, gdy trzeba</Text>
           <Text style={styles.subtitle}>Ktoś bliski ma Cię w swoim kręgu. Jeśli da znać, że coś się dzieje, zobaczysz to tutaj.</Text>
 
           <View style={styles.emptyCard}>

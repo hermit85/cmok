@@ -530,7 +530,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
       // Persist so we don't re-show same streak milestone on every re-render / app re-open
       if (Platform.OS === 'web') localStorage.setItem(storeKey, String(sigStreak));
       else await SecureStore.setItemAsync(storeKey, String(sigStreak));
-      analytics.milestoneReached(sigStreak);
+      analytics.milestoneReached(sigStreak, 'recipient');
     })();
     return () => { cancelled = true; };
   }, [pv, sigId, sigStreak]);
@@ -539,7 +539,7 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
   const myUserId = useAuthedUserId();
   const handlePeerRecommend = async () => {
     const url = buildPeerShareUrl(myUserId, 'peer_family');
-    const msg = `Znasz kogoś z rodzicem lub babcią, kto mieszka sam? cmok daje codzienny znak, że u nich wszystko OK. Mnie pomogło — może i wam pomoże.\n\n${url}`;
+    const msg = `Znasz kogoś z rodzicem lub babcią, kto mieszka sam? cmok daje codzienny znak, że u nich wszystko OK. Mnie pomogło, może i wam pomoże.\n\n${url}`;
     try {
       const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
       if (result.action === Share.sharedAction) analytics.inviteShared('peer_family');

@@ -3,7 +3,9 @@ import type { ExpoConfig } from 'expo/config';
 const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID || process.env.EAS_PROJECT_ID;
 
 const config: ExpoConfig = {
-  name: 'Cmok',
+  // Brand rule: lowercase 'cmok' everywhere. iOS home-screen label +
+  // App Store display name both read from this field.
+  name: 'cmok',
   slug: 'cmok',
   version: '1.0.0',
   orientation: 'portrait',
@@ -25,7 +27,7 @@ const config: ExpoConfig = {
     // file served from cmok.app (infra side, cmok-web repo).
     associatedDomains: ['applinks:cmok.app'],
     infoPlist: {
-      NSLocationWhenInUseUsageDescription: 'Cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
+      NSLocationWhenInUseUsageDescription: 'cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
     },
   },
   android: {
@@ -65,7 +67,7 @@ const config: ExpoConfig = {
     [
       'expo-location',
       {
-        locationWhenInUsePermission: 'Cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
+        locationWhenInUsePermission: 'cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
       },
     ],
     'expo-font',

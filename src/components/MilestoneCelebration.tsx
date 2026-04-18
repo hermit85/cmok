@@ -78,7 +78,7 @@ export function MilestoneCelebration({ visible, streak, recipientName, perspecti
       : `Od ${streak} dni codziennie daję ${name} znak, że u mnie OK. Bez dzwonienia, bez stresu. Jeden tap i spokój.\n\n${url}`;
     try {
       const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
-      if (result.action === Share.sharedAction) analytics.milestoneShared(streak);
+      if (result.action === Share.sharedAction) analytics.milestoneShared(streak, perspective, shareType);
     } catch { /* cancelled */ }
   };
 

@@ -33,7 +33,7 @@ function copyFor(role: Role, name: string, shareUrl: string): { headline: string
     return {
       headline: 'Już dobrze',
       body: 'Dziękujemy za to, że macie siebie.\nSpokój wraca.',
-      share: `Byłam w potrzebie, krąg zareagował w kilka minut. cmok po prostu działa — jeden tap i ktoś był ze mną.\n\n${shareUrl}`,
+      share: `Byłam w potrzebie, krąg zareagował w kilka minut. cmok po prostu działa. Jeden tap i ktoś był ze mną.\n\n${shareUrl}`,
     };
   }
   if (role === 'primary') {
@@ -47,7 +47,7 @@ function copyFor(role: Role, name: string, shareUrl: string): { headline: string
   return {
     headline: 'Już spokojnie',
     body: `${name} jest bezpieczna.\nDobrze, że byłeś na wezwanie.`,
-    share: `${name} potrzebowała pomocy, cmok powiadomił sąsiadów i rodzinę — w kilka minut ktoś był przy niej. Działa jak bezpiecznik.\n\n${shareUrl}`,
+    share: `${name} potrzebowała pomocy, cmok powiadomił sąsiadów i rodzinę. W kilka minut ktoś był przy niej. Działa jak bezpiecznik.\n\n${shareUrl}`,
   };
 }
 
