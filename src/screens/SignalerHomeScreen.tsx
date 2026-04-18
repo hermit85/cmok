@@ -854,7 +854,12 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   containerAfter: { backgroundColor: Colors.background },
   scroll: { flexGrow: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 8 },
+  // Content flows naturally top-to-bottom. Outer ScrollView's
+  // justifyContent: 'space-between' pushes the SOS button to the bottom of
+  // the screen; any leftover space ends up between the last content row
+  // (circleLink) and the SOS button — not mid-content like it used to when
+  // this container was `flex: 1 + justifyContent: 'center'`.
+  center: { alignItems: 'center', paddingTop: 8 },
   offlineBadge: { textAlign: 'center', fontSize: 12, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary, backgroundColor: Colors.surface, alignSelf: 'center', paddingHorizontal: 14, paddingVertical: 5, borderRadius: Radius.pill, overflow: 'hidden', marginTop: Spacing.sm },
   pushBannerWrap: { paddingHorizontal: 24, marginTop: 10 },
   urgentSendingWrap: { flex: 1, justifyContent: 'center' as const, alignItems: 'center' as const, paddingHorizontal: 32, gap: 16 },
