@@ -768,7 +768,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                       {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
                     </Text>
                   </Animated.View>
-                  <Text style={s.statusSentHint}>{primaryName ? `${primaryName} zobaczy` : 'Wysłano'}</Text>
+                  {/* Confirmation pill — symmetrical with recipient's "Mama zobaczy Twój gest".
+                     Mirrors the emotional receipt so signaler feels the gesture landed. */}
+                  <Animated.View style={[s.statusSentPill, { opacity: moodPickedOpacity }]}>
+                    <Text style={s.statusSentPillText}>
+                      {primaryName ? `${primaryName} zobaczy Twój znak` : 'Znak wysłany'}
+                    </Text>
+                  </Animated.View>
                 </>
               )}
               {!isReallyFirstEver ? <Text style={s.tomorrowHook}>Gotowe na dziś. Jutro Ci przypomnimy.</Text> : null}
@@ -914,8 +920,12 @@ const s = StyleSheet.create({
   },
   statusPickedSymbol: { fontSize: 18 },
   statusPickedText: { fontSize: 14, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
-  statusSentHint: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
-  tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 16 },
+  statusSentPill: {
+    marginTop: 10, paddingHorizontal: 22, paddingVertical: 9, borderRadius: 999,
+    backgroundColor: Colors.safeLight, alignSelf: 'center' as const,
+  },
+  statusSentPillText: { fontSize: 13, fontFamily: Typography.headingFamilySemiBold, color: Colors.safeStrong },
+  tomorrowHook: { fontSize: 13, color: Colors.textMuted, marginTop: 20 },
   streakHook: { fontSize: 12, color: Colors.textMuted, marginTop: 6 },
   dotsWrap: { marginTop: 16 },
   statsRow: {

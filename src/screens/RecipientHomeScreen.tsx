@@ -662,10 +662,13 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         ? 'Czekamy na dzisiejszy znak'
         : 'Czekamy na pierwszy znak';
   const statusLabel = signerStatus ? STATUS_MOOD_LABELS[signerStatus] || null : null;
+  // Sub deliberately omits the check-in time when effOk — SafetyStatus above
+  // already shows "Mama dała znak o 09:30", so repeating it here was noise.
+  // Only show the mood label (e.g. "Spokojnie") as added value.
   const sub = effOk
     ? statusLabel
-      ? `${statusLabel}${effTime ? ` · ${effTime}` : ''}`
-      : `Na dziś jest kontakt${effTime ? ` · ${effTime}` : ''}`
+      ? statusLabel
+      : null
     : hasReceiverGap
       ? 'Warto się odezwać'
       : effLast
@@ -871,9 +874,9 @@ const st = StyleSheet.create({
   loadingText: { fontSize: 14, fontFamily: Typography.fontFamilyMedium, color: Colors.textSecondary },
 
   /* sections */
-  heroSection: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 16 },
-  rhythmSection: { alignItems: 'center', paddingVertical: 24 },
-  actionsSection: { alignItems: 'center', paddingBottom: 16 },
+  heroSection: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 20, paddingBottom: 8 },
+  rhythmSection: { alignItems: 'center', paddingVertical: 28 },
+  actionsSection: { alignItems: 'center', paddingTop: 20, paddingBottom: 20 },
 
   /* warm toast */
   warmToast: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 20, borderRadius: 20, backgroundColor: Colors.safeLight, marginBottom: 12 },
@@ -889,9 +892,9 @@ const st = StyleSheet.create({
   statusCheckmark: { fontSize: 48, color: Colors.safe, fontWeight: '300' },
 
   /* status text */
-  title: { fontSize: 20, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center' },
-  titlePending: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.textSecondary, textAlign: 'center' },
-  sub: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
+  title: { fontSize: 22, fontFamily: Typography.headingFamily, color: Colors.text, textAlign: 'center', marginTop: 4 },
+  titlePending: { fontSize: 18, fontFamily: Typography.headingFamilySemiBold, color: Colors.textSecondary, textAlign: 'center', marginTop: 4 },
+  sub: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 6 },
   streakBadge: { fontSize: 13, fontFamily: Typography.headingFamilySemiBold, color: Colors.safe, marginTop: 8 },
 
   /* morning thoughts — recipient proactive engagement */
