@@ -42,12 +42,14 @@ export function TrustedSupportScreen() {
   };
 
   /* ─── Viral share handlers (empty state) ─── */
+  // Only fire analytics when the user actually completes a share (not on
+  // dismiss / cancel) — prevents inflated K-factor metrics from sheet-peeks.
   const handleShareSenior = async () => {
     const url = buildPeerShareUrl(profile?.id, 'peer_senior');
     const msg = `Znasz kogoś starszego, kto mieszka sam? cmok to codzienny znak, że wszystko OK. Jeden gest dziennie, spokój dla bliskich.\n\n${url}`;
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
-      analytics.inviteShared('peer_senior');
+      const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      if (result.action === Share.sharedAction) analytics.inviteShared('peer_senior');
     } catch { /* cancelled */ }
   };
 
@@ -55,8 +57,8 @@ export function TrustedSupportScreen() {
     const url = buildPeerShareUrl(profile?.id, 'peer_family');
     const msg = `Martwisz się o rodzica, babcię, dziadka? cmok daje codzienny znak, że wszystko u nich OK. Bez dzwonienia "czy żyjesz".\n\n${url}`;
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
-      analytics.inviteShared('peer_family');
+      const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      if (result.action === Share.sharedAction) analytics.inviteShared('peer_family');
     } catch { /* cancelled */ }
   };
 
@@ -78,6 +80,7 @@ export function TrustedSupportScreen() {
           visible={!!postResolve}
           role="trusted"
           signalerName={postResolve?.name ?? null}
+          srcUserId={profile?.id}
           onDismiss={() => setPostResolve(null)}
         />
         <ScrollView contentContainerStyle={styles.content}>
@@ -90,8 +93,8 @@ export function TrustedSupportScreen() {
             <Text style={styles.topLinkText}>Ustawienia</Text>
           </Pressable>
 
-          <Text style={styles.title}>Krąg bliskich</Text>
-          <Text style={styles.subtitle}>Jeśli ktoś doda Cię do kręgu, zobaczysz tu wiadomości od bliskich.</Text>
+          <Text style={styles.title}>Jesteś na wezwanie</Text>
+          <Text style={styles.subtitle}>Ktoś bliski ma Cię w swoim kręgu. Jeśli da znać, że coś się dzieje, zobaczysz to tutaj.</Text>
 
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>Teraz jest spokojnie</Text>
@@ -223,7 +226,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase' as const, letterSpacing: 0.8,
   },
   viralCard: {
-    backgroundColor: Colors.surfaceWarm ?? Colors.card,
+    backgroundColor: Colors.surfaceWarm,
     borderRadius: 20, padding: 18, marginBottom: 12,
     borderWidth: 1, borderColor: Colors.accent + '22',
   },

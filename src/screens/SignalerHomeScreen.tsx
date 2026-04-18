@@ -349,8 +349,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
     performCheckinLogic(playSuccess);
   }, [canCheckin, performCheckinLogic, playSuccess]);
 
-  const moodPickedScale = useRef(new Animated.Value(0)).current;
-  const moodPickedOpacity = useRef(new Animated.Value(0)).current;
+  // Picker row fades out when user picks a mood. Picked pills themselves
+  // render without opacity animation (previously used moodPickedOpacity but
+  // that left pills invisible on state-restore — see commit 3ea7cad).
   const moodFadeOut = useRef(new Animated.Value(1)).current;
 
   const handleStatusPick = useCallback(async (statusKey: string, index: number) => {
@@ -361,16 +362,9 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       // 2. After peak: haptic confirmation + fade out all chips
       haptics.success();
       setStatusPicked(statusKey);
-
-      // 3. Fade out chips row, scale in the result pill
+      // 3. Fade out chips row — picked pills are plain Views that appear instantly.
       moodFadeOut.setValue(1);
-      moodPickedScale.setValue(0.6);
-      moodPickedOpacity.setValue(0);
-      Animated.parallel([
-        Animated.timing(moodFadeOut, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.spring(moodPickedScale, { toValue: 1, tension: 120, friction: 6, useNativeDriver: true }),
-        Animated.timing(moodPickedOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-      ]).start();
+      Animated.timing(moodFadeOut, { toValue: 0, duration: 200, useNativeDriver: true }).start();
     });
 
     if (pv || !userId) return;
@@ -384,19 +378,17 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
         sendSignal(primaryRecipientId, mood?.emoji || statusKey, undefined, 'poke').catch(() => {});
       }
     } catch (err) { console.warn('[status] update error:', err); }
-  }, [pv, userId, primaryRecipientId, pokeAlreadySent, sendSignal, moodScales, moodFadeOut, moodPickedScale, moodPickedOpacity]);
+  }, [pv, userId, primaryRecipientId, pokeAlreadySent, sendSignal, moodScales, moodFadeOut]);
 
   // Restore status from DB when screen loads (so picked pill persists across visits)
   useEffect(() => {
     if (pv || statusLoadedFromDb.current) return;
     if (dbStatusEmoji && !statusPicked) {
       setStatusPicked(dbStatusEmoji);
-      moodPickedOpacity.setValue(1);
-      moodPickedScale.setValue(1);
       moodFadeOut.setValue(0);
       statusLoadedFromDb.current = true;
     }
-  }, [pv, dbStatusEmoji, statusPicked, moodPickedOpacity, moodPickedScale, moodFadeOut]);
+  }, [pv, dbStatusEmoji, statusPicked, moodFadeOut]);
 
   const handleUrgentConfirm = async () => {
     setShowUrgentModal(false);
@@ -651,11 +643,18 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   return (
     <SafeAreaView style={[s.container, showChecked && s.containerAfter]}>
       <UrgentConfirmation visible={showUrgentModal} onConfirm={handleUrgentConfirm} onCancel={() => setShowUrgentModal(false)} circleCount={recipients.length} />
-      <MilestoneCelebration visible={milestoneVisible} streak={currentStreak} recipientName={primaryName} onDismiss={() => setMilestoneVisible(false)} />
+      <MilestoneCelebration
+        visible={milestoneVisible}
+        streak={currentStreak}
+        recipientName={primaryName}
+        srcUserId={userId}
+        onDismiss={() => setMilestoneVisible(false)}
+      />
       <PostResolveShare
         visible={sosResolvedVisible}
         role="signaler"
         signalerName={null}
+        srcUserId={userId}
         onDismiss={() => setSosResolvedVisible(false)}
       />
       <ScreenHeader subtitle={hasName ? `dla ${rf.genitive}` : undefined} />

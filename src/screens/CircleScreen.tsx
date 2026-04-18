@@ -43,8 +43,8 @@ export function CircleScreen() {
     const url = buildPeerShareUrl(profile?.id, 'peer_general');
     const msg = `Znasz kogoś, kto mieszka sam? cmok to codzienny znak, że wszystko OK. Jeden gest dziennie.\n\n${url}`;
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
-      analytics.inviteShared('peer_general');
+      const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      if (result.action === Share.sharedAction) analytics.inviteShared('peer_general');
     } catch { /* cancelled */ }
   };
 

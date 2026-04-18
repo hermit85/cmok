@@ -541,8 +541,8 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
     const url = buildPeerShareUrl(myProfile?.id, 'peer_family');
     const msg = `Znasz kogoś z rodzicem lub babcią, kto mieszka sam? cmok daje codzienny znak, że u nich wszystko OK. Mnie pomogło — może i wam pomoże.\n\n${url}`;
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
-      analytics.inviteShared('peer_family');
+      const result = await Share.share(Platform.OS === 'ios' ? { message: msg } : { message: msg, title: 'cmok' });
+      if (result.action === Share.sharedAction) analytics.inviteShared('peer_family');
     } catch { /* cancelled */ }
   };
 
@@ -709,12 +709,14 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         streak={recipientMilestoneStreak}
         recipientName={sigName}
         perspective="recipient"
+        srcUserId={myProfile?.id}
         onDismiss={() => setRecipientMilestoneVisible(false)}
       />
       <PostResolveShare
         visible={postResolveVisible}
         role="primary"
         signalerName={sigName}
+        srcUserId={myProfile?.id}
         onDismiss={() => setPostResolveVisible(false)}
       />
       <ScreenHeader subtitle={`od ${nameFrom}`} />

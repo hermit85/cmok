@@ -14,7 +14,6 @@ import { Particles } from './Particles';
 import { analytics } from '../services/analytics';
 import { haptics } from '../utils/haptics';
 import { buildPeerShareUrl } from '../utils/invite';
-import { useRelationship } from '../hooks/useRelationship';
 
 type Role = 'signaler' | 'primary' | 'trusted';
 
@@ -23,6 +22,9 @@ interface Props {
   role: Role;
   /** Signaler's name (who was in trouble). For signaler perspective this is null. */
   signalerName: string | null;
+  /** Current user id — passed in as prop to avoid a duplicate useRelationship
+   *  call when the parent screen already has the profile loaded. */
+  srcUserId?: string | null;
   onDismiss: () => void;
 }
 
@@ -49,8 +51,7 @@ function copyFor(role: Role, name: string, shareUrl: string): { headline: string
   };
 }
 
-export function PostResolveShare({ visible, role, signalerName, onDismiss }: Props) {
-  const { profile } = useRelationship();
+export function PostResolveShare({ visible, role, signalerName, srcUserId = null, onDismiss }: Props) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.88)).current;
 
@@ -70,7 +71,7 @@ export function PostResolveShare({ visible, role, signalerName, onDismiss }: Pro
 
   const name = signalerName || 'bliska osoba';
   const shareType = `sos_resolved_${role}`;
-  const shareUrl = buildPeerShareUrl(profile?.id, shareType);
+  const shareUrl = buildPeerShareUrl(srcUserId, shareType);
   const { headline, body, share } = copyFor(role, name, shareUrl);
 
   const handleShare = async () => {

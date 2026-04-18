@@ -11,7 +11,6 @@ import { Particles } from './Particles';
 import { analytics } from '../services/analytics';
 import { haptics } from '../utils/haptics';
 import { buildPeerShareUrl } from '../utils/invite';
-import { useRelationship } from '../hooks/useRelationship';
 
 interface Props {
   visible: boolean;
@@ -20,6 +19,9 @@ interface Props {
   recipientName: string | null;
   /** Perspective changes body copy + share framing. Default 'signaler' (Mama's side). */
   perspective?: 'signaler' | 'recipient';
+  /** Current user id — passed in as prop (instead of calling useRelationship here)
+   *  so we don't duplicate the hook's fetches for the parent screen. */
+  srcUserId?: string | null;
   onDismiss: () => void;
 }
 
@@ -45,8 +47,7 @@ function milestoneTextRecipient(streak: number, name: string): { headline: strin
   return { headline: `${streak} dni!`, body: `${name} trzyma serię.` };
 }
 
-export function MilestoneCelebration({ visible, streak, recipientName, perspective = 'signaler', onDismiss }: Props) {
-  const { profile } = useRelationship();
+export function MilestoneCelebration({ visible, streak, recipientName, perspective = 'signaler', srcUserId = null, onDismiss }: Props) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
@@ -71,7 +72,7 @@ export function MilestoneCelebration({ visible, streak, recipientName, perspecti
 
   const handleShare = async () => {
     const shareType = `milestone_${perspective}_${streak}d`;
-    const url = buildPeerShareUrl(profile?.id, shareType);
+    const url = buildPeerShareUrl(srcUserId, shareType);
     const msg = perspective === 'recipient'
       ? `Od ${streak} dni dostaję od ${name} codzienny znak, że u niej OK. Bez dzwonienia, bez stresu. Spokój w tle.\n\n${url}`
       : `Od ${streak} dni codziennie daję ${name} znak, że u mnie OK. Bez dzwonienia, bez stresu. Jeden tap i spokój.\n\n${url}`;
