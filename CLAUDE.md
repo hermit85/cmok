@@ -158,8 +158,8 @@ cmok to codzienny rytuał bliskości między osobami, które mieszkają osobno. 
    - Jeśli nie: tworzy pending row z `phone=...`, `user_id=NULL`, `status='pending'`
 2. UI pokazuje pending w liście ("Zaproszony(a), czeka na instalację") + Share sheet z linkiem `cmok.app/pobierz`
 3. Sąsiad pobiera app, loguje się swoim numerem → INSERT do `users` → trigger `activate_pending_trusted_contacts`:
-   - UPDATE trusted_contacts SET user_id, status='active' WHERE phone matches
-   - UPDATE users SET role='trusted' (jeśli role było NULL)
+   - UPDATE trusted_contacts SET user_id, status='active', phone=NULL, invite_code=NULL, invite_expires_at=NULL WHERE phone matches
+   - UPDATE users SET role='trusted' (jeśli role było NULL lub '')
 4. Onboarding wykrywa `role='trusted'` → redirect do `/trusted-support` (pomija setup/join)
 
 ## URL-e
@@ -178,19 +178,30 @@ cmok to codzienny rytuał bliskości między osobami, które mieszkają osobno. 
 - Sąsiad: dodawany przez Mamę lub Darka do kręgu bliskich via TrustedContacts
 
 ## Reset danych testowych
-Edge function `reset-test-data` (no JWT required):
+Edge function `reset-test-data` wymaga shared secret w headerze
+`x-reset-secret`. Secret jest ustawiony jako env var `RESET_TEST_SECRET`
+w Supabase dashboard (Functions → reset-test-data → Secrets). Pobierz
+go stamtąd przed uruchomieniem curla. Bez tego secret → 401.
 
 ```bash
+# Secret pobierzesz z Supabase dashboard
+export RESET_TEST_SECRET="..."
+
 # Wyczyść dane, zostaw konta + relację (do testowania home screens):
 curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
   -H "Content-Type: application/json" \
+  -H "x-reset-secret: $RESET_TEST_SECRET" \
   -d '{"mode": "keep_pair"}'
 
 # Full reset — usuń wszystko, testuj onboarding od zera:
 curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
   -H "Content-Type: application/json" \
+  -H "x-reset-secret: $RESET_TEST_SECRET" \
   -d '{"mode": "full_reset"}'
 ```
+
+Tryby: `keep_pair`, `full_reset`, `seed_invite` (invite_code=111222),
+`seed_sasiad`, `seed_apple_review` (pełny setup pod App Store review).
 
 Po `keep_pair`: zaloguj się na obu telefonach, app pokaże home screen (czyste dane, relacja aktywna).
 Po `full_reset`: oba konta usunięte, zaloguj się → onboarding od zera.

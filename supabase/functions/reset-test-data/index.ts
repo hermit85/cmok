@@ -1,10 +1,10 @@
 // ============================================================
 // cmok · reset-test-data Edge Function
 // Czyści dane testowe, seeduje konta, lub konfiguruje pod Apple review.
-// Użycie: POST z body { mode: "..." }
+// Użycie: POST z body { mode: "..." } + header x-reset-secret: <SECRET>
 //   keep_pair — czyści checkins/signals/alerts, zostawia relację
 //   full_reset — czyści wszystko, wraca do stanu pre-onboarding
-//   seed_sasiad — tworzy konto +48500000003 jeśli nie istnieje (Sąsiad, signaler)
+//   seed_sasiad — tworzy konto Sąsiada jeśli nie istnieje (signaler)
 //   seed_invite — tworzy pending pair z invite_code 111222 dla recipienta
 //   seed_apple_review — pełna konfiguracja dla Apple reviewera:
 //     - naprawia nazwy (Mama/Darek/Sąsiad)
@@ -12,16 +12,24 @@
 //     - dzisiejszy check-in od Mamy (status: good)
 //     - backup invite code 111222 dla testowania onboardingu
 // ============================================================
-
+//
+// Auth: requires header `x-reset-secret: <RESET_TEST_SECRET>`.
+// Without the env var configured, function refuses every call (503).
+//
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const TEST_PHONES = ['48500000001', '48500000002', '48500000003'];
+// Live test account phones. Updated 2026-04-18 — previously this file
+// referenced the legacy 100000xxx numbers; actual seed data uses 500000xxx.
+const TEST_PHONE_MAMA = '48500000001';
+const TEST_PHONE_DAREK = '48500000002';
+const TEST_PHONE_SASIAD = '48500000003';
+const TEST_PHONES = [TEST_PHONE_MAMA, TEST_PHONE_DAREK, TEST_PHONE_SASIAD];
 
 const CORS_HEADERS = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-reset-secret',
 };
 
 serve(async (req) => {
@@ -31,6 +39,17 @@ serve(async (req) => {
 
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'Method not allowed' }, 405);
+  }
+
+  // Gate: require shared secret header. If RESET_TEST_SECRET is unset,
+  // refuse to run at all so an empty env doesn't accidentally open the door.
+  const expectedSecret = Deno.env.get('RESET_TEST_SECRET');
+  if (!expectedSecret) {
+    return jsonResponse({ error: 'reset-test-data not configured (missing RESET_TEST_SECRET)' }, 503);
+  }
+  const providedSecret = req.headers.get('x-reset-secret');
+  if (!providedSecret || providedSecret !== expectedSecret) {
+    return jsonResponse({ error: 'Unauthorized' }, 401);
   }
 
   const serviceSupabase = createClient(
@@ -55,8 +74,8 @@ serve(async (req) => {
         .select('id, phone')
         .in('phone', TEST_PHONES);
 
-      const mama = allUsers?.find(u => u.phone === '48500000001');
-      const darek = allUsers?.find(u => u.phone === '48500000002');
+      const mama = allUsers?.find(u => u.phone === TEST_PHONE_MAMA);
+      const darek = allUsers?.find(u => u.phone === TEST_PHONE_DAREK);
 
       if (!mama || !darek) {
         return jsonResponse({ error: 'Test users not found — log in as 001 and 002 first' }, 404);
@@ -112,7 +131,7 @@ serve(async (req) => {
         credentials: {
           signaler: { phone: '+48 500 000 001', otp: '123456', name: 'Mama' },
           recipient: { phone: '+48 500 000 002', otp: '123456', name: 'Darek' },
-          note: 'Log in with either number — will land directly on home screen with active pair and today sign',
+          note: 'Log in with either number, will land directly on home screen with active pair and today sign',
         },
       });
     }
@@ -122,11 +141,11 @@ serve(async (req) => {
       const { data: darek } = await serviceSupabase
         .from('users')
         .select('id')
-        .eq('phone', '48500000002')
+        .eq('phone', TEST_PHONE_DAREK)
         .maybeSingle();
 
       if (!darek) {
-        return jsonResponse({ error: 'Recipient account (48500000002) not found' }, 404);
+        return jsonResponse({ error: `Recipient account (${TEST_PHONE_DAREK}) not found` }, 404);
       }
 
       // Remove any existing pending pair for Darek to avoid conflict
@@ -156,12 +175,12 @@ serve(async (req) => {
       return jsonResponse({ ok: true, mode, invite_code: '111222', pair_id: pair.id });
     }
 
-    // seed_sasiad: create auth+profile for 003 if missing
+    // seed_sasiad: create auth+profile for sąsiad test account if missing
     if (mode === 'seed_sasiad') {
       const { data: existing } = await serviceSupabase
         .from('users')
         .select('id')
-        .eq('phone', '48500000003')
+        .eq('phone', TEST_PHONE_SASIAD)
         .maybeSingle();
 
       if (existing) {
@@ -169,7 +188,7 @@ serve(async (req) => {
       }
 
       const { data: authUser, error: authErr } = await serviceSupabase.auth.admin.createUser({
-        phone: '48500000003',
+        phone: TEST_PHONE_SASIAD,
         phone_confirm: true,
       });
       if (authErr || !authUser?.user) {
@@ -178,7 +197,7 @@ serve(async (req) => {
 
       const { error: profileErr } = await serviceSupabase.from('users').insert({
         id: authUser.user.id,
-        phone: '48500000003',
+        phone: TEST_PHONE_SASIAD,
         name: 'Sąsiad',
         role: 'signaler',
       });
@@ -280,9 +299,9 @@ serve(async (req) => {
       deleted.push(`auth_users: ${userIds.length}`);
     } else {
       // keep_pair: just reset names to known good state
-      await serviceSupabase.from('users').update({ name: 'Mama' }).eq('phone', '48500000001');
-      await serviceSupabase.from('users').update({ name: 'Darek' }).eq('phone', '48500000002');
-      await serviceSupabase.from('users').update({ name: 'Sąsiad' }).eq('phone', '48500000003');
+      await serviceSupabase.from('users').update({ name: 'Mama' }).eq('phone', TEST_PHONE_MAMA);
+      await serviceSupabase.from('users').update({ name: 'Darek' }).eq('phone', TEST_PHONE_DAREK);
+      await serviceSupabase.from('users').update({ name: 'Sąsiad' }).eq('phone', TEST_PHONE_SASIAD);
 
       // Reset pair labels
       if (pairIds.length > 0) {
