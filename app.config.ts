@@ -35,6 +35,11 @@ const config: ExpoConfig = {
     // Re-enable with: associatedDomains: ['applinks:cmok.app'],
     infoPlist: {
       NSLocationWhenInUseUsageDescription: 'cmok może dołączyć Twoją lokalizację, gdy chcesz dać znać bliskim, że coś się dzieje.',
+      // cmok uses only standard iOS HTTPS — no custom cryptography. Declaring
+      // this up-front skips the "Missing Compliance" block in App Store Connect
+      // so builds go straight to TestFlight without manual export-compliance
+      // clicking. (Build 26 still needs the click; build 27+ won't.)
+      ITSAppUsesNonExemptEncryption: false,
     },
   },
   android: {
