@@ -760,21 +760,27 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                 </Animated.View>
               ) : (
                 <>
-                  <Animated.View style={[s.statusPickedPill, { opacity: moodPickedOpacity, transform: [{ scale: moodPickedScale }] }]}>
+                  {/* Hardcoded opacity 1 here intentionally — previously used
+                     moodPickedOpacity (an Animated.Value initialised at 0)
+                     which, if the pick animation hadn't fired in the current
+                     session (e.g. state restored from DB after app reopen),
+                     kept the pills invisible at opacity 0 while still taking
+                     layout space — producing a visible "hole" between the
+                     response pill and tomorrowHook. */}
+                  <View style={s.statusPickedPill}>
                     <Emoji style={s.statusPickedSymbol}>
                       {STATUS_MOODS.find((m) => m.key === statusPicked)?.emoji ?? ''}
                     </Emoji>
                     <Text style={s.statusPickedText}>
                       {STATUS_MOODS.find((m) => m.key === statusPicked)?.label || ''}
                     </Text>
-                  </Animated.View>
-                  {/* Confirmation pill — symmetrical with recipient's "Mama zobaczy Twój gest".
-                     Mirrors the emotional receipt so signaler feels the gesture landed. */}
-                  <Animated.View style={[s.statusSentPill, { opacity: moodPickedOpacity }]}>
+                  </View>
+                  {/* Confirmation pill — symmetrical with recipient's "Mama zobaczy Twój gest". */}
+                  <View style={s.statusSentPill}>
                     <Text style={s.statusSentPillText}>
                       {primaryName ? `${primaryName} zobaczy Twój znak` : 'Znak wysłany'}
                     </Text>
-                  </Animated.View>
+                  </View>
                 </>
               )}
               {!isReallyFirstEver ? <Text style={s.tomorrowHook}>Gotowe na dziś. Jutro Ci przypomnimy.</Text> : null}
