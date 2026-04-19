@@ -24,7 +24,7 @@ function formatDate(d: Date): string {
 }
 
 function reminderBody(recipientName: string, streak: number): string {
-  if (streak >= 7) return `${streak} dni z rzędu! Nie przerywaj — daj dziś znak`;
+  if (streak >= 7) return `${streak} dni z rzędu! Nie przerywaj, daj dziś znak`;
   if (streak >= 2) return `${streak} dni z rzędu. Daj dziś znak ${recipientName}`;
   return `Dzień dobry! ${recipientName} czeka na Twój znak`;
 }

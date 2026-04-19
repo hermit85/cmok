@@ -191,7 +191,12 @@ function RootLayout() {
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
         if (session?.user) {
           tryRegister(event.toLowerCase());
-          posthog.identify(session.user.id, { phone: session.user.phone ?? '' });
+          // Identify by user id only. We deliberately do NOT send phone to
+          // PostHog — phone is PII declared in PrivacyInfo.xcprivacy as
+          // App Functionality purpose, not Analytics. Keeping phone out of
+          // PostHog keeps the privacy declaration honest and reduces the
+          // blast radius if the PostHog project is ever compromised.
+          posthog.identify(session.user.id);
         }
       }
       if (event === 'SIGNED_OUT') {

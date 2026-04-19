@@ -21,7 +21,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.hermit85.cmok',
-    buildNumber: '27',
+    buildNumber: '28',
     // Universal Links (Associated Domains capability) temporarily disabled
     // for build 26. Blocked by two infra prereqs that aren't ready yet:
     //   1. apple-app-site-association file served from cmok.app
@@ -50,16 +50,14 @@ const config: ExpoConfig = {
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',
     },
-    // Android App Links for https://cmok.app/join/{code}. Requires matching
-    // assetlinks.json on cmok.app.
-    intentFilters: [
-      {
-        action: 'VIEW',
-        autoVerify: true,
-        data: [{ scheme: 'https', host: 'cmok.app', pathPrefix: '/join' }],
-        category: ['BROWSABLE', 'DEFAULT'],
-      },
-    ],
+    // Android App Links temporarily disabled for build 27 — mirror of iOS
+    // Associated Domains decision. Needs matching /.well-known/assetlinks.json
+    // on cmok.app (currently 404). Re-enable alongside the iOS AASA once
+    // cmok-web deploys both files:
+    //   intentFilters: [{
+    //     action: 'VIEW', autoVerify: true, category: ['BROWSABLE', 'DEFAULT'],
+    //     data: [{ scheme: 'https', host: 'cmok.app', pathPrefix: '/join' }],
+    //   }],
     permissions: ['ACCESS_FINE_LOCATION', 'ACCESS_COARSE_LOCATION'],
   },
   web: {

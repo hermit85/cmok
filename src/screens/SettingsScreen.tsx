@@ -49,7 +49,7 @@ export function SettingsScreen() {
       if (error) throw error;
       setEditingName(false);
       analytics.nameChanged();
-      refreshRelationship?.();
+      refreshRelationship?.(true);
     } catch {
       Alert.alert('Coś poszło nie tak', 'Nie udało się zapisać imienia.');
     } finally {

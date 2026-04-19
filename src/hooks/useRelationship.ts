@@ -12,7 +12,9 @@ interface RelationshipState {
   relationship: Relationship | null;
   status: RelationshipStatus;
   hasTrustedAccess: boolean;
-  refreshRelationship: () => Promise<void>;
+  /** Pass `forceFresh=true` on manual refresh (buttons, post-mutation) to
+   *  bypass the 500ms dedup cache. Default false for mount/auth/foreground. */
+  refreshRelationship: (forceFresh?: boolean) => Promise<void>;
 }
 
 function mapRelationship(raw: any): Relationship {
@@ -121,12 +123,14 @@ export function useRelationship(): RelationshipState {
   const retryCount = useRef(0);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const refreshRelationship = useCallback(async () => {
+  // `forceFresh` — when true, bypass the 500ms dedup cache. Use for manual
+  // refresh (user taps "Sprawdź", polling in /waiting, pull-to-refresh).
+  // Default false for internal mount/foreground/auth-change triggers where
+  // sharing a fetch across components is a feature, not a bug.
+  const refreshRelationship = useCallback(async (forceFresh = false) => {
     setLoading(true);
     try {
-      // Dedupe concurrent/repeat fetches. Two screens calling useRelationship
-      // within the same navigation transition now share one SELECT set.
-      const next = await dedupedFetch();
+      const next = forceFresh ? await dedupedFetch.refresh() : await dedupedFetch();
       setProfile(next.profile);
       setRelationship(next.relationship);
       setStatus(next.status);
@@ -141,7 +145,7 @@ export function useRelationship(): RelationshipState {
       } else if (retryCount.current < 3) {
         // First load failed — retry up to 3 times
         retryCount.current += 1;
-        retryTimer.current = setTimeout(() => refreshRelationship(), 3000);
+        retryTimer.current = setTimeout(() => refreshRelationship(true), 3000);
       } else {
         // Give up — show app with null state (will route to onboarding)
         setSessionReady(true);

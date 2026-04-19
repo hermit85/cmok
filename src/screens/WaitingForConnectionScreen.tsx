@@ -44,7 +44,8 @@ export function WaitingForConnectionScreen() {
       const { error } = await supabase.from('users').update({ name: trimmed }).eq('id', profile.id);
       if (error) throw error;
       setEditingName(false);
-      refreshRelationship();
+      // Force fresh so the new name shows immediately, bypassing 500ms dedup.
+      refreshRelationship(true);
     } catch { Alert.alert('Coś poszło nie tak', 'Nie udało się zapisać.'); }
   };
 
@@ -194,7 +195,7 @@ export function WaitingForConnectionScreen() {
             // rendered a tappable link whose onPress silently returned
             // early because !inviteCode).
             <Pressable
-              onPress={refreshRelationship}
+              onPress={() => refreshRelationship(true)}
               style={({ pressed }) => [s.resendLink, pressed && { opacity: 0.6 }]}
               accessibilityRole="button"
               accessibilityLabel="Odśwież, żeby pobrać kod"
@@ -212,7 +213,7 @@ export function WaitingForConnectionScreen() {
             <Text style={s.statusHint}>Gdy się połączycie, zaczniecie Wasz codzienny cmok.</Text>
           </View>
           <Pressable
-            onPress={refreshRelationship}
+            onPress={() => refreshRelationship(true)}
             style={({ pressed }) => [s.checkBtn, pressed && { opacity: 0.7 }]}
             accessibilityRole="button"
             accessibilityLabel="Sprawdź, czy bliska osoba już dołączyła"

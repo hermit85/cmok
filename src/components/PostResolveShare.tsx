@@ -80,7 +80,15 @@ export function PostResolveShare({ visible, role, signalerName, srcUserId = null
         Platform.OS === 'ios' ? { message: share } : { message: share, title: 'cmok' },
       );
       if (result.action === Share.sharedAction) {
-        analytics.inviteShared(role === 'signaler' ? 'peer_general' : role === 'primary' ? 'peer_family' : 'peer_senior');
+        // Use the sos_resolved_* variant so analytics matches the URL
+        // `type=` param. Previously logged as peer_* which made the SOS
+        // funnel look like organic peer shares — inflated peer metrics,
+        // hid SOS conversion entirely.
+        analytics.inviteShared(
+          role === 'signaler' ? 'sos_resolved_signaler'
+            : role === 'primary' ? 'sos_resolved_primary'
+              : 'sos_resolved_trusted',
+        );
       }
     } catch { /* cancelled */ }
   };

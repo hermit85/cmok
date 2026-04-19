@@ -24,11 +24,11 @@ function formatDate(d: Date): string {
 }
 
 function summaryBody(signalerName: string, daysOk: number): string {
-  if (daysOk === 7) return `Tydzien z ${signalerName}: 7/7 — pelny tydzien!`;
-  if (daysOk >= 5) return `Tydzien z ${signalerName}: ${daysOk}/7 znakow. Swietnie!`;
-  if (daysOk >= 3) return `Tydzien z ${signalerName}: ${daysOk}/7 znakow.`;
-  if (daysOk >= 1) return `Tydzien z ${signalerName}: ${daysOk}/7. Moze warto porozmawiac?`;
-  return `Tydzien z ${signalerName}: brak znakow. Zadzwon i sprawdz.`;
+  if (daysOk === 7) return `Tydzień z ${signalerName}: 7/7, pełny tydzień!`;
+  if (daysOk >= 5) return `Tydzień z ${signalerName}: ${daysOk}/7 znaków. Świetnie!`;
+  if (daysOk >= 3) return `Tydzień z ${signalerName}: ${daysOk}/7 znaków.`;
+  if (daysOk >= 1) return `Tydzień z ${signalerName}: ${daysOk}/7. Może warto porozmawiać?`;
+  return `Tydzień z ${signalerName}: brak znaków. Zadzwoń i sprawdź.`;
 }
 
 serve(async (req) => {

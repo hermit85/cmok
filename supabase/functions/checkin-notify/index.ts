@@ -46,14 +46,14 @@ function streakPushBody(name: string, streak: number, totalCount: number): strin
   // Comeback after gap
   if (streak === 1 && totalCount > 1) return `${name} wraca z dzisiejszym znakiem`;
   // Milestones
-  if (streak === 7) return `${name} — cały tydzień! Nie zapomina o Tobie`;
-  if (streak === 14) return `${name} — dwa tygodnie z rzędu!`;
-  if (streak === 21) return `${name} — trzy tygodnie. To już nawyk!`;
-  if (streak === 30) return `${name} — miesiąc razem!`;
+  if (streak === 7) return `${name}, cały tydzień! Nie zapomina o Tobie`;
+  if (streak === 14) return `${name}, dwa tygodnie z rzędu!`;
+  if (streak === 21) return `${name}, trzy tygodnie. To już nawyk!`;
+  if (streak === 30) return `${name}, miesiąc razem!`;
   // Streak days
-  if (streak >= 2 && streak <= 6) return `${name} — dzień ${streak} z rzędu`;
+  if (streak >= 2 && streak <= 6) return `${name}, dzień ${streak} z rzędu`;
   // Default
-  return `${name} dał(a) znak — wszystko OK`;
+  return `${name} dał(a) znak. Wszystko OK`;
 }
 
 serve(async (req) => {

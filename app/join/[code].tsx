@@ -59,10 +59,25 @@ export default function JoinByCode() {
     <JoinScreen
       initialCode={cleanCode}
       onBack={() => { clearPendingInvite(); router.replace('/'); }}
-      onDone={async () => {
+      onDone={async (kind) => {
         clearPendingInvite();
         logInviteEvent('join_completed', { code: cleanCode, source: 'deep-link' });
-        // Ensure role is signaler after join
+
+        // Route + role depend on which kind of invite was redeemed:
+        //   'pair'    — care-pair redeem → user becomes signaler → /signaler-home
+        //   'trusted' — trusted-contact redeem → role set by DB trigger
+        //               (activate_pending_trusted_contacts) to 'trusted'
+        //               → /trusted-support. We do NOT overwrite the role here;
+        //               that would have clobbered the trigger's 'trusted'
+        //               assignment and misrouted them. Bug until commit
+        //               introducing this fix.
+        if (kind === 'trusted') {
+          router.replace('/trusted-support');
+          return;
+        }
+
+        // Care-pair path: make sure the account's role is 'signaler' (handles
+        // the case where the user started onboarding with no role selected).
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
