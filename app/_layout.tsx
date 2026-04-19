@@ -12,10 +12,6 @@ Sentry.init({
   enableAutoSessionTracking: true,
 });
 import * as Notifications from 'expo-notifications';
-import {
-  requestTrackingPermissionsAsync,
-  getTrackingPermissionsAsync,
-} from 'expo-tracking-transparency';
 import { useRouter } from 'expo-router';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from '@expo-google-fonts/nunito';
@@ -36,30 +32,15 @@ function RootLayout() {
     Nunito_700Bold,
   });
 
-  // App Tracking Transparency prompt — shown once on first launch.
-  // Required by Apple when the app includes analytics SDKs, even if they
-  // don't use IDFA (reviewers check for ATT presence). Runs only on iOS,
-  // only when status is 'undetermined'. Runs after a short delay so the
-  // welcome screen renders first and the prompt doesn't feel jarring.
-  useEffect(() => {
-    if (Platform.OS !== 'ios') return;
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      if (cancelled) return;
-      try {
-        const { status } = await getTrackingPermissionsAsync();
-        if (status === 'undetermined') {
-          await requestTrackingPermissionsAsync();
-        }
-      } catch {
-        // prompt unavailable (older iOS / simulator) — ignore silently
-      }
-    }, 1500);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, []);
+  // App Tracking Transparency intentionally NOT requested.
+  // cmok's PostHog usage is product analytics only — no IDFA access, no
+  // cross-app tracking, no data broker sharing. Under Apple's rules
+  // (ATT is required ONLY for cross-app/IDFA tracking), we shouldn't
+  // prompt. Shipping the prompt while the privacy manifest declares
+  // NSPrivacyTracking=false triggered an App Store review inconsistency
+  // flag (2026-04-19). Removed both plugin + Info.plist permission +
+  // runtime prompt. If we ever add cross-app tracking later, re-enable
+  // intentionally rather than as a "just in case".
 
   // Capture JS errors in PostHog
   useEffect(() => {

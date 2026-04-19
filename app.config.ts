@@ -21,7 +21,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.hermit85.cmok',
-    buildNumber: '28',
+    buildNumber: '29',
     // Universal Links (Associated Domains capability) temporarily disabled
     // for build 26. Blocked by two infra prereqs that aren't ready yet:
     //   1. apple-app-site-association file served from cmok.app
@@ -82,13 +82,11 @@ const config: ExpoConfig = {
     ],
     'expo-font',
     ['@sentry/react-native', { organization: 'cybird-consulting', project: 'cmok' }],
-    [
-      'expo-tracking-transparency',
-      {
-        userTrackingPermission:
-          'cmok używa anonimowej analityki, żeby wiedzieć co działa, a co nie. Twój numer i treści zostają u Ciebie.',
-      },
-    ],
+    // expo-tracking-transparency removed 2026-04-19. cmok does not use
+    // IDFA / cross-app tracking; the ATT prompt was inconsistent with the
+    // privacy manifest (NSPrivacyTracking=false) and triggered App Store
+    // review flagging. Re-add deliberately only if we ship cross-app
+    // tracking later.
   ],
   extra: {
     eas: {
