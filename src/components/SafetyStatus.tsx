@@ -44,9 +44,13 @@ export function SafetyStatus({ signalerName, signedAt, isSafe, lastSyncedAt, isO
     return () => clearInterval(id);
   }, []);
 
+  // Genderless copy. Previous "dał/dała" heuristic was wrong for any name
+  // ending in 'a' that isn't female (Kuba, Kostka, Sasza) and any female
+  // name not ending in 'a' (Ines, Nel). Safer to just say "znak od {name}
+  // o {time}" — works for any name, any gender.
   const safeLine = isSafe
     ? signalerName && signedAt
-      ? `Bezpiecznie \u00B7 ${signalerName} dał${signalerName.endsWith('a') ? 'a' : ''} znak o ${signedAt}`
+      ? `Bezpiecznie \u00B7 znak od ${signalerName} o ${signedAt}`
       : 'Bezpiecznie \u00B7 znak dotarł dziś'
     : 'Czekamy na dzisiejszy znak';
 

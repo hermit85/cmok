@@ -455,9 +455,14 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
         ? localStorage.getItem(CIRCLE_PROMPT_KEY)
         : await SecureStore.getItemAsync(CIRCLE_PROMPT_KEY);
       if (cancelled || shown) return;
-      // Delay so the first-sign celebration lands first.
+      // Delay so the first-sign celebration lands first. Re-check `cancelled`
+      // inside the callback: between async SecureStore read and timer schedule
+      // the effect can unmount, and the cleanup clears `circlePromptTimerRef`
+      // but the timer we just set is after that, so setShowCirclePrompt could
+      // fire post-unmount without this guard.
       circlePromptTimerRef.current = setTimeout(() => {
         circlePromptTimerRef.current = null;
+        if (cancelled) return;
         setShowCirclePrompt(true);
       }, 2500);
     })();

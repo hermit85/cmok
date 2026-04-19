@@ -116,6 +116,13 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const pv = __DEV__ && !!previewMode;
   const pvChecked = previewMode === 'after';
   const pvSupport = previewMode === 'support';
+
+  // Computed early so effects that track first-sign events can reference it
+  // via useEffect dependency arrays without a stale closure. Moved up from
+  // line ~550 during the pre-ship audit — old location worked (effects run
+  // after full render) but kept the binding out of the dep arrays, so
+  // first_sign_success_seen could fire with a stale value after a re-render.
+  const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.every((d) => d !== 'ok');
   const primaryName = pv ? 'Mama' : recipients[0]?.name || null;
   const primaryRecipientId = pv ? 'r' : recipients[0]?.userId || null;
   const pokeAlreadySent = !pv && primaryRecipientId ? hasSentPokeToday(primaryRecipientId) : false;
@@ -248,7 +255,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
       copySlide.setValue(8);
     }
     return () => { if (copyDelayRef.current) clearTimeout(copyDelayRef.current); };
-  }, [showChecked, afterFade, copySlide]);
+  }, [showChecked, afterFade, copySlide, isFirstEver]);
 
   /* ─── animations ─── */
 
@@ -549,7 +556,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
   const hasName = !rf.isFallback;
   const name = rf.nominative;
 
-  const isFirstEver = !pv && realWeekDays.length > 0 && realWeekDays.every((d) => d !== 'ok');
+  // isFirstEver is declared earlier (line ~125) so effects can reference it.
   const okDays = realWeekDays.filter((d) => d === 'ok').length + (showChecked && !pv ? 1 : 0);
 
   // Signals / response data (computed first, used in copy and tracking)
