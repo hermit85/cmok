@@ -15,12 +15,10 @@
       "extends": "preview"
     },
     "ios-production": {
-      "extends": "production",
-      "autoIncrement": true
+      "extends": "production"
     },
     "android-production": {
-      "extends": "production",
-      "autoIncrement": true
+      "extends": "production"
     }
   },
   "submit": {

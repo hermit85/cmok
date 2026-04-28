@@ -24,7 +24,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.hermit85.cmok',
-    buildNumber: '29',
+    buildNumber: '30',
     // Universal Links (Associated Domains capability) temporarily disabled
     // for build 26. Blocked by two infra prereqs that aren't ready yet:
     //   1. apple-app-site-association file served from cmok.app
