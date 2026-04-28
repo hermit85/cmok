@@ -6,7 +6,7 @@
  * but the public API speaks product language.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { supabase } from '../services/supabase';
@@ -128,6 +128,14 @@ export function useUrgentSignal(): UrgentSignalState {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(true);
 
+  // candidateIds are senior_ids whose alert_cases / alert_deliveries are
+  // actually relevant to this viewer (themselves if signaler, plus any
+  // senior they're a recipient or trusted contact for). Realtime channels
+  // get every change to these tables — without this allowlist, a SOS
+  // anywhere in the system would re-fetch every user's state.
+  const candidateIdsRef = useRef<Set<string>>(new Set());
+  const currentAlertIdRef = useRef<string | null>(null);
+
   const loadState = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -136,6 +144,7 @@ export function useUrgentSignal(): UrgentSignalState {
 
       const { relationships } = await loadViewerRelationships(userId);
       const candidateIds = [...new Set([userId, ...relationships.keys()])];
+      candidateIdsRef.current = new Set(candidateIds);
 
       if (candidateIds.length === 0) { setIsActive(false); setCurrentAlert(null); setUrgentCase(null); return; }
 
@@ -219,6 +228,7 @@ export function useUrgentSignal(): UrgentSignalState {
 
       setIsActive(true);
       setCurrentAlert(alert);
+      currentAlertIdRef.current = alert.id;
       setUrgentCase({
         alert, relationshipId: rel.id, viewerUserId: userId,
         signalerId: rel.signalerUserId, signalerName: resolveLabel(rel.signalerLabel, userMap.get(rel.signalerUserId)?.name),
@@ -238,11 +248,35 @@ export function useUrgentSignal(): UrgentSignalState {
   useEffect(() => { loadState(); }, [loadState]);
 
   useEffect(() => {
+    // We can't add Realtime row filters with `in.()` on the senior_id list,
+    // so we accept every change but discard ones we don't care about. The
+    // alternative — refetching on every SOS in the entire database — was
+    // doing 6+ queries per unrelated event. Now: row-level allowlist check
+    // before triggering loadState, which is the expensive part.
+    const isOurAlert = (row: { senior_id?: string } | null | undefined): boolean => {
+      if (!row?.senior_id) return false;
+      return candidateIdsRef.current.has(row.senior_id);
+    };
+    const isOurDelivery = (row: { alert_case_id?: string } | null | undefined): boolean => {
+      // Without senior_id on alert_deliveries, gate by current alert id —
+      // misses deliveries to a not-yet-loaded alert, but loadState will
+      // pick that up via the alert_cases channel which fires first.
+      if (!row?.alert_case_id) return false;
+      return currentAlertIdRef.current === row.alert_case_id;
+    };
     const ch1 = supabase.channel('urgent-alert-cases')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'alert_cases' }, () => loadState())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'alert_cases' }, (payload) => {
+        if (isOurAlert(payload.new as { senior_id?: string }) || isOurAlert(payload.old as { senior_id?: string })) {
+          loadState();
+        }
+      })
       .subscribe();
     const ch2 = supabase.channel('urgent-alert-deliveries')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'alert_deliveries' }, () => loadState())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'alert_deliveries' }, (payload) => {
+        if (isOurDelivery(payload.new as { alert_case_id?: string }) || isOurDelivery(payload.old as { alert_case_id?: string })) {
+          loadState();
+        }
+      })
       .subscribe();
     return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); };
   }, [loadState]);

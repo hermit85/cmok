@@ -98,20 +98,35 @@ async function fetchCircleImpl(): Promise<CircleResult> {
 const dedupedFetch = createDedupedFetch(fetchCircleImpl);
 supabase.auth.onAuthStateChange(() => dedupedFetch.invalidate());
 
+/** Pre-warm the circle cache from outside React (e.g. from the push tap
+ *  handler in _layout.tsx). The destination home route then lazy-seeds
+ *  from this cache and skips the inner "Sprawdzamy dzisiejszy znak…"
+ *  spinner that gates the screen on circleLoading. Fire-and-forget. */
+export function prefetchCircle(): Promise<CircleResult> {
+  return dedupedFetch();
+}
+
 export function useCircle() {
-  const [members, setMembers] = useState<CircleMember[]>([]);
-  const [userRole, setUserRole] = useState<AppRole | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Lazy-seed from dedup cache (see useRelationship for rationale): when
+  // index.tsx already fetched the circle and the home route remounts useCircle,
+  // we want the home to render with members in-hand instead of flashing a
+  // "Sprawdzamy dzisiejszy znak…" spinner while a redundant fetch flies.
+  const seed = dedupedFetch.peek();
+  const [members, setMembers] = useState<CircleMember[]>(seed?.members ?? []);
+  const [userRole, setUserRole] = useState<AppRole | null>(seed?.userRole ?? null);
+  const [loading, setLoading] = useState(seed === null);
+  const [error, setError] = useState<string | null>(seed?.error ?? null);
+  const hasEverLoaded = useRef(seed !== null);
 
   const fetchCircle = useCallback(async () => {
-    setLoading(true);
+    if (!hasEverLoaded.current) setLoading(true);
     setError(null);
     try {
       const result = await dedupedFetch();
       setMembers(result.members);
       setUserRole(result.userRole);
       setError(result.error);
+      hasEverLoaded.current = true;
     } catch (err) {
       console.error('[useCircle] fetchCircle error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');

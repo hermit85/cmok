@@ -110,13 +110,27 @@ async function ensureAndroidChannels(): Promise<void> {
 }
 
 async function registerDeviceOnServer(pushToken: string | null): Promise<void> {
-  try {
-    const platform = Platform.OS === 'ios' ? 'ios' : 'android';
-    const appVersion = Constants.expoConfig?.version || '1.0.0';
+  const platform = Platform.OS === 'ios' ? 'ios' : 'android';
+  const appVersion = Constants.expoConfig?.version || '1.0.0';
+  const body = { platform, push_token: pushToken, app_version: appVersion };
 
-    const { error } = await supabase.functions.invoke('register-device', {
-      body: { platform, push_token: pushToken, app_version: appVersion },
-    });
+  const invoke = () => supabase.functions.invoke('register-device', { body });
+
+  try {
+    let { error } = await invoke();
+
+    // Edge function does its own auth.getUser() (CLAUDE.md: verify_jwt:false).
+    // A stale JWT here surfaces as "Edge Function returned a non-2xx" — the
+    // dominant production failure mode (Sentry CMOK-4). Refresh the session
+    // and retry once before giving up; intermittent JWT clock skew between
+    // the client's getUser() success and the function's getUser() failure
+    // would otherwise spam Sentry on every foreground.
+    if (error && /non-2xx|401|unauthor/i.test(error.message || '')) {
+      const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+      if (!refreshErr && refreshed?.session) {
+        ({ error } = await invoke());
+      }
+    }
 
     if (error) throw new Error(error.message || 'register-device failed');
   } catch (err) {

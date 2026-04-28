@@ -19,6 +19,8 @@ import { PostHogProvider } from 'posthog-react-native';
 import { registerPushToken } from '../src/services/notifications';
 import { supabase } from '../src/services/supabase';
 import { posthog } from '../src/services/posthog';
+import { prefetchRelationship } from '../src/hooks/useRelationship';
+import { prefetchCircle } from '../src/hooks/useCircle';
 import { Colors } from '../src/constants/colors';
 
 function RootLayout() {
@@ -58,7 +60,16 @@ function RootLayout() {
     });
   }, []);
 
-  // Handle push notification tap — navigate based on role + trusted access
+  // Handle push notification tap — navigate based on role.
+  //
+  // Past versions made up to 4 sequential queries (users → alert_cases →
+  // care_pairs → trusted_contacts) BEFORE navigating. On cold start this
+  // meant the user stared at a blank screen for 500–1500 ms after tapping
+  // a push. Now we navigate by role on a single query (users.role) and
+  // refine to /trusted-support in the background only when the alert
+  // belongs to a different pair than the user's primary role. The home
+  // screens already render the SOS state via useUrgentSignal, so landing
+  // there immediately is a strict UX win over waiting for the chain.
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
       const data = response.notification.request.content.data;
@@ -66,65 +77,49 @@ function RootLayout() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) { router.replace('/onboarding'); return; }
 
-        const { data: profile } = await supabase.from('users').select('role').eq('id', session.user.id).maybeSingle();
+        // Prefetch fills the dedup caches so the destination home route
+        // lazy-seeds from cache and skips its LoadingScreens. We need
+        // useRelationship for routing (profile.role); we also kick off
+        // useCircle in parallel so RecipientHomeScreen's inner gate
+        // (`circleLoading || dataLoading`) doesn't flash either.
+        const [{ profile }] = await Promise.all([
+          prefetchRelationship(),
+          prefetchCircle().catch(() => null),
+        ]);
         const role = profile?.role;
 
-        // Check trusted-contact access for SOS routing
-        // Uses alert_cases → care_pairs → trusted_contacts to determine role precisely.
-        if (data?.type === 'sos' || data?.type === 'missed_checkin') {
-          if (data?.alert_id) {
+        // Step 1: navigate immediately based on role. Home screens render
+        // any active SOS via useUrgentSignal, so this lands the user where
+        // they need to be without waiting on more network calls.
+        if (role === 'signaler') router.replace('/signaler-home');
+        else if (role === 'recipient') router.replace('/recipient-home');
+        else if (role === 'trusted') router.replace('/trusted-support');
+        else { router.replace('/onboarding'); return; }
+
+        // Step 2: for SOS / missed_checkin pushes, edge case: the same user
+        // may be a primary recipient for one pair AND a trusted contact for
+        // a different pair. If the alert belongs to the trusted-side pair,
+        // re-route to /trusted-support. Runs in background; the wrong-but-
+        // close screen is already showing while this resolves.
+        if ((data?.type === 'sos' || data?.type === 'missed_checkin') && data?.alert_id && role === 'recipient') {
+          try {
             const { data: alert } = await supabase
-              .from('alert_cases')
-              .select('senior_id')
-              .eq('id', data.alert_id)
-              .maybeSingle();
-
-            if (alert) {
-              // User is the signaler who triggered SOS
-              if (alert.senior_id === session.user.id) {
-                router.replace('/signaler-home'); return;
-              }
-              // Check the care_pair for this alert
-              const { data: pair } = await supabase
-                .from('care_pairs')
-                .select('id, caregiver_id')
-                .eq('senior_id', alert.senior_id)
-                .eq('status', 'active')
-                .maybeSingle();
-
-              if (pair) {
-                // User is the primary recipient
-                if (pair.caregiver_id === session.user.id) {
-                  router.replace('/recipient-home'); return;
-                }
-                // Check if user is a trusted contact for this relationship
-                const { data: tc } = await supabase
-                  .from('trusted_contacts')
-                  .select('id')
-                  .eq('relationship_id', pair.id)
-                  .eq('user_id', session.user.id)
-                  .eq('status', 'active')
-                  .maybeSingle();
-                if (tc) {
-                  router.replace('/trusted-support'); return;
-                }
-              }
+              .from('alert_cases').select('senior_id').eq('id', data.alert_id).maybeSingle();
+            if (!alert) return;
+            const { data: pair } = await supabase
+              .from('care_pairs').select('id, caregiver_id')
+              .eq('senior_id', alert.senior_id).eq('status', 'active').maybeSingle();
+            if (pair && pair.caregiver_id !== session.user.id) {
+              const { data: tc } = await supabase
+                .from('trusted_contacts').select('id')
+                .eq('relationship_id', pair.id).eq('user_id', session.user.id)
+                .eq('status', 'active').maybeSingle();
+              if (tc) router.replace('/trusted-support');
             }
-          }
-          // Fallback: route by role
-          if (role === 'signaler') { router.replace('/signaler-home'); return; }
-          if (role === 'recipient') { router.replace('/recipient-home'); return; }
-          router.replace('/onboarding');
-          return;
+          } catch { /* background refinement; leave the user where they landed */ }
         }
-
-        if (data?.type === 'daily_checkin') { router.replace('/recipient-home'); return; }
-        if (data?.type === 'nudge') { router.replace('/signaler-home'); return; }
-
-        // Default: route by role
-        router.replace(role === 'signaler' ? '/signaler-home' : role === 'recipient' ? '/recipient-home' : '/onboarding');
       } catch {
-        // Network error during push handling — just go to index which will route correctly
+        // Network error during push handling — go to index which will route correctly
         router.replace('/');
       }
     });
@@ -134,6 +129,13 @@ function RootLayout() {
   // Rejestruj push token przy uruchomieniu + po zalogowaniu + po wznowieniu
   // Identify user in PostHog after auth
   const lastPushRegisterRef = useRef(0);
+  // Track which (status, reason) pairs we've already captured this session.
+  // Reduces Sentry noise: Sentry CMOK-3/4/5/7 each fired 11–55× because we
+  // captured a warning every foreground when the device was a simulator
+  // (always 'skipped') or had permissions denied (always 'unavailable')
+  // or hit a flaky edge function (often 'failed'). One capture per app
+  // lifecycle is enough to know the state.
+  const capturedPushStatesRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const PUSH_REGISTER_THROTTLE_MS = 30_000;
 
@@ -153,12 +155,19 @@ function RootLayout() {
           return;
         }
         const result = await registerPushToken();
-        if (result.status !== 'registered') {
-          Sentry.captureMessage(`push_register_${result.status}`, {
-            level: 'warning',
-            extra: { reason, detail: result.reason || null },
-          });
-        }
+        if (result.status === 'registered') return;
+        // 'skipped' = simulator or web; 'unavailable' = user denied permission.
+        // Both are expected states, not bugs — don't ship them to Sentry.
+        // 'failed' is the only one we care about, and once per (reason,detail)
+        // tells us the edge function path is misbehaving without spamming.
+        if (result.status !== 'failed') return;
+        const key = `${result.status}:${result.reason || 'none'}`;
+        if (capturedPushStatesRef.current.has(key)) return;
+        capturedPushStatesRef.current.add(key);
+        Sentry.captureMessage(`push_register_${result.status}`, {
+          level: 'warning',
+          extra: { reason, detail: result.reason || null },
+        });
       } catch (err) {
         Sentry.captureException(err, { extra: { context: 'push_register', reason } });
       }

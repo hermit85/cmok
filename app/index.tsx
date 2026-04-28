@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Redirect } from 'expo-router';
 import { LoadingScreen } from '../src/components/LoadingScreen';
 import { useRelationship } from '../src/hooks/useRelationship';
+import { prefetchCircle } from '../src/hooks/useCircle';
 import { getPendingInvite } from '../src/utils/pendingInvite';
 
 /*
@@ -31,6 +32,10 @@ export default function Index() {
       if (pending) setPendingCode(pending.code);
       setCheckedPending(true);
     });
+    // Pre-warm the circle cache in parallel with useRelationship so the
+    // destination home route lazy-seeds and skips its inner spinner.
+    // Fire-and-forget; failure is harmless (the home will fetch normally).
+    prefetchCircle().catch(() => {});
   }, []);
 
   if (loading || !sessionReady || !checkedPending) {

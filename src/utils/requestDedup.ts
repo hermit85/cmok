@@ -34,6 +34,11 @@ export interface DedupedFetch<T> {
   /** Like (), but bypasses any cached result and kicks off a fresh
    *  fetch (any concurrent callers still share it). */
   refresh: () => Promise<T>;
+  /** Synchronous peek at the cached value. Returns null if no fresh
+   *  cache. Used by hooks to lazy-seed initial state and avoid a
+   *  LoadingScreen flash on remount when data is already known.
+   *  Honors the same `ttlMs` as the deduped call. */
+  peek: () => T | null;
 }
 
 export function createDedupedFetch<T>(
@@ -74,6 +79,12 @@ export function createDedupedFetch<T>(
     cache = null;
     if (pending) return pending;
     return runFresh();
+  };
+
+  deduped.peek = () => {
+    if (!cache) return null;
+    if (Date.now() - cache.at >= ttlMs) return null;
+    return cache.value;
   };
 
   return deduped;

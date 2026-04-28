@@ -112,14 +112,32 @@ const dedupedFetch = createDedupedFetch(fetchProfileAndRelationship);
 // Invalidate cache on auth change so a new session always fetches fresh.
 supabase.auth.onAuthStateChange(() => dedupedFetch.invalidate());
 
+/**
+ * Warm the dedup cache from outside the React tree. The push tap handler
+ * uses this on cold start so by the time it calls router.replace and the
+ * home route mounts useRelationship, the data is already cached and the
+ * route renders without a LoadingScreen flash. Returns the same result
+ * the hook would see — callers can pull `profile.role` for routing
+ * without firing a second query.
+ */
+export function prefetchRelationship(): ReturnType<typeof fetchProfileAndRelationship> {
+  return dedupedFetch();
+}
+
 export function useRelationship(): RelationshipState {
-  const [loading, setLoading] = useState(true);
-  const [sessionReady, setSessionReady] = useState(false);
-  const [profile, setProfile] = useState<AppProfile | null>(null);
-  const [relationship, setRelationship] = useState<Relationship | null>(null);
-  const [status, setStatus] = useState<RelationshipStatus>('none');
-  const [hasTrustedAccess, setHasTrustedAccess] = useState(false);
-  const hasEverLoaded = useRef(false);
+  // Lazy-seed from dedup cache: when index.tsx fetched profile + redirects to
+  // /recipient-home, the home route remounts useRelationship. Without this seed,
+  // the new instance starts with loading=true → LoadingScreen flashes for one
+  // frame even though the data is already known. Seeding from peek() makes
+  // index→home navigation render the home screen instantly on warm cache.
+  const seed = dedupedFetch.peek();
+  const [loading, setLoading] = useState(seed === null);
+  const [sessionReady, setSessionReady] = useState(seed !== null);
+  const [profile, setProfile] = useState<AppProfile | null>(seed?.profile ?? null);
+  const [relationship, setRelationship] = useState<Relationship | null>(seed?.relationship ?? null);
+  const [status, setStatus] = useState<RelationshipStatus>(seed?.status ?? 'none');
+  const [hasTrustedAccess, setHasTrustedAccess] = useState(seed?.hasTrustedAccess ?? false);
+  const hasEverLoaded = useRef(seed !== null);
   const retryCount = useRef(0);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -128,7 +146,9 @@ export function useRelationship(): RelationshipState {
   // Default false for internal mount/foreground/auth-change triggers where
   // sharing a fetch across components is a feature, not a bug.
   const refreshRelationship = useCallback(async (forceFresh = false) => {
-    setLoading(true);
+    // Don't show loading state if we already have data — background refresh
+    // shouldn't flash a spinner. Manual forceFresh always shows loading.
+    if (forceFresh || !hasEverLoaded.current) setLoading(true);
     try {
       const next = forceFresh ? await dedupedFetch.refresh() : await dedupedFetch();
       setProfile(next.profile);

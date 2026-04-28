@@ -8,11 +8,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, ActivityIndicator,
   Alert, Pressable, KeyboardAvoidingView, Platform, ScrollView,
-  Animated, Linking,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
 import { analytics } from '../services/analytics';
+import { openExternalUrl } from '../utils/linking';
 import { normalizeAppRole } from '../utils/roles';
 import { Colors } from '../constants/colors';
 import { Typography } from '../constants/typography';
@@ -312,9 +313,9 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                   </View>
                   <Text style={s.termsText}>
                     Akceptuję{' '}
-                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok.app/regulamin')}>Regulamin</Text>
+                    <Text style={s.termsLink} onPress={() => openExternalUrl('https://cmok.app/regulamin')}>Regulamin</Text>
                     {' '}i potwierdzam zapoznanie się z{' '}
-                    <Text style={s.termsLink} onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')}>Polityką prywatności</Text>.
+                    <Text style={s.termsLink} onPress={() => openExternalUrl('https://cmok.app/polityka-prywatnosci')}>Polityką prywatności</Text>.
                   </Text>
                 </Pressable>
                 <Text style={s.termsDisclaimer}>cmok nie zastępuje numeru 112 ani służb ratunkowych.</Text>

@@ -1,6 +1,9 @@
+import { existsSync } from 'node:fs';
 import type { ExpoConfig } from 'expo/config';
 
 const projectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID || process.env.EAS_PROJECT_ID;
+const googleServicesPath = process.env.GOOGLE_SERVICES_JSON || './google-services.json';
+const hasGoogleServicesFile = existsSync(googleServicesPath);
 
 const config: ExpoConfig = {
   // Brand rule: lowercase 'cmok' everywhere. iOS home-screen label +
@@ -44,6 +47,10 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.hermit85.cmok',
+    // Android keeps its own monotonically increasing build counter for
+    // Google Play. Do not reuse iOS buildNumber here.
+    versionCode: 1,
+    ...(hasGoogleServicesFile ? { googleServicesFile: googleServicesPath } : {}),
     adaptiveIcon: {
       backgroundColor: '#F7F3EE',
       foregroundImage: './assets/android-icon-foreground.png',

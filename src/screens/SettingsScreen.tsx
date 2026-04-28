@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { openExternalUrl } from '../utils/linking';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../services/supabase';
@@ -252,7 +253,7 @@ export function SettingsScreen() {
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Prawne</Text>
           <Pressable
-            onPress={() => Linking.openURL('https://cmok.app/regulamin')}
+            onPress={() => openExternalUrl('https://cmok.app/regulamin')}
             style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}
             accessibilityRole="link"
             accessibilityLabel="Otwórz regulamin w przeglądarce"
@@ -261,7 +262,7 @@ export function SettingsScreen() {
             <Text style={styles.chevron}>→</Text>
           </Pressable>
           <Pressable
-            onPress={() => Linking.openURL('https://cmok.app/polityka-prywatnosci')}
+            onPress={() => openExternalUrl('https://cmok.app/polityka-prywatnosci')}
             style={({ pressed }) => [styles.legalItem, pressed && { opacity: 0.6 }]}
             accessibilityRole="link"
             accessibilityLabel="Otwórz politykę prywatności w przeglądarce"
@@ -270,7 +271,7 @@ export function SettingsScreen() {
             <Text style={styles.chevron}>→</Text>
           </Pressable>
           <Pressable
-            onPress={() => Linking.openURL('mailto:cmok.app@gmail.com')}
+            onPress={() => openExternalUrl('mailto:cmok.app@gmail.com', 'Otwórz aplikację mailową ręcznie i napisz na cmok.app@gmail.com.')}
             style={({ pressed }) => [styles.legalItem, { borderBottomWidth: 0 }, pressed && { opacity: 0.6 }]}
             accessibilityRole="link"
             accessibilityLabel="Napisz do nas mailem"

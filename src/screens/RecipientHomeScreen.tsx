@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Animated, Modal,
-  ActivityIndicator, ScrollView, Alert, Linking, Platform, Share,
+  ActivityIndicator, ScrollView, Alert, Platform, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -25,7 +25,7 @@ import { useUrgentSignal } from '../hooks/useUrgentSignal';
 import { useWeekRhythm } from '../hooks/useWeekRhythm';
 import { useCheckinStats } from '../hooks/useCheckinStats';
 import { haptics } from '../utils/haptics';
-import { openPhoneCall } from '../utils/linking';
+import { openMapLocation, openPhoneCall } from '../utils/linking';
 import { supabase } from '../services/supabase';
 import type { DailyCheckin, SupportParticipant as SParticipant } from '../types';
 import type { RecipientHomePreview } from '../dev/homePreview';
@@ -607,7 +607,11 @@ export function RecipientHomeScreen({ preview = null }: { preview?: RecipientHom
           <Text style={st.urgentTime}>Wysłano o {fmtTime(effAlert.triggered_at)}</Text>
           {effAlert.latitude != null && effAlert.longitude != null ? (
             <Pressable
-              onPress={() => Linking.openURL(`https://maps.apple.com/?ll=${effAlert.latitude},${effAlert.longitude}&q=${encodeURIComponent(relationDisplay(effUrgent.signalerName))}`)}
+              onPress={() => openMapLocation({
+                latitude: effAlert.latitude!,
+                longitude: effAlert.longitude!,
+                label: relationDisplay(effUrgent.signalerName),
+              })}
               style={({ pressed }) => [st.mapLink, pressed && { opacity: 0.7 }]}
               accessibilityRole="link"
               accessibilityLabel={`Pokaż lokalizację ${relationDisplay(effUrgent.signalerName)} na mapie`}

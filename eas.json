@@ -7,7 +7,21 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {}
+    "production": {},
+    "ios-preview": {
+      "extends": "preview"
+    },
+    "android-preview": {
+      "extends": "preview"
+    },
+    "ios-production": {
+      "extends": "production",
+      "autoIncrement": true
+    },
+    "android-production": {
+      "extends": "production",
+      "autoIncrement": true
+    }
   },
   "submit": {
     "production": {
@@ -15,6 +29,25 @@
         "appleId": "darek@hermit85.com",
         "ascAppId": "6762090888",
         "appleTeamId": "JLBR5N4FB3"
+      }
+    },
+    "ios-production": {
+      "ios": {
+        "appleId": "darek@hermit85.com",
+        "ascAppId": "6762090888",
+        "appleTeamId": "JLBR5N4FB3"
+      }
+    },
+    "android-internal": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    },
+    "android-production": {
+      "android": {
+        "track": "production",
+        "releaseStatus": "draft"
       }
     }
   }
