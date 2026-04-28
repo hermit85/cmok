@@ -10,7 +10,7 @@ const config: ExpoConfig = {
   // App Store display name both read from this field.
   name: 'cmok',
   slug: 'cmok',
-  version: '1.0.0',
+  version: '1.0.2',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'light',
@@ -24,7 +24,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: false,
     bundleIdentifier: 'com.hermit85.cmok',
-    buildNumber: '30',
+    buildNumber: '31',
     // Universal Links (Associated Domains capability) temporarily disabled
     // for build 26. Blocked by two infra prereqs that aren't ready yet:
     //   1. apple-app-site-association file served from cmok.app
