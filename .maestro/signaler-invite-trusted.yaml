@@ -1,0 +1,43 @@
+# Flow: Mama logs in → adds a trusted contact by phone (pending invite flow).
+#
+# Uses a non-cmok number to trigger the pending-invite branch.
+# +48 500 000 001 (Mama, signaler), OTP: 123456
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: true
+
+# Login as Mama
+- tapOn:
+    id: "login-existing-account"
+- tapOn:
+    id: "phone-input"
+- inputText: "500000001"
+- tapOn:
+    id: "terms-checkbox"
+- tapOn:
+    id: "send-code-button"
+- tapOn:
+    id: "otp-input"
+- inputText: "123456"
+
+- assertVisible:
+    id: "urgent-button"
+
+# Tap "Dodaj kogoś do kręgu bliskich" link on signaler home
+- tapOn:
+    id: "trusted-contacts-link"
+
+# On /trusted-contacts — input field with placeholder "600 100 200"
+- tapOn:
+    id: "trusted-phone-input"
+- inputText: "600100299"
+- tapOn:
+    id: "trusted-add-button"
+
+# Pending invite: card with "Wyślij zaproszenie" + 6-digit code
+- assertVisible:
+    id: "trusted-invite-card"
+- assertVisible:
+    text: "[0-9]{6}"

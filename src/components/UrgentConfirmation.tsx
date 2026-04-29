@@ -52,6 +52,7 @@ export function UrgentConfirmation({ visible, onConfirm, onCancel, circleCount =
             style={({ pressed }) => [s.confirmBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
             accessibilityRole="button"
             accessibilityLabel="Wyślij sygnał do kręgu bliskich"
+            testID="urgent-confirm-send-button"
           >
             <Text style={s.confirmText}>Wyślij sygnał</Text>
           </Pressable>

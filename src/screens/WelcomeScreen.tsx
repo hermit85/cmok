@@ -140,6 +140,7 @@ export function WelcomeScreen({ onStart, onLogin }: WelcomeScreenProps) {
           style={({ pressed }) => [s.loginLink, pressed && { opacity: 0.6 }]}
           accessibilityRole="button"
           accessibilityLabel="Mam już konto, zaloguj"
+          testID="login-existing-account"
         >
           <Text style={s.loginText}>Mam już konto</Text>
         </Pressable>

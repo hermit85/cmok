@@ -31,22 +31,23 @@ Depending on the flow you'll want the database in a specific state:
 ```bash
 # Clear signals/checkins/alerts but keep the Mama↔Darek pair + auth rows.
 # Best for running most flows which assume paired state.
-curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
-  -H "Content-Type: application/json" \
-  -d '{"mode": "keep_pair"}'
+export RESET_TEST_SECRET="..."
+npm run test:data:reset
 
 # Full wipe — delete all test accounts. Use before running
 # onboarding-recipient.yaml to exercise a fresh signup from scratch.
-curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
-  -H "Content-Type: application/json" \
-  -d '{"mode": "full_reset"}'
+bash scripts/reset-test-data.sh full_reset
 ```
 
 ## Run
 
 ```bash
-# Run everything
-maestro test .maestro/
+# Safe default smoke test
+npm run test:e2e
+
+# Manual, mutates production test data
+npm run test:e2e:manual:sos
+npm run test:e2e:manual:invite-trusted
 
 # Run one flow
 maestro test .maestro/checkin-flow.yaml
@@ -72,6 +73,9 @@ open -a Simulator
 | `trusted-invite.yaml`       | Mama adds a non-cmok number → pending row + invite code + Share sheet |
 | `sos-flow.yaml`             | Mama triggers SOS → resolves → PostResolveShare overlay appears |
 | `add-pair.yaml`             | Darek invites a second signaler via `/add-pair` (P2.1 multi-pair) |
+| `signaler-login-checkin.yaml` | Safe Android smoke: Mama login → signaler home visible |
+| `signaler-sos.yaml` | Manual only: sends a real urgent signal in the production test DB |
+| `signaler-invite-trusted.yaml` | Manual only: creates a pending trusted contact invite |
 
 ## Known limitations
 
@@ -87,6 +91,8 @@ open -a Simulator
   should split to a separate PostHog project keyed by env.
 - SMS OTP is bypassed for test accounts via the reserved `123456`
   code (see `CLAUDE.md`). Real-phone OTP won't work for Maestro.
+- SOS and trusted-invite flows write to the live production test DB.
+  Run them only after `test:data:reset`, and reset again afterwards.
 
 ## CI integration (future)
 

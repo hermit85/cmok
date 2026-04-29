@@ -15,8 +15,10 @@
 #   trusted:   +48 500 000 003 (Sąsiad) OTP: 123456
 #
 # Reset test data before running flows (from repo root):
+#   export RESET_TEST_SECRET="..."
 #   curl -X POST https://pckpxspcecbvjprxmdja.supabase.co/functions/v1/reset-test-data \
 #     -H "Content-Type: application/json" \
+#     -H "x-reset-secret: $RESET_TEST_SECRET" \
 #     -d '{"mode": "full_reset"}'
 
 appId: com.hermit85.cmok

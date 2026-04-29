@@ -9,16 +9,20 @@
     },
     "production": {},
     "ios-preview": {
-      "extends": "preview"
+      "extends": "preview",
+      "environment": "preview"
     },
     "android-preview": {
-      "extends": "preview"
+      "extends": "preview",
+      "environment": "preview"
     },
     "ios-production": {
-      "extends": "production"
+      "extends": "production",
+      "environment": "production"
     },
     "android-production": {
-      "extends": "production"
+      "extends": "production",
+      "environment": "production"
     }
   },
   "submit": {

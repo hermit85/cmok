@@ -31,6 +31,7 @@ yarn-error.*
 *.pem
 google-play-service-account*.json
 play-service-account*.json
+google-services.json
 
 # local env files
 .env

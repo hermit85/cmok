@@ -707,6 +707,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
                     accessibilityState={{ disabled: !canCheckin, selected: buttonDone }}
                     accessibilityLabel={buttonDone ? 'Znak na dziś wysłany' : 'Daj znak bliskim'}
                     accessibilityHint={buttonDone ? 'Zrobione na dziś' : 'Jedno stuknięcie i bliscy wiedzą, że wszystko OK'}
+                    testID={buttonDone ? 'checkin-button-done' : 'checkin-button'}
                     style={({ pressed }) => [
                       s.btn, buttonDone && s.btnDone, buttonDisabled && s.btnOff, !buttonDone && !buttonDisabled && s.btnActive,
                       pressed && canCheckin && { opacity: 0.9, transform: [{ scale: 0.96 }] },
@@ -832,6 +833,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
               style={({ pressed }) => [s.circleLink, pressed && { opacity: 0.6 }]}
               accessibilityRole="link"
               accessibilityLabel="Dodaj kogoś do kręgu bliskich"
+              testID="trusted-contacts-link"
             >
               <Text style={s.circleLinkText}>Dodaj kogoś do kręgu bliskich</Text>
             </Pressable>
@@ -848,6 +850,7 @@ export function SignalerHomeScreen({ preview = null }: { preview?: SignalerHomeP
           accessibilityRole="button"
           accessibilityLabel="Potrzebuję pomocy"
           accessibilityHint="Wyśle sygnał do kręgu bliskich po potwierdzeniu"
+          testID="urgent-button"
           style={({ pressed }) => [s.urgentBtn, pressed && { opacity: 0.75, transform: [{ scale: 0.98 }] }]}
         >
           <Text style={s.urgentBtnLabel}>Potrzebuję pomocy</Text>

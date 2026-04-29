@@ -1,0 +1,39 @@
+# Flow: Mama (signaler, paired with Darek) logs in → home screen state visible.
+#
+# Idempotent — works whether today's signal was already sent or not.
+# +48 500 000 001 (Mama, signaler), OTP: 123456
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: true
+
+# Welcome → "Mam już konto" (skips intro carousel + role picker for existing user)
+- tapOn:
+    id: "login-existing-account"
+
+# Phone screen
+- tapOn:
+    id: "phone-input"
+- inputText: "500000001"
+- tapOn:
+    id: "terms-checkbox"
+- tapOn:
+    id: "send-code-button"
+
+# OTP — auto-submits at 6 digits
+- tapOn:
+    id: "otp-input"
+- inputText: "123456"
+
+# Land on signaler home
+- assertVisible: "cmok"
+- assertVisible: "dla Darka"
+
+# Either pre-checkin ("daj znak") or post-checkin ("Gotowe") — both valid
+- assertVisible:
+    text: "Gotowe|daj znak"
+
+# SOS button always visible at bottom
+- assertVisible:
+    id: "urgent-button"

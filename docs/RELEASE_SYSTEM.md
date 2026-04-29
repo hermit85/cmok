@@ -34,8 +34,8 @@ npm run submit:android:production
 ## Reguły wersjonowania
 
 - `expo.version` zmieniamy przy publicznym release produktu, na przykład `1.0.0` -> `1.0.1`
-- `ios-production` auto-increment podbija tylko `ios.buildNumber`
-- `android-production` auto-increment podbija tylko `android.versionCode`
+- `ios.buildNumber` podbijamy ręcznie przed każdym uploadem iOS
+- `android.versionCode` podbijamy ręcznie przed każdym uploadem AAB do Play
 - nie wyrównujemy na siłę `buildNumber` i `versionCode`, to są różne porządki
 
 ## App Store flow

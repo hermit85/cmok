@@ -1,0 +1,47 @@
+# Flow: Mama logs in → triggers SOS → confirms → urgent state visible.
+#
+# WARNING: This sends a real urgent signal to Darek's account in the live
+# database. Push won't reach Darek's device unless he has a current push
+# token registered, but the DB row + RealTime broadcast will fire.
+#
+# +48 500 000 001 (Mama, signaler), OTP: 123456
+
+appId: com.hermit85.cmok
+---
+- launchApp:
+    clearState: true
+
+# Login as Mama
+- tapOn:
+    id: "login-existing-account"
+- tapOn:
+    id: "phone-input"
+- inputText: "500000001"
+- tapOn:
+    id: "terms-checkbox"
+- tapOn:
+    id: "send-code-button"
+- tapOn:
+    id: "otp-input"
+- inputText: "123456"
+
+# Wait for home
+- assertVisible:
+    id: "urgent-button"
+
+# LogBox toast suppressed via EXPO_PUBLIC_DISABLE_LOGBOX=1 — bottom button reachable.
+- scroll
+- tapOn:
+    id: "urgent-button"
+- waitForAnimationToEnd
+
+# Confirmation modal — tap "Wyślij sygnał" (confirm)
+- extendedWaitUntil:
+    visible: "Wyślij sygnał"
+    timeout: 5000
+- tapOn:
+    id: "urgent-confirm-send-button"
+
+# Urgent state — banner copy
+- assertVisible:
+    text: "Coś się dzieje|Sygnał wysłany|Wyślij ponownie"

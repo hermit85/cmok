@@ -22,30 +22,33 @@
     "submit:ios:production": "eas submit --platform ios --profile ios-production",
     "submit:android:internal": "eas submit --platform android --profile android-internal",
     "submit:android:production": "eas submit --platform android --profile android-production",
-    "test:e2e": "maestro test .maestro/",
+    "test:e2e": "maestro test .maestro/signaler-login-checkin.yaml",
     "test:e2e:checkin": "maestro test .maestro/checkin-flow.yaml",
-    "test:e2e:sos": "maestro test .maestro/sos-flow.yaml"
+    "test:e2e:sos": "echo 'SOS flow mutates production test data. Run npm run test:e2e:manual:sos intentionally.' && exit 1",
+    "test:e2e:android:login": "maestro test .maestro/signaler-login-checkin.yaml",
+    "test:e2e:manual:sos": "maestro test .maestro/signaler-sos.yaml",
+    "test:e2e:manual:invite-trusted": "maestro test .maestro/signaler-invite-trusted.yaml",
+    "test:data:reset": "bash scripts/reset-test-data.sh keep_pair"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/nunito": "^0.4.2",
     "@expo/metro-runtime": "~6.1.2",
-    "@expo/ngrok": "^4.1.3",
     "@react-native-community/netinfo": "11.4.1",
     "@sentry/react-native": "~7.2.0",
     "@supabase/supabase-js": "^2.49.1",
-    "expo": "^54.0.33",
+    "expo": "~54.0.34",
     "expo-application": "~7.0.8",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
     "expo-device": "~8.0.10",
-    "expo-file-system": "~19.0.21",
+    "expo-file-system": "~19.0.22",
     "expo-font": "~14.0.11",
     "expo-haptics": "~15.0.8",
-    "expo-linking": "~8.0.11",
+    "expo-linking": "~8.0.12",
     "expo-localization": "~17.0.8",
     "expo-location": "~19.0.8",
-    "expo-notifications": "~0.32.16",
+    "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
@@ -62,8 +65,13 @@
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
+    "@expo/ngrok": "^4.1.3",
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "brace-expansion": "^1.1.14",
+    "postcss": "^8.5.12"
   },
   "private": true
 }

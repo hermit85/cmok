@@ -1,5 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { View, ActivityIndicator, AppState, Platform } from 'react-native';
+import { View, ActivityIndicator, AppState, Platform, LogBox } from 'react-native';
+
+// Maestro E2E: suppress dev LogBox toast so it doesn't overlay bottom UI
+// (e.g. SOS button) and intercept tap events. No-op in production builds.
+if (__DEV__ && process.env.EXPO_PUBLIC_DISABLE_LOGBOX === '1') {
+  LogBox.ignoreAllLogs(true);
+}
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';

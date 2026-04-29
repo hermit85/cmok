@@ -281,6 +281,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                     <TextInput
                       ref={phoneInputRef}
                       style={s.input}
+                      testID="phone-input"
                       value={displayNumber}
                       onChangeText={(t) => {
                         const next = t.replace(/\D/g, '').slice(0, 9);
@@ -307,6 +308,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: termsAccepted }}
                   accessibilityLabel="Akceptuję regulamin i politykę prywatności"
+                  testID="terms-checkbox"
                 >
                   <View style={[s.checkbox, termsAccepted && s.checkboxChecked]}>
                     {termsAccepted ? <Text style={s.checkmark}>✓</Text> : null}
@@ -329,6 +331,7 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                     accessibilityRole="button"
                     accessibilityLabel="Wyślij kod SMS"
                     accessibilityState={{ disabled: !isValid || !termsAccepted }}
+                    testID="send-code-button"
                     style={({ pressed }) => [
                       s.sendBtn,
                       isValid && termsAccepted ? s.sendBtnActive : s.sendBtnDisabled,
@@ -350,12 +353,14 @@ export function PhoneVerifyScreen({ onBack, onVerified, selectedRole, relationLa
                     accessibilityRole="button"
                     accessibilityLabel={`Pole kodu SMS, ${code.length} z 6 cyfr wpisanych`}
                     accessibilityHint="Stuknij, żeby otworzyć klawiaturę"
+                    testID="otp-input-trigger"
                   >
                     <CodeBoxes code={code} />
                   </Pressable>
                   <TextInput
                     ref={codeInputRef}
                     style={s.hiddenInput}
+                    testID="otp-input"
                     value={code}
                     onChangeText={(t) => {
                       const next = t.replace(/\D/g, '').slice(0, 6);

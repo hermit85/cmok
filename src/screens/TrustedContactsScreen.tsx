@@ -219,6 +219,7 @@ export function TrustedContactsScreen() {
                 <TextInput
                   ref={phoneInputRef}
                   style={styles.input}
+                  testID="trusted-phone-input"
                   value={displayNumber}
                   onChangeText={(t) => setPhone(t.replace(/\D/g, '').slice(0, 9))}
                   keyboardType="phone-pad"
@@ -244,6 +245,7 @@ export function TrustedContactsScreen() {
               accessibilityRole="button"
               accessibilityLabel="Dodaj tę osobę do kręgu bliskich"
               accessibilityState={{ disabled: !isValid || saving || !!justAddedName, busy: saving }}
+              testID="trusted-add-button"
               style={({ pressed }) => [
                 styles.addButton,
                 (!isValid || saving || !!justAddedName) && styles.addButtonDisabled,
@@ -262,7 +264,7 @@ export function TrustedContactsScreen() {
 
             {/* ─── Invite card (user not in cmok) ─── */}
             {notFoundPhone ? (
-              <View style={styles.inviteCard}>
+              <View style={styles.inviteCard} testID="trusted-invite-card">
                 <Text style={styles.inviteTitle}>Wyślij zaproszenie</Text>
                 <Text style={styles.inviteBody}>
                   Numer {notFoundPhone} nie ma jeszcze cmok. Wyślij zaproszenie z kodem, ta osoba wpisze go w apce i dołączy do Twojego kręgu.
@@ -278,6 +280,7 @@ export function TrustedContactsScreen() {
                   style={({ pressed }) => [styles.inviteBtn, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }]}
                   accessibilityRole="button"
                   accessibilityLabel="Wyślij zaproszenie do tej osoby"
+                  testID="trusted-send-invite-button"
                 >
                   <Text style={styles.inviteBtnText}>Wyślij zaproszenie</Text>
                 </Pressable>
