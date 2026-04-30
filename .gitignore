@@ -32,6 +32,11 @@ yarn-error.*
 google-play-service-account*.json
 play-service-account*.json
 google-services.json
+fcm-service-account.json
+*-firebase-adminsdk-*.json
+
+# build artifacts (local backups of EAS-built AAB/APK)
+artifacts/
 
 # local env files
 .env
